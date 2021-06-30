@@ -1,12 +1,8 @@
 
 using UnityEngine;
 
-public class TitleScreenLogic : MonoBehaviour, IGameEventListener
+public class PlayerLobbyStatus : MonoBehaviour, IGameEventListener
 {
-    public string nextScene;
-
-    public GameObject[] playerJoinedText;
-
     private IEventBus _eventBus;
 
     public int EventFlags => GameEventIds.PlayerCanceled;
@@ -28,17 +24,17 @@ public class TitleScreenLogic : MonoBehaviour, IGameEventListener
         }
     }
 
-    
     public void HandleGameEvent(GameEvent evt)
     {
-        switch (evt.eventId)
+        var playerIndex = (int)evt.payload;
+
+        if (playerIndex >= 0 && transform.childCount > playerIndex)
         {
-            case GameEventIds.PlayerCanceled:
-                playerJoinedText[(int)evt.payload].SetActive(false);
-                break;
-            case GameEventIds.PlayerJoined:
-                playerJoinedText[(int)evt.payload].SetActive(true);
-                break;
+            transform.GetChild(playerIndex).gameObject.SetActive(evt.eventId == GameEventIds.PlayerJoined);
+        }
+        else
+        {
+            Debug.LogWarning("Player index (" + playerIndex + ") is outside the range of children the PlayerLobbyStatus can affect. Make sure there the number of children matches the max number of players.");
         }
     }
 

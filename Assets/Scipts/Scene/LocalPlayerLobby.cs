@@ -2,7 +2,6 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
-using UnityEngine.SceneManagement;
 
 public enum PlayerParentTransform
 {
@@ -63,7 +62,11 @@ public class LocalPlayerLobby : MonoBehaviour, IGameEventListener
 
     public void OnDisable()
     {
-        _eventBus.RemoveListener(this);
+        if (_eventBus != null)
+        {
+            _eventBus.RemoveListener(this);
+        }
+
         _action.Dispose();
     }
 
@@ -77,7 +80,6 @@ public class LocalPlayerLobby : MonoBehaviour, IGameEventListener
 
             _registry.RegisterPlayer(newPlayerRoot);
 
-            
             switch (playerParentTransform)
             {
                 case PlayerParentTransform.GameObject:
@@ -99,7 +101,8 @@ public class LocalPlayerLobby : MonoBehaviour, IGameEventListener
             }
 
             _eventBus.Send(GameEventIds.PlayerJoined, gameObject, newPlayerRoot.Id);
-        }        
+
+        }
     }
 
     private void AttachToParentByTagPath(GameObject obj, string str)
@@ -159,8 +162,6 @@ public class LocalPlayerLobby : MonoBehaviour, IGameEventListener
     {
         GameObject.Destroy(_registry.DeregisterPlayer((int)evt.payload));
     }
-
-    
 
     private PlayerRoot NewInstance(InputDevice device)
     {
