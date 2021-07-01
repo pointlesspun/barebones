@@ -1,18 +1,20 @@
 
 using UnityEngine;
 
-public class PlayerLobbyStatus : MonoBehaviour, IGameEventListener
+using BareBones.Common.Messages;
+ 
+public class PlayerLobbyStatus : MonoBehaviour, IGameMessageListener
 {
-    private IEventBus _eventBus;
+    private IGameMessageBus _eventBus;
 
-    public int EventFlags => GameEventIds.PlayerCanceled;
+    public int EventFlags => GameMessageIds.PlayerCanceled;
 
-    public int GameEventFlags => GameEventIds.PlayerJoined | GameEventIds.PlayerCanceled;
+    public int GameMessageFlags => GameMessageIds.PlayerJoined | GameMessageIds.PlayerCanceled;
 
 
     void Start()
     {
-        _eventBus = ResourceLocator._instance.Resolve<IEventBus>();       
+        _eventBus = ResourceLocator._instance.Resolve<IGameMessageBus>();       
         _eventBus.AddListener(this);
     }
 
@@ -24,13 +26,13 @@ public class PlayerLobbyStatus : MonoBehaviour, IGameEventListener
         }
     }
 
-    public void HandleGameEvent(GameEvent evt)
+    public void HandleMessage(GameMessage evt)
     {
         var playerIndex = (int)evt.payload;
 
         if (playerIndex >= 0 && transform.childCount > playerIndex)
         {
-            transform.GetChild(playerIndex).gameObject.SetActive(evt.eventId == GameEventIds.PlayerJoined);
+            transform.GetChild(playerIndex).gameObject.SetActive(evt.messageId == GameMessageIds.PlayerJoined);
         }
         else
         {

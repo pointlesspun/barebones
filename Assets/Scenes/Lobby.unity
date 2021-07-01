@@ -630,7 +630,7 @@ GameObject:
   - component: {fileID: 1031746965}
   - component: {fileID: 1031746964}
   m_Layer: 5
-  m_Name: Title Screen Text
+  m_Name: Header Text
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -675,7 +675,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: '<b><u>Title Screen</u></b>
+  m_text: '<b><u>Title</u></b>
 
     <size=60%>Bare bones lobby</b>'
   m_isRightToLeft: 0
@@ -1170,26 +1170,13 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1541039147}
-  - component: {fileID: 1541039146}
   m_Layer: 0
-  m_Name: EventBus
+  m_Name: MessageBus
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1541039146
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1541039145}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 97b1be4c737bcb44db95efaf3745a9b6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!4 &1541039147
 Transform:
   m_ObjectHideFlags: 0

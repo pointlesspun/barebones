@@ -1,5 +1,7 @@
 using UnityEngine;
 
+using BareBones.Common.Messages;
+
 public class Hitpoints : MonoBehaviour
 {
     public float baselineHitpoints = 1;
@@ -12,11 +14,11 @@ public class Hitpoints : MonoBehaviour
 
     private GameObjectMeta _meta;
 
-    private IEventBus _eventBus;
+    private IGameMessageBus _eventBus;
 
     void Start()
     {
-        _eventBus = ResourceLocator._instance.Resolve<IEventBus>();
+        _eventBus = ResourceLocator._instance.Resolve<IGameMessageBus>();
         _meta = GetComponent<GameObjectMeta>();
         currentHitpoints = baselineHitpoints;
     }
@@ -29,7 +31,7 @@ public class Hitpoints : MonoBehaviour
 
             if (currentHitpoints <= 0)
             {
-                _eventBus.Send(GameEventIds.EntityDestroyed, gameObject, null);
+                _eventBus.Send(GameMessageIds.EntityDestroyed, gameObject, null);
 
                 if (_meta != null)
                 {

@@ -1,17 +1,20 @@
 using System.Collections;
+
 using UnityEngine;
 using UnityEngine.SceneManagement;
+
+using BareBones.Common.Messages;
 
 public class SceneLogic : MonoBehaviour
 {
     public string _titleSceneName;
     public GameObjectMeta[] _activePlayers;
 
-    private IEventBus _eventBus;
+    private IGameMessageBus _eventBus;
 
     private void Start()
     {
-        _eventBus = ResourceLocator._instance.Resolve<IEventBus>();
+        _eventBus = ResourceLocator._instance.Resolve<IGameMessageBus>();
     }
 
     // Update is called once per frame
@@ -38,7 +41,7 @@ public class SceneLogic : MonoBehaviour
             for (var i = 0; i < _eventBus.ReadBufferLength; i++ )
             {
                 var evt = _eventBus.Read(i);
-                if (evt.eventId == GameEventIds.EntityDestroyed
+                if (evt.messageId == GameMessageIds.EntityDestroyed
                     && evt.sender != null
                     && evt.sender.CompareTag("Player")
                     && GetLivingPlayerCount(_activePlayers) == 0)

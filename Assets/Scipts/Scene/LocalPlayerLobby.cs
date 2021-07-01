@@ -1,8 +1,10 @@
 ﻿using System;
+
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 
+using BareBones.Common.Messages;
 public enum PlayerParentTransform
 {
     None,
@@ -12,7 +14,7 @@ public enum PlayerParentTransform
     Tag_Path
 }
 
-public class LocalPlayerLobby : MonoBehaviour, IGameEventListener
+public class LocalPlayerLobby : MonoBehaviour, IGameMessageListener
 {
     public GameObject playerPrefab;
 
@@ -30,14 +32,14 @@ public class LocalPlayerLobby : MonoBehaviour, IGameEventListener
 
     private IPlayerRegistry _registry;
 
-    private IEventBus _eventBus;
+    private IGameMessageBus _eventBus;
 
-    public int GameEventFlags => GameEventIds.PlayerCanceled;
+    public int GameMessageFlags => GameMessageIds.PlayerCanceled;
 
     public void Start()
     {
         _registry = ResourceLocator._instance.Resolve<IPlayerRegistry>();
-        _eventBus = ResourceLocator._instance.Resolve<IEventBus>();
+        _eventBus = ResourceLocator._instance.Resolve<IGameMessageBus>();
         
         _eventBus.AddListener(this);
         
@@ -100,7 +102,7 @@ public class LocalPlayerLobby : MonoBehaviour, IGameEventListener
 
             }
 
-            _eventBus.Send(GameEventIds.PlayerJoined, gameObject, newPlayerRoot.Id);
+            _eventBus.Send(GameMessageIds.PlayerJoined, gameObject, newPlayerRoot.Id);
 
         }
     }
@@ -158,7 +160,7 @@ public class LocalPlayerLobby : MonoBehaviour, IGameEventListener
     }
 
 
-    public void HandleGameEvent(GameEvent evt)
+    public void HandleMessage(GameMessage evt)
     {
         GameObject.Destroy(_registry.DeregisterPlayer((int)evt.payload));
     }

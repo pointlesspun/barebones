@@ -1,24 +1,27 @@
 ﻿using System;
+
 using UnityEngine;
 using UnityEngine.UI;
 
-public class StartButton : MonoBehaviour, IGameEventListener
+using BareBones.Common.Messages;
+
+public class StartButton : MonoBehaviour, IGameMessageListener
 {
     public string waitingForPlayersText = "Waiting for players...";
     public string startText = "Start !!!";
 
-    private IEventBus _eventBus;
+    private IGameMessageBus _eventBus;
 
     private int _playersRegistered = 0;
 
     private Button _button;
     private TMPro.TMP_Text _buttonText;
 
-    public int GameEventFlags => GameEventIds.PlayerCanceled | GameEventIds.PlayerJoined;
+    public int GameMessageFlags => GameMessageIds.PlayerCanceled | GameMessageIds.PlayerJoined;
 
     void Start()
     {
-        _eventBus = ResourceLocator._instance.Resolve<IEventBus>();
+        _eventBus = ResourceLocator._instance.Resolve<IGameMessageBus>();
 
         _eventBus.AddListener(this);
 
@@ -40,10 +43,10 @@ public class StartButton : MonoBehaviour, IGameEventListener
         }
     }
 
-    public void HandleGameEvent(GameEvent evt)
+    public void HandleMessage(GameMessage evt)
     {
         // xxx this needs refinement
-        _playersRegistered += evt.eventId == GameEventIds.PlayerJoined ? 1 : -1;
+        _playersRegistered += evt.messageId == GameMessageIds.PlayerJoined ? 1 : -1;
         
         var allPlayersReady = _playersRegistered > 0;
 

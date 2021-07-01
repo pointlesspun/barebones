@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using UnityEngine.InputSystem;
+using BareBones.Common.Messages;
 
 public enum AgentControllerProvider
 {
@@ -19,14 +20,14 @@ public class PlayerRoot : MonoBehaviour
     public GameObject _controlledObject;
     public int[] _deviceIds;
 
-    private IEventBus _eventBus;
+    private IGameMessageBus _eventBus;
     private AgentController _controller;
 
     public int Id => _input.playerIndex;
 
     public void Start()
     {
-        _eventBus = ResourceLocator._instance.Resolve<IEventBus>();
+        _eventBus = ResourceLocator._instance.Resolve<IGameMessageBus>();
 
         SelectAgentController();
     }
@@ -100,7 +101,7 @@ public class PlayerRoot : MonoBehaviour
         
         if (this._input != null && context.performed)
         {
-            _eventBus.Send(GameEventIds.PlayerCanceled, gameObject, Id);
+            _eventBus.Send(GameMessageIds.PlayerCanceled, gameObject, Id);
         }      
     }
 }
