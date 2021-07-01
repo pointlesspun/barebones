@@ -3,7 +3,7 @@
 
     public interface IGameMessageListener
     {
-        int GameMessageFlags { get; }
+        GameMessageCategories CategoryFlags { get; }
 
         void HandleMessage(GameMessage evt);
     }

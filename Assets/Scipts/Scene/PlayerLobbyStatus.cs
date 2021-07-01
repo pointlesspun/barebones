@@ -5,34 +5,32 @@ using BareBones.Common.Messages;
  
 public class PlayerLobbyStatus : MonoBehaviour, IGameMessageListener
 {
-    private IGameMessageBus _eventBus;
+    private IGameMessageBus _messageBus;
 
-    public int EventFlags => GameMessageIds.PlayerCanceled;
-
-    public int GameMessageFlags => GameMessageIds.PlayerJoined | GameMessageIds.PlayerCanceled;
+    public GameMessageCategories CategoryFlags => GameMessageCategories.Player;
 
 
     void Start()
     {
-        _eventBus = ResourceLocator._instance.Resolve<IGameMessageBus>();       
-        _eventBus.AddListener(this);
+        _messageBus = ResourceLocator._instance.Resolve<IGameMessageBus>();       
+        _messageBus.AddListener(this);
     }
 
     void OnEnable()
     {
-        if (_eventBus != null)
+        if (_messageBus != null)
         {
-            _eventBus.AddListener(this);
+            _messageBus.AddListener(this);
         }
     }
 
-    public void HandleMessage(GameMessage evt)
+    public void HandleMessage(GameMessage message)
     {
-        var playerIndex = (int)evt.payload;
+        var playerIndex = (int)message.payload;
 
         if (playerIndex >= 0 && transform.childCount > playerIndex)
         {
-            transform.GetChild(playerIndex).gameObject.SetActive(evt.messageId == GameMessageIds.PlayerJoined);
+            transform.GetChild(playerIndex).gameObject.SetActive(message.messageId == GameMessageIds.PlayerJoined);
         }
         else
         {
@@ -42,6 +40,6 @@ public class PlayerLobbyStatus : MonoBehaviour, IGameMessageListener
 
     public void OnDisable()
     {
-        _eventBus.RemoveListener(this);
+        _messageBus.RemoveListener(this);
     }
 }

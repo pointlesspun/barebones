@@ -8,6 +8,7 @@ namespace BareBones.Common.Messages
     public class GameMessage
     {
         public GameObject sender;
+        public GameMessageCategories messageCategory;
         public int messageId;
         public System.Object payload;
     }

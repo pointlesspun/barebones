@@ -66,18 +66,19 @@ namespace BareBones.Common.Messages
             SwitchReadWriteBuffers();
         }
 
-        public GameMessage Send(int messageId, GameObject sender, System.Object payload)
+        public GameMessage Send(GameMessageCategories category, int messageId, GameObject sender, System.Object payload)
         {
-            var evt = Obtain();
+            var message = Obtain();
 
-            if (evt != null)
+            if (message != null)
             {
-                evt.messageId = messageId;
-                evt.sender = sender;
-                evt.payload = payload;
+                message.messageCategory = category;
+                message.messageId = messageId;
+                message.sender = sender;
+                message.payload = payload;
             }
 
-            return evt;
+            return message;
         }
 
         public void Clear()
@@ -95,6 +96,7 @@ namespace BareBones.Common.Messages
                 var result = _writeBuffer[_writeBufferLength];
 
                 result.sender = null;
+                result.messageCategory = GameMessageCategories.Any;
                 result.messageId = -1;
                 result.payload = null;
 
@@ -120,7 +122,7 @@ namespace BareBones.Common.Messages
                 {
                     var listener = _listeners[j];
 
-                    if ((evt.messageId & listener.GameMessageFlags) > 0)
+                    if ((evt.messageCategory & listener.CategoryFlags) > 0)
                     {
                         listener.HandleMessage(evt);
                     }

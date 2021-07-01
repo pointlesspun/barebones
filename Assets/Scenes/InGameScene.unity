@@ -493,7 +493,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cf1140d4357f86d42b37d684946c7c69, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _titleSceneName: TitleScreen
+  _titleSceneName: Lobby
   _activePlayers: []
 --- !u!114 &1856360662
 MonoBehaviour:

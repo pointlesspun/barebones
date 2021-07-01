@@ -31,7 +31,7 @@ public class Hitpoints : MonoBehaviour
 
             if (currentHitpoints <= 0)
             {
-                _eventBus.Send(GameMessageIds.EntityDestroyed, gameObject, null);
+                _eventBus.Send(GameMessageCategories.Entity, GameMessageIds.EntityDestroyed, gameObject, null);
 
                 if (_meta != null)
                 {

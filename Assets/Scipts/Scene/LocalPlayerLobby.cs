@@ -32,16 +32,16 @@ public class LocalPlayerLobby : MonoBehaviour, IGameMessageListener
 
     private IPlayerRegistry _registry;
 
-    private IGameMessageBus _eventBus;
+    private IGameMessageBus _messageBus;
 
-    public int GameMessageFlags => GameMessageIds.PlayerCanceled;
+    public GameMessageCategories CategoryFlags => GameMessageCategories.Player;
 
     public void Start()
     {
         _registry = ResourceLocator._instance.Resolve<IPlayerRegistry>();
-        _eventBus = ResourceLocator._instance.Resolve<IGameMessageBus>();
+        _messageBus = ResourceLocator._instance.Resolve<IGameMessageBus>();
         
-        _eventBus.AddListener(this);
+        _messageBus.AddListener(this);
         
         _action = new InputAction();
 
@@ -56,17 +56,17 @@ public class LocalPlayerLobby : MonoBehaviour, IGameMessageListener
 
     void OnEnable()
     {
-        if (_eventBus != null)
+        if (_messageBus != null)
         {
-            _eventBus.AddListener(this);
+            _messageBus.AddListener(this);
         }
     }
 
     public void OnDisable()
     {
-        if (_eventBus != null)
+        if (_messageBus != null)
         {
-            _eventBus.RemoveListener(this);
+            _messageBus.RemoveListener(this);
         }
 
         _action.Dispose();
@@ -102,8 +102,7 @@ public class LocalPlayerLobby : MonoBehaviour, IGameMessageListener
 
             }
 
-            _eventBus.Send(GameMessageIds.PlayerJoined, gameObject, newPlayerRoot.Id);
-
+            _messageBus.Send(GameMessageCategories.Player, GameMessageIds.PlayerJoined, gameObject, newPlayerRoot.Id);
         }
     }
 

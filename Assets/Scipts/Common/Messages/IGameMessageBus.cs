@@ -13,7 +13,7 @@ namespace BareBones.Common.Messages
 
         void RemoveListener(IGameMessageListener listener);
 
-        GameMessage Send(int eventId, GameObject sender, System.Object payload);
+        GameMessage Send(GameMessageCategories category, int id, GameObject sender, System.Object payload);
 
         GameMessage Read(int index);
     }

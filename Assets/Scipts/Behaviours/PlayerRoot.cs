@@ -101,7 +101,7 @@ public class PlayerRoot : MonoBehaviour
         
         if (this._input != null && context.performed)
         {
-            _eventBus.Send(GameMessageIds.PlayerCanceled, gameObject, Id);
+            _eventBus.Send(GameMessageCategories.Player, GameMessageIds.PlayerCanceled, gameObject, Id);
         }      
     }
 }

@@ -10,11 +10,11 @@ public class SceneLogic : MonoBehaviour
     public string _titleSceneName;
     public GameObjectMeta[] _activePlayers;
 
-    private IGameMessageBus _eventBus;
+    private IGameMessageBus _messageBus;
 
     private void Start()
     {
-        _eventBus = ResourceLocator._instance.Resolve<IGameMessageBus>();
+        _messageBus = ResourceLocator._instance.Resolve<IGameMessageBus>();
     }
 
     // Update is called once per frame
@@ -36,14 +36,16 @@ public class SceneLogic : MonoBehaviour
             }
         }
 
-        if (_eventBus.ReadBufferLength > 0)
+        // xxx use listeners
+        if (_messageBus != null && _messageBus.ReadBufferLength > 0)
         {
-            for (var i = 0; i < _eventBus.ReadBufferLength; i++ )
+            for (var i = 0; i < _messageBus.ReadBufferLength; i++ )
             {
-                var evt = _eventBus.Read(i);
-                if (evt.messageId == GameMessageIds.EntityDestroyed
-                    && evt.sender != null
-                    && evt.sender.CompareTag("Player")
+                var message = _messageBus.Read(i);
+                if (message.messageCategory == GameMessageCategories.Entity
+                    && message.messageId == GameMessageIds.EntityDestroyed
+                    && message.sender != null
+                    && message.sender.CompareTag("Player")
                     && GetLivingPlayerCount(_activePlayers) == 0)
                 {
                     

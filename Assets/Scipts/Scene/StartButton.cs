@@ -10,20 +10,20 @@ public class StartButton : MonoBehaviour, IGameMessageListener
     public string waitingForPlayersText = "Waiting for players...";
     public string startText = "Start !!!";
 
-    private IGameMessageBus _eventBus;
+    private IGameMessageBus _messageBus;
 
     private int _playersRegistered = 0;
 
     private Button _button;
     private TMPro.TMP_Text _buttonText;
 
-    public int GameMessageFlags => GameMessageIds.PlayerCanceled | GameMessageIds.PlayerJoined;
+    public GameMessageCategories CategoryFlags => GameMessageCategories.Player;
 
     void Start()
     {
-        _eventBus = ResourceLocator._instance.Resolve<IGameMessageBus>();
+        _messageBus = ResourceLocator._instance.Resolve<IGameMessageBus>();
 
-        _eventBus.AddListener(this);
+        _messageBus.AddListener(this);
 
         _button = GetComponent<Button>();
 
@@ -37,9 +37,9 @@ public class StartButton : MonoBehaviour, IGameMessageListener
 
     void OnEnable()
     {
-        if (_eventBus != null)
+        if (_messageBus != null)
         {
-            _eventBus.AddListener(this);
+            _messageBus.AddListener(this);
         }
     }
 
@@ -62,7 +62,7 @@ public class StartButton : MonoBehaviour, IGameMessageListener
 
     public void OnDisable()
     {
-        _eventBus.RemoveListener(this);
+        _messageBus.RemoveListener(this);
     }
 }
 
