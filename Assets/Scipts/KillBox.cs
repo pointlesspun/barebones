@@ -4,11 +4,11 @@ public class KillBox : MonoBehaviour
 {
     public Bounds killBoxDimensions;
 
-    private GameObjectMeta _metaInformation;
+    private PoolObject _metaInformation;
 
     private void Start()
     {
-        _metaInformation = GetComponent<GameObjectMeta>();
+        _metaInformation = GetComponent<PoolObject>();
     }
 
     void Update()

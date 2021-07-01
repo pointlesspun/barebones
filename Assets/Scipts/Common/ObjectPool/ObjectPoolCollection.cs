@@ -25,9 +25,9 @@ public class ObjectPoolCollection : MonoBehaviour
 
     public ObjectPoolConfig[] poolCollectionConfig;
 
-    public GameObjectMetaPool this[int index] => poolCollection[index];
+    public ObjectPool this[int index] => poolCollection[index];
 
-    private GameObjectMetaPool[] poolCollection;
+    private ObjectPool[] poolCollection;
 
     public void Awake()
     {
@@ -47,13 +47,13 @@ public class ObjectPoolCollection : MonoBehaviour
         instance = this;
     }
 
-    public GameObjectMeta Obtain(int poolId)
+    public PoolObject Obtain(int poolId)
     {
         return poolCollection[poolId].Obtain();
     }
 
 
-    public GameObjectMeta Obtain(int poolId, Transform transform, in Vector3 localStartPosition, in Quaternion rotation)
+    public PoolObject Obtain(int poolId, Transform transform, in Vector3 localStartPosition, in Quaternion rotation)
     {
         var result = poolCollection[poolId].Obtain();
 
@@ -74,9 +74,11 @@ public class ObjectPoolCollection : MonoBehaviour
         return result;
     }
 
-    public void Release(GameObjectMeta meta)
+    public void Release(PoolObject meta)
     {
-        poolCollection[meta.poolId].Release(meta);
+        var pool = poolCollection[meta.poolId];
+        pool.Release(meta);
+        meta.gameObject.transform.parent = pool.ParentObject.transform;
     }
 
     public void OnDestroy()
@@ -84,9 +86,9 @@ public class ObjectPoolCollection : MonoBehaviour
         instance = null;
     }
 
-    private GameObjectMetaPool[] InitializePool(ObjectPoolConfig[] config)
+    private ObjectPool[] InitializePool(ObjectPoolConfig[] config)
     {
-        var result = new GameObjectMetaPool[config.Length];
+        var result = new ObjectPool[config.Length];
 
         for (var i = 0; i < config.Length; i++)
         {
@@ -99,7 +101,7 @@ public class ObjectPoolCollection : MonoBehaviour
                     poolObject.transform.parent = transform;
                     poolObject.name = config[i].name;
 
-                    result[i] = new GameObjectMetaPool(i, config[i].size, config[i].prefab, poolObject);
+                    result[i] = new ObjectPool(i, config[i].size, config[i].prefab, poolObject);
                 }
                 else
                 {

@@ -12,14 +12,14 @@ public class Hitpoints : MonoBehaviour
 
     public bool deferDestruction = false;
 
-    private GameObjectMeta _meta;
+    private PoolObject _meta;
 
     private IGameMessageBus _eventBus;
 
     void Start()
     {
         _eventBus = ResourceLocator._instance.Resolve<IGameMessageBus>();
-        _meta = GetComponent<GameObjectMeta>();
+        _meta = GetComponent<PoolObject>();
         currentHitpoints = baselineHitpoints;
     }
 

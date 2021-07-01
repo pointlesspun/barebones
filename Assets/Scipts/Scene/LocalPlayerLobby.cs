@@ -5,6 +5,8 @@ using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 
 using BareBones.Common.Messages;
+using UnityEngine.InputSystem.Users;
+
 public enum PlayerParentTransform
 {
     None,
@@ -158,29 +160,38 @@ public class LocalPlayerLobby : MonoBehaviour, IGameMessageListener
         return null;
     }
 
-
-    public void HandleMessage(GameMessage evt)
+    public void HandleMessage(GameMessage message)
     {
-        GameObject.Destroy(_registry.DeregisterPlayer((int)evt.payload));
+        if (message.messageId == GameMessageIds.PlayerCanceled)
+        {          
+            _registry.DeregisterPlayer((int)message.payload);
+
+            message.sender.GetComponent<PoolObject>().TryRelease();
+        }
     }
 
     private PlayerRoot NewInstance(InputDevice device)
     {
         var (devices, controlScheme, deviceIds) = CreateInputConfiguration(device);
 
-        var input = PlayerInput.Instantiate(
-                                playerPrefab,
-                                playerIndex: _registry.GetAvailableIndex(),
-                                controlScheme: controlScheme,
-                                pairWithDevices: devices
-        );
+        var poolObject = ObjectPoolCollection.instance.Obtain((int)PoolIdEnum.Players);
 
-        var root = input.gameObject.GetComponent<PlayerRoot>();
-        var name = playerPrefab.name + " " + input.playerIndex;
+        var root = poolObject.GetComponent<PlayerRoot>();
+        var input = poolObject.GetComponent<PlayerInput>();
+        var id = _registry.GetAvailableIndex();
+
+        input.user.UnpairDevices();
+        devices.ForEach(dev => InputUser.PerformPairingWithDevice(dev, user: input.user));
+
+        input.defaultControlScheme = controlScheme;
+        input.SwitchCurrentControlScheme(controlScheme);
+        
+        var name = playerPrefab.name + " " + id;
 
         input.gameObject.name = name;
 
         return root.Initialize(
+            id,
             name, 
             input, 
             deviceIds

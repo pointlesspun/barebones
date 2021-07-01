@@ -29,7 +29,7 @@ public class Spawner : MonoBehaviour
     public float initialDelay = 0.0f;
 
     private int _current = 0;
-    private List<GameObjectMeta> _aliveObjects = new List<GameObjectMeta>();
+    private List<PoolObject> _aliveObjects = new List<PoolObject>();
     private float _lastSpawnTime = -1.0f;
     private GameObject[] _activePlayers;
 

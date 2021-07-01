@@ -8,7 +8,7 @@ using BareBones.Common.Messages;
 public class SceneLogic : MonoBehaviour
 {
     public string _titleSceneName;
-    public GameObjectMeta[] _activePlayers;
+    public PoolObject[] _activePlayers;
 
     private IGameMessageBus _messageBus;
 
@@ -27,11 +27,11 @@ public class SceneLogic : MonoBehaviour
 
             if (playerObjects.Length > 0)
             {
-                _activePlayers = new GameObjectMeta[playerObjects.Length];
+                _activePlayers = new PoolObject[playerObjects.Length];
 
                 for (var i = 0; i < playerObjects.Length; i++)
                 {
-                    _activePlayers[i] = playerObjects[i].GetComponent<GameObjectMeta>();
+                    _activePlayers[i] = playerObjects[i].GetComponent<PoolObject>();
                 }
             }
         }
@@ -55,7 +55,7 @@ public class SceneLogic : MonoBehaviour
         }   
     }
 
-    public int GetLivingPlayerCount(GameObjectMeta[] players)
+    public int GetLivingPlayerCount(PoolObject[] players)
     {
         var count = 0;
         for (var i = 0; i < players.Length; i++)

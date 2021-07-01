@@ -1,28 +1,32 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
 
-public class GameObjectMetaPool
+public class ObjectPool
 {
     public int Id { get; private set; }
-    private List<GameObjectMeta> _available;
+    
+    public GameObject ParentObject { get; private set; }
 
-    public GameObjectMetaPool(int id, int count, GameObject prefab, GameObject parentObject)
+    private List<PoolObject> _available;
+
+    public ObjectPool(int id, int count, GameObject prefab, GameObject parentObject)
     {
         Id = id;
+        ParentObject = parentObject;
 
-        _available = new List<GameObjectMeta>();
+        _available = new List<PoolObject>();
 
         for (var i = 0; i < count; i++)
         {
             var obj = GameObject.Instantiate(prefab, parentObject.transform);
-            var config = obj.GetComponent<GameObjectMeta>();
+            var config = obj.GetComponent<PoolObject>();
 
             obj.name = parentObject.name + "@" + id + "-" + i;
             
 
             if (config == null)
             {
-                config = obj.AddComponent<GameObjectMeta>();
+                config = obj.AddComponent<PoolObject>();
             }
 
             config.poolId = Id;
@@ -34,7 +38,7 @@ public class GameObjectMetaPool
         }
     }
 
-    public GameObjectMeta Obtain()
+    public PoolObject Obtain()
     {
         if (_available.Count > 0)
         {
@@ -51,7 +55,7 @@ public class GameObjectMetaPool
         return null;
     }
 
-    public void Release(GameObjectMeta meta)
+    public void Release(PoolObject meta)
     {
         Debug.Assert(meta.poolId == Id);
 

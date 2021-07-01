@@ -114,16 +114,24 @@ public static class Enumerations
         return result;
     }
 
-    public static T[] ForEach<T>(this T[] array, Func<T, T> action)
+    public static T[] SetForEach<T>(this T[] array, Func<T, T> function)
     {
         for (var i = 0; i < array.Length; i++ )
         {
-            array[i] = action(array[i]);
+            array[i] = function(array[i]);
         }
 
         return array;
     }
 
+    public static T[] ForEach<T>(this T[] array, Action<T> action)
+    {
+        for (var i = 0; i < array.Length; i++)
+        {
+            action(array[i]);
+        }
 
+        return array;
+    }
 }
 

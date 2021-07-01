@@ -77,7 +77,7 @@ public class PlayerRegistry : IPlayerRegistry
 
     public void Reset()
     {
-        players.ForEach(plr =>
+        players.SetForEach(plr =>
         {
             if (plr != null)
             {

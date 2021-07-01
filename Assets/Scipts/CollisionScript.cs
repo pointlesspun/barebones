@@ -15,12 +15,12 @@ public class CollisionScript : MonoBehaviour
 
     private Rigidbody _body;
 
-    private GameObjectMeta _meta;
+    private PoolObject _meta;
 
     private void Start()
     {
         _body = GetComponent<Rigidbody>();
-        _meta = GetComponent<GameObjectMeta>();
+        _meta = GetComponent<PoolObject>();
     }
 
     void OnCollisionEnter(Collision collision)

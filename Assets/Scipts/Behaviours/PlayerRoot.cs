@@ -23,7 +23,9 @@ public class PlayerRoot : MonoBehaviour
     private IGameMessageBus _eventBus;
     private AgentController _controller;
 
-    public int Id => _input.playerIndex;
+    private int _id;
+
+    public int Id => _id;
 
     public void Start()
     {
@@ -67,8 +69,9 @@ public class PlayerRoot : MonoBehaviour
             Debug.LogWarning("PlayerRoot.SelectAgentController no agent controller found in controller provider.");
         }
     }
-    public PlayerRoot Initialize(string name, PlayerInput input, int[] deviceIds, AgentController controlledObject = null, int score = 0)
+    public PlayerRoot Initialize(int id, string name, PlayerInput input, int[] deviceIds, AgentController controlledObject = null, int score = 0)
     {
+        _id = id;
         _playerName = name;
         _input = input;
         _score = score;

@@ -1,11 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using UnityEngine;
+﻿using UnityEngine;
 
-public class GameObjectMeta : MonoBehaviour
+public class PoolObject : MonoBehaviour
 {
     public int poolId;
     public bool isReleased = false;
