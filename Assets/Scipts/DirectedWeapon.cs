@@ -13,6 +13,13 @@ public class DirectedWeapon : MonoBehaviour, IWeapon
 
     private float lastFiredBullet = -1.0f;
 
+    private IObjectPoolCollection _pool;
+
+    public void Start()
+    {
+        _pool = ResourceLocator._instance.Resolve<IObjectPoolCollection>();
+    }
+
     public void Fire()
     {
         Fire(gameObject.transform, gameObject.transform.position);
@@ -27,7 +34,7 @@ public class DirectedWeapon : MonoBehaviour, IWeapon
     {
         if (Time.time - lastFiredBullet > cooldown)
         {
-            ObjectPoolCollection.instance.Obtain(
+            _pool.Obtain(
                 (int)bulletPoolId,
                 transform,
                 localStartPosition,

@@ -1,14 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-public enum PoolIdEnum
-{
-    Players = 0,
-    PlayerBullets = 1,
-    EnemyDrones = 2,
-    None = 3,
-}
 
 [Serializable]
 public class ObjectPoolConfig
@@ -16,46 +10,60 @@ public class ObjectPoolConfig
     public string name;
     public int size;
     public GameObject prefab;
-    public PoolIdEnum preferredId = PoolIdEnum.None;
+    public PoolIdEnum preferredId = PoolIdEnum.Other;
 }
 
-public class ObjectPoolCollection : MonoBehaviour
+public class ObjectPoolCollection : MonoBehaviour, IObjectPoolCollection
 {
-    public static ObjectPoolCollection instance;
-
     public ObjectPoolConfig[] poolCollectionConfig;
 
-    public ObjectPool this[int index] => poolCollection[index];
+    public ObjectPool this[int index] => _poolCollection[index];
 
-    private ObjectPool[] poolCollection;
+    private List<ObjectPool> _poolCollection;
 
     public void Awake()
     {
-        if (poolCollection == null)
+        var locator = ResourceLocator._instance;
+
+        if (locator.Contains<IObjectPoolCollection>())
         {
-            if (poolCollectionConfig.Length > 0)
+            IObjectPoolCollection other = locator.Resolve<IObjectPoolCollection>();
+            if (other != this)
             {
-                poolCollectionConfig.OrderBy(p => (int) p.preferredId);
-                poolCollection = InitializePool(poolCollectionConfig);
-            }
-            else
-            {
-                Debug.LogWarning("No custom PoolCollection Configuration defined.");
+                // merge this config with the existing one
+                other.Add(poolCollectionConfig);
+                Destroy(gameObject);
             }
         }
+        else
+        { 
+            if (_poolCollection == null)
+            {
+                _poolCollection = new List<ObjectPool>();
 
-        instance = this;
+                if (poolCollectionConfig.Length > 0)
+                {
+                    poolCollectionConfig.OrderBy(p => (int)p.preferredId);
+                    Add(poolCollectionConfig);
+                }
+                else
+                {
+                    Debug.LogWarning("No custom PoolCollection Configuration defined.");
+                }
+            }
+
+            locator.Register<IObjectPoolCollection>(this);
+        }
     }
 
     public PoolObject Obtain(int poolId)
     {
-        return poolCollection[poolId].Obtain();
+        return _poolCollection[poolId].Obtain();
     }
-
 
     public PoolObject Obtain(int poolId, Transform transform, in Vector3 localStartPosition, in Quaternion rotation)
     {
-        var result = poolCollection[poolId].Obtain();
+        var result = _poolCollection[poolId].Obtain();
 
         if (result != null)
         {
@@ -76,32 +84,36 @@ public class ObjectPoolCollection : MonoBehaviour
 
     public void Release(PoolObject meta)
     {
-        var pool = poolCollection[meta.poolId];
+        var pool = _poolCollection[meta.poolId];
         pool.Release(meta);
         meta.gameObject.transform.parent = pool.ParentObject.transform;
     }
 
     public void OnDestroy()
     {
-        instance = null;
+        if (this._poolCollection != null)
+        {
+            ResourceLocator._instance.Deregister<IObjectPoolCollection>(this);
+        }
     }
 
-    private ObjectPool[] InitializePool(ObjectPoolConfig[] config)
+    public void Add(ObjectPoolConfig[] config)
     {
-        var result = new ObjectPool[config.Length];
-
         for (var i = 0; i < config.Length; i++)
         {
             if (config[i].size > 0)
             {
                 if (config[i].prefab != null)
                 {
-                    var poolObject = new GameObject();
-
-                    poolObject.transform.parent = transform;
-                    poolObject.name = config[i].name;
-
-                    result[i] = new ObjectPool(i, config[i].size, config[i].prefab, poolObject);
+                    if (_poolCollection.FindIndex(0, pool => pool.Id == (int) config[i].preferredId) >= 0)
+                    {
+                        Debug.LogWarning("Pool collection already contains objects for pool id: " + config[i].preferredId);
+                        Debug.LogWarning("New pool will be ignored.");
+                    }
+                    else
+                    {
+                        _poolCollection.Add(CreateObjectPool(config[i]));
+                    }
                 }
                 else
                 {
@@ -114,7 +126,17 @@ public class ObjectPoolCollection : MonoBehaviour
             }
         }
 
-        return result;
+        _poolCollection.Sort((a, b) => a.Id.CompareTo(b.Id));
+    }
+
+    private ObjectPool CreateObjectPool(ObjectPoolConfig config)
+    {
+        var poolObject = new GameObject();
+
+        poolObject.transform.parent = transform;
+        poolObject.name = config.name;
+
+        return new ObjectPool((int) config.preferredId, config.size, config.prefab, poolObject); 
     }
 }
 

@@ -38,11 +38,15 @@ public class LocalPlayerLobby : MonoBehaviour, IGameMessageListener
 
     public GameMessageCategories CategoryFlags => GameMessageCategories.Player;
 
+    private IObjectPoolCollection _pool;
+
+    
     public void Start()
     {
         _registry = ResourceLocator._instance.Resolve<IPlayerRegistry>();
         _messageBus = ResourceLocator._instance.Resolve<IGameMessageBus>();
-        
+        _pool = ResourceLocator._instance.Resolve<IObjectPoolCollection>();
+
         _messageBus.AddListener(this);
         
         _action = new InputAction();
@@ -166,7 +170,7 @@ public class LocalPlayerLobby : MonoBehaviour, IGameMessageListener
         {          
             _registry.DeregisterPlayer((int)message.payload);
 
-            message.sender.GetComponent<PoolObject>().TryRelease();
+            message.sender.GetComponent<PoolObject>().Release();
         }
     }
 
@@ -174,7 +178,7 @@ public class LocalPlayerLobby : MonoBehaviour, IGameMessageListener
     {
         var (devices, controlScheme, deviceIds) = CreateInputConfiguration(device);
 
-        var poolObject = ObjectPoolCollection.instance.Obtain((int)PoolIdEnum.Players);
+        var poolObject = _pool.Obtain((int)PoolIdEnum.Players);
 
         var root = poolObject.GetComponent<PlayerRoot>();
         var input = poolObject.GetComponent<PlayerInput>();

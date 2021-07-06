@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 [Serializable]
@@ -89,5 +91,16 @@ public class PlayerRegistry : IPlayerRegistry
 
         playerCount = 0;
     }
+    
+    public IEnumerator<PlayerRoot> GetEnumerator()
+    {
+        for (var i = 0; i < players.Length; i++)
+        {
+            if (players[i] != null)
+            yield return players[i];
+        }
+    }
+
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 }
 

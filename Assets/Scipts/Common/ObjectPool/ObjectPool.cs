@@ -1,20 +1,20 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
 
+[Serializable]
 public class ObjectPool
 {
     public int Id { get; private set; }
     
     public GameObject ParentObject { get; private set; }
 
-    private List<PoolObject> _available;
+    private readonly List<PoolObject> _available = new List<PoolObject>();
 
     public ObjectPool(int id, int count, GameObject prefab, GameObject parentObject)
     {
         Id = id;
         ParentObject = parentObject;
-
-        _available = new List<PoolObject>();
 
         for (var i = 0; i < count; i++)
         {

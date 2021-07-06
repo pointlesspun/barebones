@@ -5,7 +5,7 @@
     {
         GameMessageCategories CategoryFlags { get; }
 
-        void HandleMessage(GameMessage evt);
+        void HandleMessage(GameMessage message);
     }
 }
 

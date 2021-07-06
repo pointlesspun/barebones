@@ -8,15 +8,23 @@ namespace BareBones.Common.Messages
     {
         Any    = ~0,
         Player = 1 << 0,
+        Scene  = 1 << 1,
         Entity = 1 << 8,
     }
 
     public static class GameMessageIds
     {
-        // generic event ids
+        // lobby events
         public static readonly int PlayerJoined = 1;
         public static readonly int PlayerCanceled = 2;
 
+        // scene events
+        public static readonly int SessionStarted = 50;
+        public static readonly int SceneStarted = 51;
+        public static readonly int SceneEnded = 52;
+        public static readonly int SessionEnded = 53;
+
+        // in game events
         public static readonly int EntityDestroyed = 100;
     }
 }

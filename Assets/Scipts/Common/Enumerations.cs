@@ -102,6 +102,19 @@ public static class Enumerations
         return false;
     }
 
+    public static bool Any<T>(this IEnumerable<T> enumeration, Func<T, bool> predicate)
+    {
+        foreach (var value in enumeration)
+        {
+            if (predicate(value))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public static T[] CreateArray<T>(int count)
     {
         var result = new T[count];

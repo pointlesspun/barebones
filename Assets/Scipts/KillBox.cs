@@ -17,7 +17,7 @@ public class KillBox : MonoBehaviour
         {
             if (_metaInformation != null)
             {
-                _metaInformation.TryRelease();
+                _metaInformation.Release();
             }
             else
             {

@@ -8,7 +8,7 @@ public enum AgentControllerProvider
     FirstChild
 }
 
-public class PlayerRoot : MonoBehaviour
+public class PlayerRoot : MonoBehaviour, IGameMessageListener
 {
     public string _playerName;
     public int _score;
@@ -20,16 +20,24 @@ public class PlayerRoot : MonoBehaviour
     public GameObject _controlledObject;
     public int[] _deviceIds;
 
-    private IGameMessageBus _eventBus;
+    private IGameMessageBus _messageBus;
     private AgentController _controller;
 
     private int _id;
 
     public int Id => _id;
 
+    public GameMessageCategories CategoryFlags => GameMessageCategories.Entity | GameMessageCategories.Scene;
+
+    public bool IsAlive => _controller != null && _controller.gameObject.activeSelf;
+
     public void Start()
     {
-        _eventBus = ResourceLocator._instance.Resolve<IGameMessageBus>();
+        if (_messageBus == null)
+        {
+            _messageBus = ResourceLocator._instance.Resolve<IGameMessageBus>();
+            _messageBus.AddListener(this);
+        }
 
         SelectAgentController();
     }
@@ -104,8 +112,39 @@ public class PlayerRoot : MonoBehaviour
         
         if (this._input != null && context.performed)
         {
-            _eventBus.Send(GameMessageCategories.Player, GameMessageIds.PlayerCanceled, gameObject, Id);
+            _messageBus.Send(GameMessageCategories.Player, GameMessageIds.PlayerCanceled, gameObject, Id);
         }      
+    }
+
+    public void HandleMessage(GameMessage message)
+    {
+        switch (message.messageCategory)
+        {
+            case GameMessageCategories.Entity:
+
+                if (message.messageId == GameMessageIds.EntityDestroyed && message.sender == _controller.gameObject)
+                {
+                    _controller.gameObject.SetActive(false);
+                }
+                break;
+            case GameMessageCategories.Scene:
+                if (message.messageId == GameMessageIds.SceneStarted)
+                {
+                    gameObject.ActivateHierarchyTree(true);
+                }
+                break;
+            default:
+                Debug.LogWarning("PlayerRoot.HandleMessage, unhandled message category " + message.messageCategory);
+                break;
+        }
+    }
+
+    public void OnDestroy()
+    {
+        if (_messageBus != null)
+        {
+            _messageBus.RemoveListener(this);
+        }
     }
 }
 

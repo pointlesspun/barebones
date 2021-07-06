@@ -35,7 +35,7 @@ public class Hitpoints : MonoBehaviour
 
                 if (_meta != null)
                 {
-                    _meta.TryRelease();
+                    _meta.Release();
                 } 
                 else if (!deferDestruction) 
                 {

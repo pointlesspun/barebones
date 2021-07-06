@@ -1,0 +1,7 @@
+﻿
+[done] Finish Timerservice - add behaviour
+[done] Scenelogic - add time out
+[done] Add timer service to start scene
+[done] Activate player on scene begin
+Fix player movement
+Add player spawn positions

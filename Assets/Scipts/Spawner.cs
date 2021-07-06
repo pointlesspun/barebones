@@ -37,6 +37,13 @@ public class Spawner : MonoBehaviour
     // want to pick on the same player every time.
     private int _lastTargetedPlayer = -1;
 
+    private IObjectPoolCollection _pool;
+
+    public void Start()
+    {
+        _pool = ResourceLocator._instance.Resolve<IObjectPoolCollection>();
+    }
+
     void Update()
     {
         // have to put a small delay in to allow players to spawn
@@ -55,7 +62,7 @@ public class Spawner : MonoBehaviour
 
     private void SpawnObject()
     {
-        var spawnedObject = ObjectPoolCollection.instance.Obtain((int)poolId);
+        var spawnedObject = _pool.Obtain((int)poolId);
 
         if (spawnedObject != null)
         {
@@ -105,7 +112,8 @@ public class Spawner : MonoBehaviour
             if (meta.isReleased)
             {
                 _aliveObjects.RemoveAt(i);
-                ObjectPoolCollection.instance.Release(meta);
+                meta.deferRelease = false;
+                meta.Release();
             }
             else
             {

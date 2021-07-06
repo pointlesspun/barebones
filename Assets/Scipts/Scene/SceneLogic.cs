@@ -5,68 +5,35 @@ using UnityEngine.SceneManagement;
 
 using BareBones.Common.Messages;
 
-public class SceneLogic : MonoBehaviour
+public class SceneLogic : MonoBehaviour, IGameMessageListener, ITimeoutCallback
 {
     public string _titleSceneName;
-    public PoolObject[] _activePlayers;
+    /**
+     * Time after the game over has been signalled before the next scene is loaded
+     */
+    public float _gameOverTimeout = 1.0f;
 
     private IGameMessageBus _messageBus;
+    private IPlayerRegistry _playerRegistry;
+    private ITimeService _timeService;
+
+    private int _timeOutHandle = -1;
+
+    public GameMessageCategories CategoryFlags => GameMessageCategories.Entity;
 
     private void Start()
     {
-        _messageBus = ResourceLocator._instance.Resolve<IGameMessageBus>();
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        if (_activePlayers == null || _activePlayers.Length == 0)
+        if (_messageBus == null)
         {
-            // need to wait until players have been spawned
-            var playerObjects = GameObject.FindGameObjectsWithTag("Player");
-
-            if (playerObjects.Length > 0)
-            {
-                _activePlayers = new PoolObject[playerObjects.Length];
-
-                for (var i = 0; i < playerObjects.Length; i++)
-                {
-                    _activePlayers[i] = playerObjects[i].GetComponent<PoolObject>();
-                }
-            }
+            _messageBus = ResourceLocator._instance.Resolve<IGameMessageBus>();
+            _messageBus.AddListener(this);
+            _messageBus.Send(GameMessageCategories.Scene, GameMessageIds.SceneStarted, gameObject, null);
         }
 
-        // xxx use listeners
-        if (_messageBus != null && _messageBus.ReadBufferLength > 0)
-        {
-            for (var i = 0; i < _messageBus.ReadBufferLength; i++ )
-            {
-                var message = _messageBus.Read(i);
-                if (message.messageCategory == GameMessageCategories.Entity
-                    && message.messageId == GameMessageIds.EntityDestroyed
-                    && message.sender != null
-                    && message.sender.CompareTag("Player")
-                    && GetLivingPlayerCount(_activePlayers) == 0)
-                {
-                    
-                    StartCoroutine(LoadScene(_titleSceneName));
-                }
-            }
-        }   
+        _playerRegistry = ResourceLocator._instance.Resolve<IPlayerRegistry>();
+        _timeService = ResourceLocator._instance.Resolve<ITimeService>();
     }
 
-    public int GetLivingPlayerCount(PoolObject[] players)
-    {
-        var count = 0;
-        for (var i = 0; i < players.Length; i++)
-        {
-            if (!players[i].isReleased)
-            {
-                count++;
-            }
-        }
-        return count;
-    }
 
     IEnumerator LoadScene(string sceneName)
     {
@@ -77,5 +44,43 @@ public class SceneLogic : MonoBehaviour
         {
             yield return null;
         }
+    }
+
+    public void HandleMessage(GameMessage message)
+    {
+        if (message.messageCategory == GameMessageCategories.Entity
+            && message.messageId == GameMessageIds.EntityDestroyed
+            && message.sender != null
+            && message.sender.CompareTag("Player")
+            && !_playerRegistry.Any(player => player.IsAlive))
+        {
+            // send game over
+            _messageBus.Send(GameMessageCategories.Scene, GameMessageIds.SessionEnded, gameObject, null);
+
+            _timeOutHandle = _timeService.SetTimeout(this, _gameOverTimeout);
+
+            if (_timeOutHandle < 0 || _gameOverTimeout <= 0)
+            {
+                Debug.LogWarning("No more timeout handles available or _gameOverTimeOut is equal or less than zero, loading next scene now... ");
+                StartCoroutine(LoadScene(_titleSceneName));
+            }
+        }
+    }
+
+    public void OnDestroy()
+    {
+        _messageBus.RemoveListener(this);
+
+        if (_timeOutHandle >= 0 && _timeService != null)
+        {
+            _timeService.Cancel(_timeOutHandle);
+            _timeOutHandle = -1;
+        }
+    }
+
+    public void OnTimeout(int handle)
+    {
+        _timeOutHandle = -1;
+        StartCoroutine(LoadScene(_titleSceneName));
     }
 }

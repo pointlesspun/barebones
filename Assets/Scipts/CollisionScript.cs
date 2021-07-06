@@ -14,8 +14,8 @@ public class CollisionScript : MonoBehaviour
     private float _lastImpact = float.MinValue;
 
     private Rigidbody _body;
-
     private PoolObject _meta;
+
 
     private void Start()
     {
@@ -38,7 +38,7 @@ public class CollisionScript : MonoBehaviour
             {
                 if (_meta != null)
                 {
-                    ObjectPoolCollection.instance.Release(_meta);
+                    _meta.Release();
                 }
                 else
                 {

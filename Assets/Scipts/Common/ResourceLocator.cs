@@ -98,4 +98,9 @@ public class ResourceLocator
     {
         return _typedResources.ContainsKey(typeof(T));
     }
+
+    public bool Contains(string name)
+    {
+        return _namedResources.ContainsKey(name);
+    }
 }

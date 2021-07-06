@@ -6,7 +6,14 @@ public class PoolObject : MonoBehaviour
     public bool isReleased = false;
     public bool deferRelease = false;
 
-    public void TryRelease()
+    private IObjectPoolCollection _pool;
+
+    public void Start()
+    {
+        _pool = ResourceLocator._instance.Resolve<IObjectPoolCollection>();
+    }
+
+    public void Release()
     {
         if (deferRelease)
         {
@@ -15,7 +22,7 @@ public class PoolObject : MonoBehaviour
         }
         else
         {
-            ObjectPoolCollection.instance.Release(this);
+            _pool.Release(this);
         }
     }
 }

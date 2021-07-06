@@ -1,8 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.InputSystem;
 
-public interface IPlayerRegistry
+public interface IPlayerRegistry : IEnumerable<PlayerRoot>
 {
     PlayerRoot this[int index] { get; }
 
