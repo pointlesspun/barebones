@@ -19,6 +19,8 @@ public class StartButton : MonoBehaviour, IGameMessageListener
 
     public GameMessageCategories CategoryFlags => GameMessageCategories.Player;
 
+    public GameMessageListenerState GameMessageListenerState { get; set; } = GameMessageListenerState.None;
+
     void Start()
     {
         _messageBus = ResourceLocator._instance.Resolve<IGameMessageBus>();

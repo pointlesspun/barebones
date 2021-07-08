@@ -5,5 +5,7 @@
 [done] Activate player on scene begin
 [done] Fix player movement
 [done] Add player spawn positions
-restore PlayerLobbyStatus
+[done] Restore PlayerLobbyStatus
+[done] Stage listener addition / removal
 attach gamepad movement
+bug, Joining and leaving more than Max Players causes player to lose controls and other weird stuff

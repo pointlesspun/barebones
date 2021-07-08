@@ -127,6 +127,18 @@ public static class Enumerations
         return result;
     }
 
+    public static T[] CreateArray<T>(int count, Func<int, T> factoryMethod)
+    {
+        var result = new T[count];
+
+        for (var i = 0; i < result.Length; i++)
+        {
+            result[i] = factoryMethod(i);
+        }
+
+        return result;
+    }
+
     public static T[] SetForEach<T>(this T[] array, Func<T, T> function)
     {
         for (var i = 0; i < array.Length; i++ )

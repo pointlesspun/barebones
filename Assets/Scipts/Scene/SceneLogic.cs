@@ -21,6 +21,8 @@ public class SceneLogic : MonoBehaviour, IGameMessageListener, ITimeoutCallback
 
     public GameMessageCategories CategoryFlags => GameMessageCategories.Entity;
 
+    public GameMessageListenerState GameMessageListenerState { get; set; } = GameMessageListenerState.None;
+
     private void Start()
     {
         if (_messageBus == null)

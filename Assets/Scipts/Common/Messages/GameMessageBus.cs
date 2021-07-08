@@ -19,7 +19,8 @@ namespace BareBones.Common.Messages
         private int _writeBufferLength = 0;
 
         private readonly List<IGameMessageListener> _listeners = new List<IGameMessageListener>();
-
+        private readonly List<IGameMessageListener> _stagedListeners = new List<IGameMessageListener>();
+        
         public GameMessageBus()
         {
             _readBufferLength = 0;
@@ -37,22 +38,46 @@ namespace BareBones.Common.Messages
 
         public void AddListener(IGameMessageListener listener)
         {
-            Debug.Assert(!_listeners.Contains(listener), "Duplicate call to AddListener, listener = " + listener);
-            _listeners.Add(listener);
+            Debug.Assert(listener.GameMessageListenerState == GameMessageListenerState.None, "Duplicate call to AddListener, listener = " + listener);
+
+            // can't immediately add a listener to the active listener lists if the addition is the result
+            // of a message being send and handled by another listener. So stage the listener
+            // which will be added next update
+            _stagedListeners.Add(listener);
+            listener.GameMessageListenerState = GameMessageListenerState.Staged;
         }
 
+        /**
+         * This will flag the listener for removal but doesn't actually remove it from 
+         * the lists of listeners.
+         */
         public void RemoveListener(IGameMessageListener listener)
         {
-            Debug.Assert(_listeners.Contains(listener), "Removing listener which was not registered, listener = " + listener);
-            _listeners.Remove(listener);
+            Debug.Assert(listener.GameMessageListenerState != GameMessageListenerState.None, "Removing listener which was not registered, listener = " + listener);
+            Debug.Assert(listener.GameMessageListenerState != GameMessageListenerState.FlaggedForRemoval, "Duplicate removal call to listener = " + listener);
+
+            // if the handle is negative, the listener was in the staging queue.
+            // remove it from the queue.
+            if (listener.GameMessageListenerState == GameMessageListenerState.Staged)
+            {
+                _stagedListeners.Remove(listener);
+                listener.GameMessageListenerState = GameMessageListenerState.None;
+            }
+            else
+            {
+                // by setting the handle to 0 we flag that this listener is ready for removal if
+                // it is an active listener or just clear the handle if it was staged. 
+                listener.GameMessageListenerState = GameMessageListenerState.FlaggedForRemoval;
+            }
         }
 
         public void Update()
         {
-            if (_listeners.Count > 0 && _readBufferLength > 0)
+            if (_stagedListeners.Count > 0 || (_listeners.Count > 0 && _readBufferLength > 0))
             {
                 try
                 {
+                    AddStagedListeners();
                     UpdateListeners();
                 }
                 catch (Exception e)
@@ -109,22 +134,46 @@ namespace BareBones.Common.Messages
             return null;
         }
 
+        private void AddStagedListeners()
+        {
+            for (var i = 0; i < _stagedListeners.Count; i++)
+            {
+                _listeners.Add(_stagedListeners[i]);
+                _stagedListeners[i].GameMessageListenerState = GameMessageListenerState.Active;
+            }
+
+            _stagedListeners.Clear();
+        }
+
         private void UpdateListeners()
         {
-            var evtCount = ReadBufferLength;
-            var listenerCount = _listeners.Count;
+            var messageCount = ReadBufferLength;
 
-            for (var i = 0; i < evtCount; i++)
+            for (var i = 0; i < messageCount; i++)
             {
                 var evt = _readBuffer[i];
 
-                for (var j = 0; j < listenerCount; j++)
+                for (var j = 0; j < _listeners.Count;)
                 {
                     var listener = _listeners[j];
 
-                    if ((evt.messageCategory & listener.CategoryFlags) > 0)
+                    if (listener == null || listener.GameMessageListenerState != GameMessageListenerState.Active)
                     {
-                        listener.HandleMessage(evt);
+                        _listeners.RemoveAt(j);
+
+                        if (listener != null)
+                        {
+                            listener.GameMessageListenerState = GameMessageListenerState.None;
+                        }
+                    }
+                    else 
+                    {
+                        if ((evt.messageCategory & listener.CategoryFlags) > 0)
+                        {
+                            listener.HandleMessage(evt);
+                        }
+
+                        j++;
                     }
                 }
             }

@@ -40,7 +40,8 @@ public class LocalPlayerLobby : MonoBehaviour, IGameMessageListener
 
     private IObjectPoolCollection _pool;
 
-    
+    public GameMessageListenerState GameMessageListenerState { get; set; } = GameMessageListenerState.None;
+
     public void Start()
     {
         _registry = ResourceLocator._instance.Resolve<IPlayerRegistry>();

@@ -15,6 +15,8 @@ public class PlayerRegistryBehaviour : MonoBehaviour, IGameMessageListener
 
     public GameMessageCategories CategoryFlags => GameMessageCategories.Scene;
 
+    public GameMessageListenerState GameMessageListenerState { get; set; } = GameMessageListenerState.None;
+
     public void Awake()
     {
         if (_registry == null && !ResourceLocator._instance.Contains<IPlayerRegistry>())

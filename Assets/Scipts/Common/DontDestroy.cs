@@ -19,7 +19,8 @@ public class DontDestroy : MonoBehaviour, IGameMessageListener
 
     public GameMessageCategories CategoryFlags => GameMessageCategories.Scene;
 
-    
+    public GameMessageListenerState GameMessageListenerState { get; set; } = GameMessageListenerState.None;
+
     void Awake()
     {
         if (_destroySelfIfExists && GameObject.FindGameObjectsWithTag(gameObject.tag).Length > 1)

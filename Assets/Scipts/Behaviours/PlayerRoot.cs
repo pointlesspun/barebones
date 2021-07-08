@@ -31,15 +31,26 @@ public class PlayerRoot : MonoBehaviour, IGameMessageListener
 
     public bool IsAlive => _controller != null && _controller.gameObject.activeSelf;
 
+    public GameMessageListenerState GameMessageListenerState { get; set; } = GameMessageListenerState.None;
+
+    public void OnEnable()
+    {
+        RegisterWithMessageBus();
+    }
+
     public void Start()
+    {
+        SelectAgentController();
+    }
+
+    private void RegisterWithMessageBus()
     {
         if (_messageBus == null)
         {
             _messageBus = ResourceLocator._instance.Resolve<IGameMessageBus>();
-            _messageBus.AddListener(this);
         }
 
-        SelectAgentController();
+        _messageBus.AddListener(this);
     }
 
     private void SelectAgentController()
@@ -139,7 +150,7 @@ public class PlayerRoot : MonoBehaviour, IGameMessageListener
         }
     }
 
-    public void OnDestroy()
+    public void OnDisable()
     {
         if (_messageBus != null)
         {
