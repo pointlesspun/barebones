@@ -16,7 +16,7 @@ GameObject:
   - component: {fileID: 5020183640071854975}
   m_Layer: 6
   m_Name: PlayerBullet
-  m_TagString: Untagged
+  m_TagString: Bullet
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -79,7 +79,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   force: 0
-  initialVelocity: 20
+  initialVelocity: 30
 --- !u!114 &2918745815683398891
 MonoBehaviour:
   m_ObjectHideFlags: 0

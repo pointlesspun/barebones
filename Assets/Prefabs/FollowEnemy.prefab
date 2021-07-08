@@ -97,7 +97,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 311a6397ca9dc0b4fb459e652ed5be48, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  baselineHitpoints: 2
+  baselineHitpoints: 3
   currentHitpoints: 3
   isInvulnerable: 0
   deferDestruction: 0

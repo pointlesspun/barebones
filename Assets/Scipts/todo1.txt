@@ -3,5 +3,7 @@
 [done] Scenelogic - add time out
 [done] Add timer service to start scene
 [done] Activate player on scene begin
-Fix player movement
-Add player spawn positions
+[done] Fix player movement
+[done] Add player spawn positions
+restore PlayerLobbyStatus
+attach gamepad movement

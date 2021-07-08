@@ -16,11 +16,15 @@ public class Hitpoints : MonoBehaviour
 
     private IGameMessageBus _eventBus;
 
+    void OnEnable()
+    {
+        currentHitpoints = baselineHitpoints;
+    }
+
     void Start()
     {
         _eventBus = ResourceLocator._instance.Resolve<IGameMessageBus>();
         _meta = GetComponent<PoolObject>();
-        currentHitpoints = baselineHitpoints;
     }
 
     public void OnHit(float damage)

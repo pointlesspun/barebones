@@ -565,6 +565,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1648839220}
   - component: {fileID: 1648839221}
+  - component: {fileID: 1648839222}
   m_Layer: 0
   m_Name: PlayerRegistry
   m_TagString: Untagged
@@ -600,8 +601,26 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxPlayers: 3
   initialActivePlayers: 1
-  reset: 0
-  resetScene: 
+--- !u!114 &1648839222
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1648839219}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbccd2b8c79544943887bae8f866a77a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  locations:
+  - {x: 0, y: -1, z: 0}
+  - {x: -1, y: -1.5, z: 0}
+  - {x: 1, y: -1.55, z: 0}
+  order: 3
+  useRelativeLocations: 1
+  locationScale: 1
+  randomRadius: 0
 --- !u!1 &1856360658
 GameObject:
   m_ObjectHideFlags: 0

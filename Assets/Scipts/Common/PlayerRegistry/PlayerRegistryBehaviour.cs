@@ -1,8 +1,8 @@
-﻿using UnityEngine;
-using UnityEngine.SceneManagement;
+﻿using BareBones.Common.Messages;
+using UnityEngine;
 
 
-public class PlayerRegistryBehaviour : MonoBehaviour
+public class PlayerRegistryBehaviour : MonoBehaviour, IGameMessageListener
 {
     public int maxPlayers = 3;
 
@@ -10,6 +10,10 @@ public class PlayerRegistryBehaviour : MonoBehaviour
 
     private PlayerRegistry _registry;
     private IObjectPoolCollection _objectPool;
+    private ILocationProvider _startLocationProvider;
+    private IGameMessageBus _messageBus;
+
+    public GameMessageCategories CategoryFlags => GameMessageCategories.Scene;
 
     public void Awake()
     {
@@ -21,6 +25,12 @@ public class PlayerRegistryBehaviour : MonoBehaviour
 
     public void Start()
     {
+        if (_messageBus == null)
+        {
+            _messageBus = ResourceLocator._instance.Resolve<IGameMessageBus>();
+            _messageBus.AddListener(this);
+        }
+
         _objectPool = ResourceLocator._instance.Resolve<IObjectPoolCollection>();
 
         for (var i = 0; i < initialActivePlayers; i++)
@@ -37,6 +47,29 @@ public class PlayerRegistryBehaviour : MonoBehaviour
         {
             ResourceLocator._instance.Deregister<IPlayerRegistry>();
             _registry = null;
+        }
+
+        if (_messageBus != null)
+        {
+            _messageBus.RemoveListener(this);
+            _messageBus = null;
+        }
+    }
+
+    public void HandleMessage(GameMessage message)
+    {
+        if (message.messageId == GameMessageIds.SceneStarted)
+        {
+            _startLocationProvider = GetComponent<ILocationProvider>();
+
+            if (_startLocationProvider != null)
+            {
+                _startLocationProvider.AssignLocations(_registry, _registry.PlayerCount);
+            }
+            else
+            {
+                Debug.LogWarning("No location provider in player registry, players will be put at their default position.");
+            }
         }
     }
 }

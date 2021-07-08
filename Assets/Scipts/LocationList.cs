@@ -8,7 +8,9 @@ public class LocationList : MonoBehaviour, ILocationProvider
     {
         FirstToLast,
         LastToFirst,
-        Random
+        Random,
+        // attempt to spread out the location order over the available locations
+        Spread
     }
 
     public Vector3[] locations;
@@ -37,6 +39,36 @@ public class LocationList : MonoBehaviour, ILocationProvider
 
     public Vector3 GetNextLocation() => TransformLocation(SelectNextLocation(), randomRadius);
     
+    public Vector3[] GetLocations(Vector3[] result)
+    {
+        if (order == Order.Spread)
+        {
+            var idx = 0;
+
+            // odd 
+            if (result.Length % 2 > 0)
+            {
+                result[idx] = locations[0];
+                idx = 1;
+            }
+
+            while (idx < result.Length)
+            {
+                result[idx] = locations[idx + 1];
+                idx++;
+            }
+        }
+        else
+        {
+            for (var i = 0; i < result.Length; i++)
+            {
+                result[i] = GetNextLocation();
+            }
+        }
+
+        return result;
+    }
+
     private Vector3 SelectNextLocation()
     { 
         return order switch
@@ -44,6 +76,9 @@ public class LocationList : MonoBehaviour, ILocationProvider
             Order.FirstToLast => GetLocationAscending(),
             Order.LastToFirst => GetLocationDescending(),
             Order.Random => GetRandomLocation(),
+            // SelectNextLocation doesn't really have meaning when using spread, so simply use 
+            // ascending.
+            Order.Spread=> GetLocationAscending(),
             _ => throw new InvalidProgramException("unhandled order type: " + order),
         };
     }
