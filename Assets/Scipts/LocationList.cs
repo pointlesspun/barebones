@@ -43,19 +43,14 @@ public class LocationList : MonoBehaviour, ILocationProvider
     {
         if (order == Order.Spread)
         {
-            var idx = 0;
+            var writeIdx = 0;
+            var readIdx = result.Length % 2 > 0 ? 0 : 1;
 
-            // odd 
-            if (result.Length % 2 > 0)
+            while (writeIdx < result.Length)
             {
-                result[idx] = locations[0];
-                idx = 1;
-            }
-
-            while (idx < result.Length)
-            {
-                result[idx] = locations[idx + 1];
-                idx++;
+                result[writeIdx] = locations[readIdx];
+                writeIdx++;
+                readIdx++;
             }
         }
         else

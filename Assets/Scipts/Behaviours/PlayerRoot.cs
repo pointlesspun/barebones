@@ -101,26 +101,39 @@ public class PlayerRoot : MonoBehaviour, IGameMessageListener
 
     public void ChangeFiringState(InputAction.CallbackContext context)
     {
-        if (_controller != null)
+        if (_controller != null && OwnsDevice(context.control.device))
         {
             _controller.ChangeFiringState(context);
         }
     }
 
+    private bool OwnsDevice(InputDevice device)
+    {
+        for (var i = 0; i < _deviceIds.Length; i++)
+        {
+            if (device.deviceId == _deviceIds[i])
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public void UpdateDirection(InputAction.CallbackContext context)
     {
-        if (_controller != null)
+        if (_controller != null && OwnsDevice(context.control.device))
         {
             _controller.UpdateDirection(context);
         }
     }
 
-    public void OnCancel(InputAction.CallbackContext context)
+    public void OnCancel(InputAction.CallbackContext context )
     {
         // what happes depends on whether we're in the title screen or 
         // in game, so pass in on to the scene logic in charge
         
-        if (this._input != null && context.performed)
+        if (this._input != null && context.performed && OwnsDevice(context.control.device))
         {
             _messageBus.Send(GameMessageCategories.Player, GameMessageIds.PlayerCanceled, gameObject, Id);
         }      
