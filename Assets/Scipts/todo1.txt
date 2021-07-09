@@ -7,8 +7,11 @@
 [done] Add player spawn positions
 [done] Restore PlayerLobbyStatus
 [done] Stage listener addition / removal
-attach gamepad movement
+[done] attach gamepad movement
 [fixed] bug, Joining and leaving more than Max Players causes player to lose controls and other weird stuff
+
+test with three players somehow
 not happy with how gamelistener is exposing something internal to the implementation (state) find a way to fix that
+
 
 general clean up & documentation & publish
