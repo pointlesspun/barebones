@@ -168,8 +168,12 @@ public class LocalPlayerLobby : MonoBehaviour, IGameMessageListener
     public void HandleMessage(GameMessage message)
     {
         if (message.messageId == GameMessageIds.PlayerCanceled)
-        {          
-            _registry.DeregisterPlayer((int)message.payload);
+        {
+            var registryIdx = (int)message.payload;
+            var playerRoot = _registry.GetPlayer(registryIdx);
+
+            playerRoot._input.user.UnpairDevices();
+            _registry.DeregisterPlayer(registryIdx);
 
             message.sender.GetComponent<PoolObject>().Release();
         }

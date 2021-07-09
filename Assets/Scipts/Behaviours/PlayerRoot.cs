@@ -2,7 +2,7 @@
 using UnityEngine.InputSystem;
 using BareBones.Common.Messages;
 
-public enum AgentControllerProvider
+public enum AgentControllerSource
 {
     ControlledObject,
     FirstChild
@@ -16,7 +16,7 @@ public class PlayerRoot : MonoBehaviour, IGameMessageListener
 
     public PlayerInput _input;
 
-    public AgentControllerProvider _obtainControllerFrom = AgentControllerProvider.ControlledObject;
+    public AgentControllerSource _obtainControllerFrom = AgentControllerSource.ControlledObject;
     public GameObject _controlledObject;
     public int[] _deviceIds;
 
@@ -57,7 +57,7 @@ public class PlayerRoot : MonoBehaviour, IGameMessageListener
     {
         switch (_obtainControllerFrom)
         {
-            case AgentControllerProvider.ControlledObject:
+            case AgentControllerSource.ControlledObject:
                 if (_controlledObject != null)
                 {
                     _controller = _controlledObject.GetComponent<AgentController>();
@@ -68,7 +68,7 @@ public class PlayerRoot : MonoBehaviour, IGameMessageListener
                 }
 
                 break;
-            case AgentControllerProvider.FirstChild:
+            case AgentControllerSource.FirstChild:
                 if (transform.childCount >= 0)
                 {
                     _controller = transform.GetChild(0).gameObject.GetComponent<AgentController>();
@@ -88,13 +88,12 @@ public class PlayerRoot : MonoBehaviour, IGameMessageListener
             Debug.LogWarning("PlayerRoot.SelectAgentController no agent controller found in controller provider.");
         }
     }
-    public PlayerRoot Initialize(int id, string name, PlayerInput input, int[] deviceIds, AgentController controlledObject = null, int score = 0)
+
+    public PlayerRoot Initialize(int id, string name, PlayerInput input, int[] deviceIds)
     {
         _id = id;
         _playerName = name;
         _input = input;
-        _score = score;
-        _controller = controlledObject;
         _deviceIds = deviceIds;
 
         return this;
@@ -138,6 +137,7 @@ public class PlayerRoot : MonoBehaviour, IGameMessageListener
                     _controller.gameObject.SetActive(false);
                 }
                 break;
+
             case GameMessageCategories.Scene:
                 if (message.messageId == GameMessageIds.SceneStarted)
                 {
@@ -158,4 +158,3 @@ public class PlayerRoot : MonoBehaviour, IGameMessageListener
         }
     }
 }
-
