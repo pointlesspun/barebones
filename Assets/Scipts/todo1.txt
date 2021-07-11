@@ -13,7 +13,8 @@
 [fixed] bug: the third controller causing in game spawning to break
 [fixed] bug: when attaching two controllers, cancel removes both players in the lobby. Both players are controlled for the same devices.
 
-not happy with how gamelistener is exposing something internal to the implementation (state) find a way to fix that
+[in progress] not happy with how gamelistener is exposing something internal to the implementation (state) find a way to fix that
+	complete messagebus tests
 device ids in playeroot is now an open ended array, can be limited to two properties dev1 dev2
 
 general clean up & unit test & documentation & publish

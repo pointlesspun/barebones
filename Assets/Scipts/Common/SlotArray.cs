@@ -4,11 +4,12 @@ using System.Collections.Generic;
 using UnityEngine;
 
 [Serializable]
-public class SlotArray<T> : IEnumerable<T> where T : class
+public class SlotArray<TData, TMetaData> : IEnumerable<TData> where TData : class
 {
     private class Slot
     {
-        public T _data;
+        public TMetaData _metaData;
+        public TData _data;
         public int _next = -1;
         public int _previous = -1;
     }
@@ -22,26 +23,34 @@ public class SlotArray<T> : IEnumerable<T> where T : class
 
     public int Available => _available;
 
+    public int Count => _slots.Length - Available;
+
     public int First => _firstInUse;
 
-    public T this[int idx] => _slots[idx]._data;
-    
-    public SlotArray(int capacity)
+    public TData this[int idx] => _slots[idx]._data;
+
+    public SlotArray(int capacity) : this(capacity, (idx) => default(TMetaData))
     {
-        _slots = Enumerations.CreateArray<Slot>(capacity);
+    }
+
+    public SlotArray(int capacity, Func<int, TMetaData> metaDataConstructor)
+    {
+        _slots = Enumerations.CreateArray<Slot>(capacity, (idx) =>
+        {
+            return new Slot()
+            {
+                _next = idx + 1,
+                _previous = idx - 1,
+                _metaData = metaDataConstructor(idx)
+            };
+        });
         _available = capacity;
         _firstInUse = -1;
-
-        for (var i = 0; i < capacity; i++)
-        {
-            _slots[i]._next = i + 1;
-            _slots[i]._previous = i - 1;
-        }
 
         _slots[capacity - 1]._next = -1;
     }
 
-    public int Obtain(T data)
+    public int Assign(TData data)
     {
         if (_available > 0)
         {
@@ -109,7 +118,7 @@ public class SlotArray<T> : IEnumerable<T> where T : class
         _available++;
     }
 
-    public IEnumerator<T> GetEnumerator()
+    public IEnumerator<TData> GetEnumerator()
     {
         var idx = _firstAvailable;
 
@@ -121,8 +130,9 @@ public class SlotArray<T> : IEnumerable<T> where T : class
         }
     }
 
+    public TMetaData GetMetaData(int idx) => _slots[idx]._metaData;
+
     public int Next(int idx) => _slots[idx]._next;
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 }
-

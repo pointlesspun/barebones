@@ -1,0 +1,34 @@
+﻿
+using System;
+
+namespace BareBones.Common.Messages
+{
+    [Serializable]
+    public class Message
+    {
+        public Object sender;
+        public int topic;
+        public int id;
+        public Object payload;
+
+        public Message Initialize(int topic = 0, int id = -1, Object sender = null, Object payload = null)
+        {
+            this.topic = topic;
+            this.id = id;
+            this.sender = sender;
+            this.payload = payload;
+
+            return this;
+        }
+
+        public Message Initialize(Message other)
+        {
+            topic = other.topic;
+            id = other.id;
+            sender = other.sender;
+            payload = other.payload;
+
+            return this;
+        }
+    }
+}
