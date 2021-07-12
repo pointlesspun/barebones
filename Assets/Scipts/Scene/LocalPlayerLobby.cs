@@ -16,7 +16,7 @@ public enum PlayerParentTransform
     Tag_Path
 }
 
-public class LocalPlayerLobby : MonoBehaviour, IGameMessageListener
+public class LocalPlayerLobby : MonoBehaviour, IMessageListener
 {
     public GameObject playerPrefab;
 
@@ -34,22 +34,17 @@ public class LocalPlayerLobby : MonoBehaviour, IGameMessageListener
 
     private IPlayerRegistry _registry;
 
-    private IGameMessageBus _messageBus;
-
-    public GameMessageCategories CategoryFlags => GameMessageCategories.Player;
-
+    private IMessageBus _messageBus;
+    private int _listenerHandle;
+ 
     private IObjectPoolCollection _pool;
 
-    public GameMessageListenerState GameMessageListenerState { get; set; } = GameMessageListenerState.None;
-
+    
     public void Start()
     {
         _registry = ResourceLocator._instance.Resolve<IPlayerRegistry>();
-        _messageBus = ResourceLocator._instance.Resolve<IGameMessageBus>();
         _pool = ResourceLocator._instance.Resolve<IObjectPoolCollection>();
-
-        _messageBus.AddListener(this);
-        
+       
         _action = new InputAction();
 
         foreach (var path in joinActionPaths)
@@ -61,21 +56,22 @@ public class LocalPlayerLobby : MonoBehaviour, IGameMessageListener
         _action.Enable();
     }
 
-    void OnEnable()
+    public void OnEnable()
     {
-        if (_messageBus != null)
+        if (_messageBus == null)
         {
-            _messageBus.AddListener(this);
+            _messageBus = ResourceLocator._instance.Resolve<IMessageBus>();
         }
+
+        _listenerHandle = _messageBus.Subscribe(this, MessageTopics.Player);
     }
 
     public void OnDisable()
     {
-        if (_messageBus != null)
+        if (_messageBus != null && _listenerHandle != -1)
         {
-            _messageBus.RemoveListener(this);
+            _messageBus.Unsubscribe(_listenerHandle);
         }
-
         _action.Dispose();
     }
 
@@ -109,7 +105,7 @@ public class LocalPlayerLobby : MonoBehaviour, IGameMessageListener
 
             }
 
-            _messageBus.Send(GameMessageCategories.Player, GameMessageIds.PlayerJoined, gameObject, newPlayerRoot.Id);
+            _messageBus.Send(MessageTopics.Player, MessageIds.PlayerJoined, gameObject, newPlayerRoot.Id);
         }
     }
 
@@ -165,9 +161,9 @@ public class LocalPlayerLobby : MonoBehaviour, IGameMessageListener
         return null;
     }
 
-    public void HandleMessage(GameMessage message)
+    public void HandleMessage(Message message)
     {
-        if (message.messageId == GameMessageIds.PlayerCanceled)
+        if (message.id == MessageIds.PlayerCanceled)
         {
             var registryIdx = (int)message.payload;
             var playerRoot = _registry.GetPlayer(registryIdx);
@@ -175,7 +171,7 @@ public class LocalPlayerLobby : MonoBehaviour, IGameMessageListener
             playerRoot._input.user.UnpairDevices();
             _registry.DeregisterPlayer(registryIdx);
 
-            message.sender.GetComponent<PoolObject>().Release();
+            ((GameObject)message.sender).GetComponent<PoolObject>().Release();
         }
     }
 

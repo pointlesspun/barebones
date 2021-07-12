@@ -5,28 +5,39 @@ using UnityEngine.UI;
 
 using BareBones.Common.Messages;
 
-public class StartButton : MonoBehaviour, IGameMessageListener
+public class StartButton : MonoBehaviour, IMessageListener
 {
     public string waitingForPlayersText = "Waiting for players...";
     public string startText = "Start !!!";
 
-    private IGameMessageBus _messageBus;
+    private IMessageBus _messageBus;
+    private int _listenerHandle;
 
     private int _playersRegistered = 0;
 
     private Button _button;
     private TMPro.TMP_Text _buttonText;
 
-    public GameMessageCategories CategoryFlags => GameMessageCategories.Player;
+    public void OnEnable()
+    {
+        if (_messageBus == null)
+        {
+            _messageBus = ResourceLocator._instance.Resolve<IMessageBus>();
+        }
 
-    public GameMessageListenerState GameMessageListenerState { get; set; } = GameMessageListenerState.None;
+        _listenerHandle = _messageBus.Subscribe(this, MessageTopics.Player);
+    }
+
+    public void OnDisable()
+    {
+        if (_messageBus != null && _listenerHandle != -1)
+        {
+            _messageBus.Unsubscribe(_listenerHandle);
+        }
+    }
 
     void Start()
     {
-        _messageBus = ResourceLocator._instance.Resolve<IGameMessageBus>();
-
-        _messageBus.AddListener(this);
-
         _button = GetComponent<Button>();
 
         _buttonText = transform.GetComponentInChildren<TMPro.TMP_Text>();
@@ -37,18 +48,11 @@ public class StartButton : MonoBehaviour, IGameMessageListener
         }
     }
 
-    void OnEnable()
-    {
-        if (_messageBus != null)
-        {
-            _messageBus.AddListener(this);
-        }
-    }
 
-    public void HandleMessage(GameMessage evt)
+    public void HandleMessage(Message message)
     {
         // xxx this needs refinement
-        _playersRegistered += evt.messageId == GameMessageIds.PlayerJoined ? 1 : -1;
+        _playersRegistered += message.id == MessageIds.PlayerJoined ? 1 : -1;
         
         var allPlayersReady = _playersRegistered > 0;
 
@@ -60,11 +64,6 @@ public class StartButton : MonoBehaviour, IGameMessageListener
                 ? startText
                 : waitingForPlayersText;
         }
-    }
-
-    public void OnDisable()
-    {
-        _messageBus.RemoveListener(this);
     }
 }
 

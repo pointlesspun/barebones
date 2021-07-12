@@ -2,7 +2,7 @@
 using UnityEngine;
 
 
-public class PlayerRegistryBehaviour : MonoBehaviour, IGameMessageListener
+public class PlayerRegistryBehaviour : MonoBehaviour, IMessageListener
 {
     public int maxPlayers = 3;
 
@@ -11,11 +11,8 @@ public class PlayerRegistryBehaviour : MonoBehaviour, IGameMessageListener
     private PlayerRegistry _registry;
     private IObjectPoolCollection _objectPool;
     private ILocationProvider _startLocationProvider;
-    private IGameMessageBus _messageBus;
-
-    public GameMessageCategories CategoryFlags => GameMessageCategories.Scene;
-
-    public GameMessageListenerState GameMessageListenerState { get; set; } = GameMessageListenerState.None;
+    private IMessageBus _messageBus;
+    private int _listenerHandle;
 
     public void Awake()
     {
@@ -25,14 +22,27 @@ public class PlayerRegistryBehaviour : MonoBehaviour, IGameMessageListener
         }
     }
 
-    public void Start()
+    public void OnEnable()
     {
         if (_messageBus == null)
         {
-            _messageBus = ResourceLocator._instance.Resolve<IGameMessageBus>();
-            _messageBus.AddListener(this);
+            _messageBus = ResourceLocator._instance.Resolve<IMessageBus>();
         }
 
+        _listenerHandle = _messageBus.Subscribe(this, MessageTopics.Scene);
+    }
+
+    public void OnDisable()
+    {
+        if (_messageBus != null && _listenerHandle != -1)
+        {
+            _messageBus.Unsubscribe(_listenerHandle);
+        }
+    }
+
+
+    public void Start()
+    {
         _objectPool = ResourceLocator._instance.Resolve<IObjectPoolCollection>();
 
         for (var i = 0; i < initialActivePlayers; i++)
@@ -50,18 +60,18 @@ public class PlayerRegistryBehaviour : MonoBehaviour, IGameMessageListener
             ResourceLocator._instance.Deregister<IPlayerRegistry>();
             _registry = null;
         }
-
-        if (_messageBus != null)
-        {
-            _messageBus.RemoveListener(this);
-            _messageBus = null;
-        }
     }
 
-    public void HandleMessage(GameMessage message)
+    public void HandleMessage(Message message)
     {
-        if (message.messageId == GameMessageIds.SceneStarted)
+        if (message.id == MessageIds.SceneStarted)
         {
+            // scene has begun, activate the players put them in their starting location
+            foreach (var root in _registry)
+            {
+                root.gameObject.ActivateHierarchyTree(true);
+            }
+
             _startLocationProvider = GetComponent<ILocationProvider>();
 
             if (_startLocationProvider != null)

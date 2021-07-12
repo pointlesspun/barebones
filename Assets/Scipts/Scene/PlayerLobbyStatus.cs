@@ -3,46 +3,40 @@ using UnityEngine;
 
 using BareBones.Common.Messages;
 
-public class PlayerLobbyStatus : MonoBehaviour, IGameMessageListener
+public class PlayerLobbyStatus : MonoBehaviour, IMessageListener
 {
-    private IGameMessageBus _eventBus;
+    private IMessageBus _messageBus;
+    private int _listenerHandle;
 
-    public int EventFlags => GameMessageIds.PlayerCanceled;
-
-    public GameMessageCategories CategoryFlags => GameMessageCategories.Player;
-
-    public GameMessageListenerState GameMessageListenerState { get; set; } = GameMessageListenerState.None;
-
-    void Start()
+    public void OnEnable()
     {
-        _eventBus = ResourceLocator._instance.Resolve<IGameMessageBus>();
-        _eventBus.AddListener(this);
+        if (_messageBus == null)
+        {
+            _messageBus = ResourceLocator._instance.Resolve<IMessageBus>();
+        }
+
+        _listenerHandle = _messageBus.Subscribe(this, MessageTopics.Player);
     }
 
-    void OnEnable()
+    public void OnDisable()
     {
-        if (_eventBus != null)
+        if (_messageBus != null && _listenerHandle != -1)
         {
-            _eventBus.AddListener(this);
+            _messageBus.Unsubscribe(_listenerHandle);
         }
     }
 
-    public void HandleMessage(GameMessage message)
+    public void HandleMessage(Message message)
     {
         var playerIndex = (int)message.payload;
 
         if (playerIndex >= 0 && transform.childCount > playerIndex)
         {
-            transform.GetChild(playerIndex).gameObject.SetActive(message.messageId == GameMessageIds.PlayerJoined);
+            transform.GetChild(playerIndex).gameObject.SetActive(message.id == MessageIds.PlayerJoined);
         }
         else
         {
             Debug.LogWarning("Player index (" + playerIndex + ") is outside the range of children the PlayerLobbyStatus can affect. Make sure there the number of children matches the max number of players.");
         }
-    }
-
-    public void OnDisable()
-    {
-        _eventBus.RemoveListener(this);
     }
 }

@@ -8,7 +8,7 @@ public enum AgentControllerSource
     FirstChild
 }
 
-public class PlayerRoot : MonoBehaviour, IGameMessageListener
+public class PlayerRoot : MonoBehaviour, IMessageListener
 {
     public string _playerName;
     public int _score;
@@ -20,18 +20,15 @@ public class PlayerRoot : MonoBehaviour, IGameMessageListener
     public GameObject _controlledObject;
     public int[] _deviceIds;
 
-    private IGameMessageBus _messageBus;
+    private IMessageBus _messageBus;
+    private int _messageListenerHandle;
     private AgentController _controller;
 
     private int _id;
 
     public int Id => _id;
 
-    public GameMessageCategories CategoryFlags => GameMessageCategories.Entity | GameMessageCategories.Scene;
-
     public bool IsAlive => _controller != null && _controller.gameObject.activeSelf;
-
-    public GameMessageListenerState GameMessageListenerState { get; set; } = GameMessageListenerState.None;
 
     public void OnEnable()
     {
@@ -47,10 +44,12 @@ public class PlayerRoot : MonoBehaviour, IGameMessageListener
     {
         if (_messageBus == null)
         {
-            _messageBus = ResourceLocator._instance.Resolve<IGameMessageBus>();
+            _messageBus = ResourceLocator._instance.Resolve<IMessageBus>();
         }
 
-        _messageBus.AddListener(this);
+        _messageListenerHandle = _messageBus.Subscribe(this, MessageTopics.Entity);
+
+        Debug.Assert(_messageListenerHandle > 0);
     }
 
     private void SelectAgentController()
@@ -135,39 +134,24 @@ public class PlayerRoot : MonoBehaviour, IGameMessageListener
         
         if (this._input != null && context.performed && OwnsDevice(context.control.device))
         {
-            _messageBus.Send(GameMessageCategories.Player, GameMessageIds.PlayerCanceled, gameObject, Id);
+            _messageBus.Send(MessageTopics.Player, MessageIds.PlayerCanceled, gameObject, Id);
         }      
     }
 
-    public void HandleMessage(GameMessage message)
+    public void HandleMessage(Message message)
     {
-        switch (message.messageCategory)
+        // was the controlled object destroyed ?
+        if (message.id == MessageIds.EntityDestroyed && message.sender == _controller.gameObject)
         {
-            case GameMessageCategories.Entity:
-
-                if (message.messageId == GameMessageIds.EntityDestroyed && message.sender == _controller.gameObject)
-                {
-                    _controller.gameObject.SetActive(false);
-                }
-                break;
-
-            case GameMessageCategories.Scene:
-                if (message.messageId == GameMessageIds.SceneStarted)
-                {
-                    gameObject.ActivateHierarchyTree(true);
-                }
-                break;
-            default:
-                Debug.LogWarning("PlayerRoot.HandleMessage, unhandled message category " + message.messageCategory);
-                break;
+            _controller.gameObject.SetActive(false);
         }
     }
 
     public void OnDisable()
     {
-        if (_messageBus != null)
+        if (_messageBus != null && _messageListenerHandle >= 0)
         {
-            _messageBus.RemoveListener(this);
+            _messageBus.Unsubscribe(_messageListenerHandle);
         }
     }
 }

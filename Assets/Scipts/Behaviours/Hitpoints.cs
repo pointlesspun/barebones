@@ -14,7 +14,7 @@ public class Hitpoints : MonoBehaviour
 
     private PoolObject _meta;
 
-    private IGameMessageBus _eventBus;
+    private IMessageBus _messageBus;
 
     void OnEnable()
     {
@@ -23,7 +23,7 @@ public class Hitpoints : MonoBehaviour
 
     void Start()
     {
-        _eventBus = ResourceLocator._instance.Resolve<IGameMessageBus>();
+        _messageBus = ResourceLocator._instance.Resolve<IMessageBus>();
         _meta = GetComponent<PoolObject>();
     }
 
@@ -35,7 +35,7 @@ public class Hitpoints : MonoBehaviour
 
             if (currentHitpoints <= 0)
             {
-                _eventBus.Send(GameMessageCategories.Entity, GameMessageIds.EntityDestroyed, gameObject, null);
+                _messageBus.Send(MessageTopics.Entity, MessageIds.EntityDestroyed, gameObject, null);
 
                 if (_meta != null)
                 {

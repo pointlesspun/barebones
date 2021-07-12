@@ -15,10 +15,16 @@
 
 [in progress] not happy with how gamelistener is exposing something internal to the implementation (state) find a way to fix that
 	[done] complete messagebus tests
-	[in progress] replace gamemessage bus with messagebus
-	document messagebus tests
-	Message bus behaviour
-	Replace message bus in scene & message bus listeners
+	[done] replace gamemessage bus with messagebus
+	[done] document messagebus tests
+	[done] Message bus behaviour
+	[done] Replace message bus in scene & message bus listeners
+	[bug - in progress] player died is not picked up the second playthrough
+	[bug] in stand alone game, player does not own the device
+	[ignored] Allow sending messages to specific listeners (already there via topic, id, payload == actual message)
+	Add logging
 device ids in playeroot is now an open ended array, can be limited to two properties dev1 dev2
+replace timers / player registry parts with SlotArray?
+adjust slotarray to allow for object pooling ?
 
 general clean up & unit test & documentation & publish

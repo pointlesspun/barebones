@@ -9,19 +9,16 @@ public enum LifeCycle
     Application,
 }
 
-public class DontDestroy : MonoBehaviour, IGameMessageListener
+public class DontDestroy : MonoBehaviour, IMessageListener
 {
     public bool _destroySelfIfExists = false;
 
     public LifeCycle _lifeCycle = LifeCycle.Application;
 
-    private IGameMessageBus _messageBus;
+    private IMessageBus _messageBus;
+    private int _listenerHandle;
 
-    public GameMessageCategories CategoryFlags => GameMessageCategories.Scene;
-
-    public GameMessageListenerState GameMessageListenerState { get; set; } = GameMessageListenerState.None;
-
-    void Awake()
+    public void Awake()
     {
         if (_destroySelfIfExists && GameObject.FindGameObjectsWithTag(gameObject.tag).Length > 1)
         {
@@ -29,31 +26,34 @@ public class DontDestroy : MonoBehaviour, IGameMessageListener
         } else
         {
             DontDestroyOnLoad(gameObject);
-
-            if (_lifeCycle == LifeCycle.Scene || _lifeCycle == LifeCycle.Session)
-            {
-                if (_messageBus == null)
-                {
-                    _messageBus = ResourceLocator._instance.Resolve<IGameMessageBus>();
-
-                    _messageBus.AddListener(this);
-                }
-            }
         }
     }
 
-    void OnDestroy()
+    public void OnEnable()
     {
-        if (_messageBus != null)
+        if (_lifeCycle == LifeCycle.Scene || _lifeCycle == LifeCycle.Session)
         {
-            _messageBus.RemoveListener(this);
+            if (_messageBus == null)
+            {
+                _messageBus = ResourceLocator._instance.Resolve<IMessageBus>();
+            }
+
+            _listenerHandle = _messageBus.Subscribe(this, MessageTopics.Scene);
         }
     }
 
-    public void HandleMessage(GameMessage message)
+    public void OnDisable()
     {
-        if ((message.messageId == GameMessageIds.SceneEnded && _lifeCycle == LifeCycle.Scene)
-            || message.messageId == GameMessageIds.SessionEnded)
+        if (_messageBus != null && _listenerHandle != -1)
+        {
+            _messageBus.Unsubscribe(_listenerHandle);
+        }
+    }
+
+    public void HandleMessage(Message message)
+    {
+        if ((message.id == MessageIds.SceneEnded && _lifeCycle == LifeCycle.Scene)
+            || message.id == MessageIds.SessionEnded)
         {
             // just clear the 'don't destroy' - the game object will be cleaned up when 
             // the scene unloads. 

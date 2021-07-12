@@ -5,7 +5,7 @@ using UnityEngine.SceneManagement;
 
 using BareBones.Common.Messages;
 
-public class SceneLogic : MonoBehaviour, IGameMessageListener, ITimeoutCallback
+public class SceneLogic : MonoBehaviour, IMessageListener, ITimeoutCallback
 {
     public string _titleSceneName;
     /**
@@ -13,29 +13,38 @@ public class SceneLogic : MonoBehaviour, IGameMessageListener, ITimeoutCallback
      */
     public float _gameOverTimeout = 1.0f;
 
-    private IGameMessageBus _messageBus;
     private IPlayerRegistry _playerRegistry;
     private ITimeService _timeService;
 
     private int _timeOutHandle = -1;
 
-    public GameMessageCategories CategoryFlags => GameMessageCategories.Entity;
-
-    public GameMessageListenerState GameMessageListenerState { get; set; } = GameMessageListenerState.None;
+    private IMessageBus _messageBus;
+    private int _listenerHandle;
 
     private void Start()
     {
-        if (_messageBus == null)
-        {
-            _messageBus = ResourceLocator._instance.Resolve<IGameMessageBus>();
-            _messageBus.AddListener(this);
-            _messageBus.Send(GameMessageCategories.Scene, GameMessageIds.SceneStarted, gameObject, null);
-        }
-
+        _messageBus.Send(MessageTopics.Scene, MessageIds.SceneStarted, gameObject, null);
         _playerRegistry = ResourceLocator._instance.Resolve<IPlayerRegistry>();
         _timeService = ResourceLocator._instance.Resolve<ITimeService>();
     }
 
+    public void OnEnable()
+    {
+        if (_messageBus == null)
+        {
+            _messageBus = ResourceLocator._instance.Resolve<IMessageBus>();
+        }
+
+        _listenerHandle = _messageBus.Subscribe(this, MessageTopics.Entity);
+    }
+
+    public void OnDisable()
+    {
+        if (_messageBus != null && _listenerHandle != -1)
+        {
+            _messageBus.Unsubscribe(_listenerHandle);
+        }
+    }
 
     IEnumerator LoadScene(string sceneName)
     {
@@ -48,16 +57,15 @@ public class SceneLogic : MonoBehaviour, IGameMessageListener, ITimeoutCallback
         }
     }
 
-    public void HandleMessage(GameMessage message)
+    public void HandleMessage(Message message)
     {
-        if (message.messageCategory == GameMessageCategories.Entity
-            && message.messageId == GameMessageIds.EntityDestroyed
+        if (message.id == MessageIds.EntityDestroyed
             && message.sender != null
-            && message.sender.CompareTag("Player")
+            && ((GameObject)message.sender).CompareTag("Player")
             && !_playerRegistry.Any(player => player.IsAlive))
         {
             // send game over
-            _messageBus.Send(GameMessageCategories.Scene, GameMessageIds.SessionEnded, gameObject, null);
+            _messageBus.Send(MessageTopics.Scene, MessageIds.SessionEnded, gameObject, null);
 
             _timeOutHandle = _timeService.SetTimeout(this, _gameOverTimeout);
 
@@ -71,8 +79,6 @@ public class SceneLogic : MonoBehaviour, IGameMessageListener, ITimeoutCallback
 
     public void OnDestroy()
     {
-        _messageBus.RemoveListener(this);
-
         if (_timeOutHandle >= 0 && _timeService != null)
         {
             _timeService.Cancel(_timeOutHandle);
