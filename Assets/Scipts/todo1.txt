@@ -17,6 +17,8 @@
 	[done] complete messagebus tests
 	[in progress] replace gamemessage bus with messagebus
 	document messagebus tests
+	Message bus behaviour
+	Replace message bus in scene & message bus listeners
 device ids in playeroot is now an open ended array, can be limited to two properties dev1 dev2
 
 general clean up & unit test & documentation & publish

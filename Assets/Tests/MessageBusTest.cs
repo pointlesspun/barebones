@@ -22,6 +22,7 @@ public class MessageBusTest
         }
     }
 
+    // trivial test if constructor works as intended
     [Test]
     public void ConstructorTest()
     {
@@ -29,8 +30,10 @@ public class MessageBusTest
 
         Assert.IsTrue(bus.MessageCount == 0);
         Assert.IsTrue(bus.Read(0) == null);
+        Assert.IsTrue(bus.ListenerCount == 0);
     }
 
+    // send a message see if it ends up in the queue
     [Test]
     public void TestSend()
     {
@@ -41,6 +44,8 @@ public class MessageBusTest
         Assert.IsTrue(bus.MessageCount == 0);
         Assert.IsTrue(bus.Read(0) == null);
 
+        // sending while not updating so the message should end up in the read
+        // queue right away
         bus.Send(42, 1, sender, payLoad);
         Assert.IsTrue(bus.MessageCount == 1);
 
@@ -58,6 +63,7 @@ public class MessageBusTest
         Assert.IsTrue(bus.Read(0) == null);
     }
 
+    // subscribe a listener see if it receives the message
     [Test]
     public void TestSendSubscribe()
     {
@@ -78,6 +84,7 @@ public class MessageBusTest
         Assert.IsTrue(messageSender == sender);
     }
 
+    // subscribe then unsubscribe, see if the listener will no longer receive a message
     [Test]
     public void TestSendUnsubscribe()
     {
@@ -98,7 +105,8 @@ public class MessageBusTest
         Assert.IsTrue(messageSender == default);
     }
 
-    
+    // receive a message, then in reply while the bus is updating send another
+    // make sure the last send doesn't mess up the queue
     [Test]
     public void TestReactiveSend()
     {
@@ -130,6 +138,8 @@ public class MessageBusTest
         Assert.IsTrue(bus.Read(0).id == id);
     }
 
+    // subscribe while the bus is updating, make sure this doesn't
+    // mess up the listener enumeration
     [Test]
     public void TestReactiveSubscribe()
     {
@@ -171,6 +181,8 @@ public class MessageBusTest
         Assert.IsTrue(messageSender == sender);
     }
 
+    // unsubscribe while the bus is updating, make sure this doesn't
+    // mess up the listener enumeration
     [Test]
     public void TestReactiveUnsubscribe()
     {
@@ -212,6 +224,8 @@ public class MessageBusTest
         Assert.IsTrue(messageSender == default);
     }
 
+    // check if running out of messages works as intended and if free-ing up messages
+    // makes them available again
     [Test]
     public void MessageLimitTest()
     {
@@ -228,6 +242,8 @@ public class MessageBusTest
         Assert.IsFalse(bus.Send(0, 0, null, null));
     }
 
+    // check if running out of listener slots works as intended and if free-ing up messages
+    // makes them available again
     [Test]
     public void ListenerLimitTest()
     {
