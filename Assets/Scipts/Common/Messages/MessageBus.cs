@@ -36,6 +36,7 @@ namespace BareBones.Common.Messages
         private bool _isUpdating = false;
         private int modifiedListeners = 0;
 
+        public int ListenerCount => _listeners.Count;
 
         public MessageBus(int messageBufferSize = MESSAGE_BUFFER_SIZE, int maxListeners = MAX_LISTENERS)
         {
@@ -56,8 +57,8 @@ namespace BareBones.Common.Messages
 
         public int Subscribe(IMessageListener listener, int topicFlags)
         {
-            // xxx check contains, null
-            //Debug.Assert(listener.GameMessageListenerState == GameMessageListenerState.None, "Duplicate call to AddListener, listener = " + listener);
+            Debug.Assert(listener != null);
+            Debug.Assert(!Contains(listener), "Duplicate call to AddListener, listener = " + listener);
 
             // can't immediately add a listener to the active listener lists if the addition is the result
             // of a message being send and handled by another listener. So stage the listener
@@ -78,6 +79,11 @@ namespace BareBones.Common.Messages
                     meta.state = MessageBusListenerState.Active;
                 }
             }
+            else
+            {
+                Debug.LogWarning("MessageBus.Subscribe: no more slots for listeners.");
+            }
+            
 
             return handle;
         }
@@ -88,11 +94,10 @@ namespace BareBones.Common.Messages
          */
         public void Unsubscribe(int handle)
         {
-            // xxx check contains
-            //Debug.Assert(listener.GameMessageListenerState != GameMessageListenerState.None, "Removing listener which was not registered, listener = " + listener);
-            //Debug.Assert(listener.GameMessageListenerState != GameMessageListenerState.FlaggedForRemoval, "Duplicate removal call to listener = " + listener);
-
             var meta = _listeners.GetMetaData(handle);
+
+            Debug.Assert(meta.state != MessageBusListenerState.None, "Removing listener which was not registered, listener handle = " + handle);
+           
             if (_isUpdating)
             {
                 if (meta.state != MessageBusListenerState.Staged)
@@ -195,7 +200,7 @@ namespace BareBones.Common.Messages
             }
         }
 
-        public Message Send(int topic, int messageId, System.Object sender, System.Object payload)
+        public bool Send(int topic, int messageId, System.Object sender, System.Object payload)
         {
             var message = Obtain();
 
@@ -204,7 +209,7 @@ namespace BareBones.Common.Messages
                 message.Initialize(topic, messageId, sender, payload);
             }
 
-            return message;
+            return message != null;
         }
 
         public void ClearMessages()
@@ -213,7 +218,20 @@ namespace BareBones.Common.Messages
             _writeBufferLength = 0;
         }
 
-        public Message Read(int index) => index < _readBufferLength ?_readBuffer[index] : null;
+        public bool Contains(IMessageListener listener)
+        {
+            for (var idx = _listeners.First; idx != -1; idx = _listeners.Next(idx))
+            {
+                if (_listeners[idx] == listener)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public Message Read(int index) => index < _readBufferLength ? new Message(_readBuffer[index]) : null;
 
         private Message Obtain()
         {
@@ -226,7 +244,7 @@ namespace BareBones.Common.Messages
                     return result;
                 }
 
-                Debug.LogError("Event write buffer has been exhausted");
+                Debug.LogWarning("MessageBus write buffer has been exhausted");
                 return null;
             }
             else
@@ -238,7 +256,7 @@ namespace BareBones.Common.Messages
                     return result;
                 }
 
-                Debug.LogError("Event read buffer has been exhausted");
+                Debug.LogWarning("MessageBus read buffer has been exhausted");
                 return null;
             }
         }

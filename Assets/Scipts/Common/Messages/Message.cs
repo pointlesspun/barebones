@@ -11,6 +11,15 @@ namespace BareBones.Common.Messages
         public int id;
         public Object payload;
 
+        public Message()
+        {
+        }
+
+        public Message(Message other)
+        {
+            Initialize(other);
+        }
+
         public Message Initialize(int topic = 0, int id = -1, Object sender = null, Object payload = null)
         {
             this.topic = topic;
