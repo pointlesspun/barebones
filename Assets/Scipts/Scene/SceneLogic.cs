@@ -35,7 +35,7 @@ public class SceneLogic : MonoBehaviour, IMessageListener, ITimeoutCallback
             _messageBus = ResourceLocator._instance.Resolve<IMessageBus>();
         }
 
-        _listenerHandle = _messageBus.Subscribe(this, MessageTopics.Entity);
+        _listenerHandle = _messageBus.Subscribe(this, MessageTopics.Player);
     }
 
     public void OnDisable()
@@ -59,10 +59,7 @@ public class SceneLogic : MonoBehaviour, IMessageListener, ITimeoutCallback
 
     public void HandleMessage(Message message)
     {
-        if (message.id == MessageIds.EntityDestroyed
-            && message.sender != null
-            && ((GameObject)message.sender).CompareTag("Player")
-            && !_playerRegistry.Any(player => player.IsAlive))
+        if (message.id == MessageIds.PlayerDied && !_playerRegistry.Any(player => player.IsAlive))
         {
             // send game over
             _messageBus.Send(MessageTopics.Scene, MessageIds.SessionEnded, gameObject, null);

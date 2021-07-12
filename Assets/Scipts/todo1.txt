@@ -19,10 +19,11 @@
 	[done] document messagebus tests
 	[done] Message bus behaviour
 	[done] Replace message bus in scene & message bus listeners
-	[bug - in progress] player died is not picked up the second playthrough
+	[done] bug: player died is not picked up the second playthrough
 	[bug] in stand alone game, player does not own the device
-	[ignored] Allow sending messages to specific listeners (already there via topic, id, payload == actual message)
+	[ignored - optimize in future] Allow sending messages to specific listeners (already there via something like topic=address, id = handle, payload == actual message)
 	Add logging
+	Listener update move try catch around the actual update
 device ids in playeroot is now an open ended array, can be limited to two properties dev1 dev2
 replace timers / player registry parts with SlotArray?
 adjust slotarray to allow for object pooling ?

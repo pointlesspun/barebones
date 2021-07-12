@@ -144,6 +144,7 @@ public class PlayerRoot : MonoBehaviour, IMessageListener
         if (message.id == MessageIds.EntityDestroyed && message.sender == _controller.gameObject)
         {
             _controller.gameObject.SetActive(false);
+            _messageBus.Send(MessageTopics.Player, MessageIds.PlayerDied, gameObject, null);
         }
     }
 

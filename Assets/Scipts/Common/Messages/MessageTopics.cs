@@ -13,6 +13,7 @@
         // lobby events
         public static readonly int PlayerJoined = 1;
         public static readonly int PlayerCanceled = 2;
+        public static readonly int PlayerDied = 3;
 
         // scene events
         public static readonly int SessionStarted = 100;
