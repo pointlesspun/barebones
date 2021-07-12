@@ -20,7 +20,7 @@
 	[done] Message bus behaviour
 	[done] Replace message bus in scene & message bus listeners
 	[done] bug: player died is not picked up the second playthrough
-	[bug] in stand alone game, player does not own the device
+	[done] bug: in stand alone game, player does not own the device
 	[ignored - optimize in future] Allow sending messages to specific listeners (already there via something like topic=address, id = handle, payload == actual message)
 	Add logging
 	Listener update move try catch around the actual update

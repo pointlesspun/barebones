@@ -296,9 +296,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 310069209}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 97b1be4c737bcb44db95efaf3745a9b6, type: 3}
+  m_Script: {fileID: 11500000, guid: 6aed5623ea2f02c4b9946f4e850148a3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _messageSize: 32
+  _listenerSize: 32
 --- !u!1 &608675584
 GameObject:
   m_ObjectHideFlags: 0
@@ -600,7 +602,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxPlayers: 3
-  initialActivePlayers: 1
+  initialActivePlayers: 3
 --- !u!114 &1648839222
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -615,8 +617,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   locations:
   - {x: 0, y: -1, z: 0}
-  - {x: -1, y: -1.5, z: 0}
-  - {x: 1, y: -1.55, z: 0}
+  - {x: -3, y: -1.5, z: 0}
+  - {x: 3, y: -1.5, z: 0}
   order: 3
   useRelativeLocations: 1
   locationScale: 1

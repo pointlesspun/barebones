@@ -1,13 +1,14 @@
 ﻿using BareBones.Common.Messages;
+using System.Linq;
 using UnityEngine;
-
+using UnityEngine.InputSystem;
 
 public class PlayerRegistryBehaviour : MonoBehaviour, IMessageListener
 {
     public int maxPlayers = 3;
 
     public int initialActivePlayers = 0;
-
+    
     private PlayerRegistry _registry;
     private IObjectPoolCollection _objectPool;
     private ILocationProvider _startLocationProvider;
@@ -43,12 +44,16 @@ public class PlayerRegistryBehaviour : MonoBehaviour, IMessageListener
 
     public void Start()
     {
+        
         _objectPool = ResourceLocator._instance.Resolve<IObjectPoolCollection>();
 
         for (var i = 0; i < initialActivePlayers; i++)
         {
             var playerPoolObject = _objectPool.Obtain((int) PoolIdEnum.Players);
-            _registry.RegisterPlayer(playerPoolObject.GetComponent<PlayerRoot>());
+            var rootId = _registry.RegisterPlayer(playerPoolObject.GetComponent<PlayerRoot>());
+            var root = _registry.GetPlayer(rootId);
+
+            root._deviceIds = CaptureDeviceIds(i);
             playerPoolObject.gameObject.ActivateHierarchyTree(true);
         }
     }
@@ -83,6 +88,42 @@ public class PlayerRegistryBehaviour : MonoBehaviour, IMessageListener
                 Debug.LogWarning("No location provider in player registry, players will be put at their default position.");
             }
         }
+    }
+
+    /**
+     * Try to match best guess devices to playerIndex where
+     * playerIndex 0 will be matched to keyboard/mouse and the rest to gamepads
+     */
+    private int[] CaptureDeviceIds(int playerIndex)
+    {
+        var devices = InputSystem.devices;
+
+        if (playerIndex == 0)
+        {
+            var mouse = devices.FirstOrDefault(d => d.name.IndexOf("Mouse") >= 0);
+            var keyboard = devices.FirstOrDefault(d => d.name.IndexOf("Keyboard") >= 0);
+
+            return (mouse != null && keyboard != null)
+                ? new int[] { mouse.deviceId, keyboard.deviceId }
+                : new int[0];
+        }
+
+        var skip = playerIndex - 1;
+
+        for (var i = 0; i < devices.Count; i++)
+        {
+            if (devices[i].enabled && devices[i] is Gamepad)
+            {
+                if (skip == 0)
+                {
+                    return new int[] { devices[i].deviceId };
+                }
+
+                skip--;
+            }
+        }
+
+        return new int[0];
     }
 }
 
