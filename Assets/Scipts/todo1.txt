@@ -22,8 +22,9 @@
 	[done] bug: player died is not picked up the second playthrough
 	[done] bug: in stand alone game, player does not own the device
 	[ignored - optimize in future] Allow sending messages to specific listeners (already there via something like topic=address, id = handle, payload == actual message)
-	Add logging
-	Listener update move try catch around the actual update
+	[done] Listener update move try catch around the actual update
+	Add optional logging
+	
 device ids in playeroot is now an open ended array, can be limited to two properties dev1 dev2
 replace timers / player registry parts with SlotArray?
 adjust slotarray to allow for object pooling ?

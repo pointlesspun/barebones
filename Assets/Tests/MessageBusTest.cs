@@ -1,6 +1,7 @@
 ﻿using System;
 using BareBones.Common.Messages;
 using NUnit.Framework;
+using UnityEngine.TestTools;
 
 public class MessageBusTest
 {
@@ -222,6 +223,50 @@ public class MessageBusTest
         // capture listener should not have received the message with topic 2 
         // becasue reactionListener unsubscibed it
         Assert.IsTrue(messageSender == default);
+    }
+
+    // a listener causing an exception during an update should not stop the bus from working
+    [Test]
+    public void ExceptionDuringUpdateTest()
+    {
+        var bus = new MessageBus();
+        var sender = new System.Object();
+        var payLoad = new System.Object();
+        var wasExceptionThrown = false;
+
+        System.Object messageSender = default;
+        var captureListener = new ReactiveTestListener(bus, (m, b) =>
+        {
+            messageSender = m.sender;
+        });
+
+        var reactionListener = new ReactiveTestListener(bus, (m, b) =>
+        {
+            wasExceptionThrown = true;
+            throw new Exception("fault");
+        });
+         
+        // note that for this test we need to know in which order listeners
+        // are registered. We need captureListener to be updated after reactionlistener
+        bus.Subscribe(captureListener, 2);
+        bus.Subscribe(reactionListener, 1);
+
+        bus.Send(1, 1, sender, payLoad);
+        bus.Send(2, 1, sender, payLoad);
+
+        // ignore the errors causing the test to fail
+        LogAssert.ignoreFailingMessages = true;
+        bus.Update();
+        LogAssert.ignoreFailingMessages = false;
+
+        Assert.IsTrue(bus.Contains(reactionListener));
+        Assert.IsTrue(bus.Contains(captureListener));
+        Assert.IsTrue(bus.ListenerCount == 2);
+
+        // the exception should have been caught & flagged but the messages should
+        // still go on
+        Assert.IsTrue(messageSender == sender);
+        Assert.IsTrue(wasExceptionThrown);
     }
 
     // check if running out of messages works as intended and if free-ing up messages

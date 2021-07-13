@@ -118,54 +118,17 @@ namespace BareBones.Common.Messages
             if (_listeners.Count > 0 || _readBufferLength > 0)
             {
                 _isUpdating = true;
+                
+                var idx = _listeners.First;
 
-                try
+                while (idx != -1)
                 {
-                    var idx = _listeners.First;
+                    var next = _listeners.Next(idx);
 
-                    while (idx != -1)
-                    {
-                        var meta = _listeners.GetMetaData(idx);
-                        var listener = _listeners[idx];
-                        var next = _listeners.Next(idx);
-
-                        // object may have been deleted
-                        if (listener == null && meta.state != MessageBusListenerState.FlaggedForRemoval)
-                        {
-                            Debug.LogWarning("Listener (" + listener + ") was deleted while not flagged for removal... removing automatically.");
-                            meta.state = MessageBusListenerState.FlaggedForRemoval;
-                        }
-
-                        switch (meta.state)
-                        {
-                            case MessageBusListenerState.Active:
-                                HandleMessages(listener, meta);
-                                break;
-                            case MessageBusListenerState.FlaggedForRemoval:
-                                meta.state = MessageBusListenerState.None;
-                                _listeners.Release(idx);
-                                modifiedListeners--;
-                                break;
-                            case MessageBusListenerState.Staged:
-                                meta.state = MessageBusListenerState.Active;
-                                modifiedListeners--;
-                                break;
-                            default:
-                                Debug.Break();
-                                Debug.LogError("Listener (" + listener + ") with unknown or None state encountered... removing.");
-                                _listeners.Release(idx);
-                                break;
-                        }
-
-                        idx = next;
-                    }
-                }
-                catch (Exception e)
-                {
-                    Debug.LogError("GameMessageBus.Update: Exception while updating listeners.");
-                    Debug.LogError(e.Message);
-                    Debug.LogError(e.StackTrace);
-                }
+                    UpdateListener(idx);
+                        
+                    idx = next;
+                }               
 
                 _isUpdating = false;
             }
@@ -177,6 +140,49 @@ namespace BareBones.Common.Messages
             }
             
             SwitchReadWriteBuffers();
+        }
+
+        private void UpdateListener(int idx)
+        {
+            var meta = _listeners.GetMetaData(idx);
+            var listener = _listeners[idx];
+
+            try
+            {                
+                // object may have been deleted
+                if (listener == null && meta.state != MessageBusListenerState.FlaggedForRemoval)
+                {
+                    Debug.LogWarning("Listener (" + listener + ") was deleted while not flagged for removal... removing automatically.");
+                    meta.state = MessageBusListenerState.FlaggedForRemoval;
+                }
+
+                switch (meta.state)
+                {
+                    case MessageBusListenerState.Active:
+                        HandleMessages(listener, meta);
+                        break;
+                    case MessageBusListenerState.FlaggedForRemoval:
+                        meta.state = MessageBusListenerState.None;
+                        _listeners.Release(idx);
+                        modifiedListeners--;
+                        break;
+                    case MessageBusListenerState.Staged:
+                        meta.state = MessageBusListenerState.Active;
+                        modifiedListeners--;
+                        break;
+                    default:
+                        Debug.Break();
+                        Debug.LogError("Listener (" + listener + ") with unknown or None state encountered... removing.");
+                        _listeners.Release(idx);
+                        break;
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.LogError("GameMessageBus.Update: Exception while updating listener( " + idx + ": " + listener + " ).");
+                Debug.LogError(e.Message);
+                Debug.LogError(e.StackTrace);
+            }
         }
 
         private void UpdateModifiedListeners(int count)
