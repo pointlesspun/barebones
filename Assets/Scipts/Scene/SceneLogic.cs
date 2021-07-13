@@ -13,7 +13,7 @@ public class SceneLogic : MonoBehaviour, IMessageListener, ITimeoutCallback
      */
     public float _gameOverTimeout = 1.0f;
 
-    private IPlayerRegistry _playerRegistry;
+    private IPlayerRegistry<PlayerRoot> _playerRegistry;
     private ITimeService _timeService;
 
     private int _timeOutHandle = -1;
@@ -24,7 +24,7 @@ public class SceneLogic : MonoBehaviour, IMessageListener, ITimeoutCallback
     private void Start()
     {
         _messageBus.Send(MessageTopics.Scene, MessageIds.SceneStarted, gameObject, null);
-        _playerRegistry = ResourceLocator._instance.Resolve<IPlayerRegistry>();
+        _playerRegistry = ResourceLocator._instance.Resolve<IPlayerRegistry<PlayerRoot>>();
         _timeService = ResourceLocator._instance.Resolve<ITimeService>();
     }
 

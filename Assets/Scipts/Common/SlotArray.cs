@@ -50,6 +50,20 @@ public class SlotArray<TData, TMetaData> : IEnumerable<TData> where TData : clas
         _slots[capacity - 1]._next = -1;
     }
 
+    public void Clear()
+    {
+        _available = _slots.Length;
+        _firstAvailable = 0;
+        _firstInUse = -1;
+
+        for (var i = 0; i < _slots.Length; i++)
+        {
+            _slots[i]._next = -1;
+            _slots[i]._previous = -1;
+            _slots[i]._data = default;
+        }
+    }
+
     public int Assign(TData data)
     {
         if (_available > 0)
@@ -120,7 +134,7 @@ public class SlotArray<TData, TMetaData> : IEnumerable<TData> where TData : clas
 
     public IEnumerator<TData> GetEnumerator()
     {
-        var idx = _firstAvailable;
+        var idx = _firstInUse;
 
         while (idx != -1)
         {
@@ -135,4 +149,33 @@ public class SlotArray<TData, TMetaData> : IEnumerable<TData> where TData : clas
     public int Next(int idx) => _slots[idx]._next;
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+}
+
+public static class SlotArrayExtensions
+{
+    public static int FindHandle<TData, TMeta>(this SlotArray<TData, TMeta> array, TData data) where TData : class
+    {
+        for (var idx = array.First; idx != -1; idx = array.Next(idx))
+        {
+            if (array[idx] == data)
+            {
+                return idx;
+            }
+        }
+
+        return -1;
+    }
+
+    public static int FindHandle<TData, TMeta>(this SlotArray<TData, TMeta> array, Func<TData, bool> predicate) where TData : class
+    {
+        for (var idx = array.First; idx != -1; idx = array.Next(idx))
+        {
+            if (predicate(array[idx]))
+            {
+                return idx;
+            }
+        }
+
+        return -1;
+    }
 }

@@ -3,7 +3,7 @@ using BareBones.Common.Messages;
 using NUnit.Framework;
 using UnityEngine.TestTools;
 
-public class MessageBusTest
+public class MessageBusServiceTest
 {
     // test utility class
     class ReactiveTestListener : IMessageListener

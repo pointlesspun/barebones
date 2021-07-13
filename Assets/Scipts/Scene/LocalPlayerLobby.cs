@@ -32,7 +32,7 @@ public class LocalPlayerLobby : MonoBehaviour, IMessageListener
 
     private InputAction _action;
 
-    private IPlayerRegistry _registry;
+    private IPlayerRegistry<PlayerRoot> _registry;
 
     private IMessageBus _messageBus;
     private int _listenerHandle;
@@ -42,7 +42,7 @@ public class LocalPlayerLobby : MonoBehaviour, IMessageListener
     
     public void Start()
     {
-        _registry = ResourceLocator._instance.Resolve<IPlayerRegistry>();
+        _registry = ResourceLocator._instance.Resolve<IPlayerRegistry<PlayerRoot>>();
         _pool = ResourceLocator._instance.Resolve<IObjectPoolCollection>();
        
         _action = new InputAction();
@@ -81,9 +81,9 @@ public class LocalPlayerLobby : MonoBehaviour, IMessageListener
             && _registry.AvailableSlots > 0 
             && !HasPlayerRegistered(context.action.activeControl.device))
         {
-            var newPlayerRoot = NewInstance(context.control.device);
+            var newPlayerRoot = RegisterPlayer(context.control.device);
 
-            _registry.RegisterPlayer(newPlayerRoot);
+            //_registry.RegisterPlayer(newPlayerRoot);
 
             switch (playerParentTransform)
             {
@@ -166,7 +166,7 @@ public class LocalPlayerLobby : MonoBehaviour, IMessageListener
         if (message.id == MessageIds.PlayerCanceled)
         {
             var registryIdx = (int)message.payload;
-            var playerRoot = _registry.GetPlayer(registryIdx);
+            var playerRoot = _registry[registryIdx];
 
             playerRoot._input.user.UnpairDevices();
             _registry.DeregisterPlayer(registryIdx);
@@ -175,7 +175,7 @@ public class LocalPlayerLobby : MonoBehaviour, IMessageListener
         }
     }
 
-    private PlayerRoot NewInstance(InputDevice device)
+    private PlayerRoot RegisterPlayer(InputDevice device)
     {
         var (devices, controlScheme, deviceIds) = CreateInputConfiguration(device);
 
@@ -183,7 +183,7 @@ public class LocalPlayerLobby : MonoBehaviour, IMessageListener
 
         var root = poolObject.GetComponent<PlayerRoot>();
         var input = poolObject.GetComponent<PlayerInput>();
-        var id = _registry.GetAvailableIndex();
+        var id = _registry.RegisterPlayer(root);
 
         input.user.UnpairDevices();
         devices.ForEach(dev => InputUser.PerformPairingWithDevice(dev, user: input.user));

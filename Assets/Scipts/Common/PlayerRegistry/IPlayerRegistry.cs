@@ -1,27 +1,21 @@
 ﻿using System;
 using System.Collections.Generic;
-using UnityEngine;
 
-public interface IPlayerRegistry : IEnumerable<PlayerRoot>
+public interface IPlayerRegistry<TPlayer> : IEnumerable<TPlayer> where TPlayer : class
 {
-    PlayerRoot this[int index] { get; }
+    TPlayer this[int index] { get; }
 
     int AvailableSlots { get; }
     int MaxPlayers { get; }
     int PlayerCount { get; }
 
-    int GetAvailableIndex();
+    int RegisterPlayer(TPlayer root);
 
-    int RegisterPlayer(PlayerRoot root);
+    TPlayer DeregisterPlayer(int playerIndex);
 
-    GameObject DeregisterPlayer(int playerIndex);
 
-    PlayerRoot GetPlayer(int playerIndex);
+    bool HasPlayerRegistered(TPlayer root);
 
-    void Reset();
-
-    bool HasPlayerRegistered(PlayerRoot root);
-
-    bool HasPlayerRegistered(Func<PlayerRoot, bool> predicate);
+    bool HasPlayerRegistered(Func<TPlayer, bool> predicate);
 }
 

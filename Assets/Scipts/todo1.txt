@@ -30,7 +30,8 @@
 [in progress] replace timers / player registry parts with SlotArray?
 	- [done] update timers
 	- [done] test timer service
-	- check player registry
+	- [done] check player registry
+	- add tests for enumeration & clear on SlotArray
 
 adjust slotarray to allow for object pooling ?
 

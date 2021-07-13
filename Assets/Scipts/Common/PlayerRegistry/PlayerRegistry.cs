@@ -1,104 +1,52 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
 
 [Serializable]
-public class PlayerRegistry : IPlayerRegistry
+public class PlayerRegistry<TPlayer> : IPlayerRegistry<TPlayer> where TPlayer : class
 {
-    public int MaxPlayers { get; private set; } = 3;
+    private SlotArray<TPlayer, object> _players;
 
-    public int PlayerCount => playerCount;
+    public int MaxPlayers => _players.Capacity;
 
-    public int AvailableSlots => MaxPlayers - playerCount;
+    public int PlayerCount => _players.Capacity - _players.Available;
 
-    public PlayerRoot this[int index] => players[index];
+    public int AvailableSlots => _players.Available;
 
-    private int playerCount = 0;
-
-    private PlayerRoot[] players;
-
-    public PlayerRegistry()
-    {
-        players = new PlayerRoot[MaxPlayers];
-    }
+    public TPlayer this[int index] => _players[index];
+    
 
     public PlayerRegistry(int maxPlayers)
     {
-        players = new PlayerRoot[maxPlayers];
-        MaxPlayers = maxPlayers;
+        _players = new SlotArray<TPlayer, object>(maxPlayers);
+    }
+    public int RegisterPlayer(TPlayer root)
+    {
+        return _players.Assign(root);
     }
 
-    public int GetAvailableIndex()
+    public TPlayer DeregisterPlayer(int playerIndex)
     {
-        return players.GetAvailableSlot();
+        var result = _players[playerIndex];
+
+        _players.Release(playerIndex);
+
+        return result;
     }
 
-    public int RegisterPlayer(PlayerRoot root)
+    public bool HasPlayerRegistered(Func<TPlayer, bool> predicate)
     {
-        Debug.Assert(!HasPlayerRegistered(root));
-        Debug.Assert(PlayerCount < MaxPlayers);
-
-        if (PlayerCount < MaxPlayers)
-        {
-            var index = GetAvailableIndex();
-            players[index] = root;
-            playerCount++;
-
-            return PlayerCount - 1;
-        }
-
-        return -1;
+        return _players.FindHandle(root => root != null && predicate(root)) >= 0;
     }
 
-    public PlayerRoot GetPlayer(int playerIndex)
+    public bool HasPlayerRegistered(TPlayer root)
     {
-        return players[playerIndex];
-    }
-
-
-    public GameObject DeregisterPlayer(int playerIndex)
-    {
-        var obj = players[playerIndex].gameObject;
-
-        players[playerIndex] = null;
-        playerCount--;
-
-        return obj;
-    }
-
-    public bool HasPlayerRegistered(Func<PlayerRoot, bool> predicate)
-    {
-        return Array.FindIndex(players, root => root != null && predicate(root)) >= 0;
-    }
-
-    public bool HasPlayerRegistered(PlayerRoot root)
-    {
-        return Array.FindIndex(players, playerRoot => playerRoot == root) >= 0;
-    }
-
-    public void Reset()
-    {
-        players.SetForEach(plr =>
-        {
-            if (plr != null)
-            {
-                GameObject.Destroy(plr.gameObject);
-            }
-
-            return null;
-        });
-
-        playerCount = 0;
+        return _players.FindHandle(root) >= 0;
     }
     
-    public IEnumerator<PlayerRoot> GetEnumerator()
+    public IEnumerator<TPlayer> GetEnumerator()
     {
-        for (var i = 0; i < players.Length; i++)
-        {
-            if (players[i] != null)
-            yield return players[i];
-        }
+        return _players.GetEnumerator();
     }
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();

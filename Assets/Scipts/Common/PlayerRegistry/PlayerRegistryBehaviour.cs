@@ -8,8 +8,8 @@ public class PlayerRegistryBehaviour : MonoBehaviour, IMessageListener
     public int maxPlayers = 3;
 
     public int initialActivePlayers = 0;
-    
-    private PlayerRegistry _registry;
+
+    private PlayerRegistry<PlayerRoot> _registry;
     private IObjectPoolCollection _objectPool;
     private ILocationProvider _startLocationProvider;
     private IMessageBus _messageBus;
@@ -17,9 +17,9 @@ public class PlayerRegistryBehaviour : MonoBehaviour, IMessageListener
 
     public void Awake()
     {
-        if (_registry == null && !ResourceLocator._instance.Contains<IPlayerRegistry>())
+        if (_registry == null && !ResourceLocator._instance.Contains<IPlayerRegistry<PlayerRoot>>())
         {
-            _registry = ResourceLocator._instance.Register<IPlayerRegistry, PlayerRegistry>(maxPlayers);
+            _registry = ResourceLocator._instance.Register<IPlayerRegistry<PlayerRoot>, PlayerRegistry<PlayerRoot>>(maxPlayers);
         }
     }
 
@@ -43,15 +43,14 @@ public class PlayerRegistryBehaviour : MonoBehaviour, IMessageListener
 
 
     public void Start()
-    {
-        
+    {        
         _objectPool = ResourceLocator._instance.Resolve<IObjectPoolCollection>();
 
         for (var i = 0; i < initialActivePlayers; i++)
         {
             var playerPoolObject = _objectPool.Obtain((int) PoolIdEnum.Players);
             var rootId = _registry.RegisterPlayer(playerPoolObject.GetComponent<PlayerRoot>());
-            var root = _registry.GetPlayer(rootId);
+            var root = _registry[rootId];
 
             root._deviceIds = CaptureDeviceIds(i);
             playerPoolObject.gameObject.ActivateHierarchyTree(true);
@@ -62,7 +61,7 @@ public class PlayerRegistryBehaviour : MonoBehaviour, IMessageListener
     {
         if (_registry != null)
         {
-            ResourceLocator._instance.Deregister<IPlayerRegistry>();
+            ResourceLocator._instance.Deregister<IPlayerRegistry<PlayerRoot>>();
             _registry = null;
         }
     }
