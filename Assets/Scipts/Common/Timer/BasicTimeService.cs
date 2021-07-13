@@ -1,86 +1,85 @@
 ﻿using System;
-using System.Collections.Generic;
 
 
 [Serializable]
 public class BasicTimeService : ITimeService
 {
-    private TimeoutCallbackEntry[] _timers;
-    private readonly List<TimeoutCallbackEntry> _timersInUse = new List<TimeoutCallbackEntry>();
-    private int _available;
-    private int _firstAvailable;
-
     private float _time;
+    private bool _isUpdating = false;
+
+    private SlotArray<ITimeoutCallback, TimeoutCallbackMetaData> _timers;
+
+    public int Available => _timers.Available;
 
     public BasicTimeService(int count, float startTime)
     {
-        _timers = Enumerations.CreateArray<TimeoutCallbackEntry>(count);
-        _available = count; 
+        _timers = new SlotArray<ITimeoutCallback, TimeoutCallbackMetaData>(count, (idx) => new TimeoutCallbackMetaData());
         _time = startTime;
-        _firstAvailable = 0;
     }
 
     public void Update(float deltaTime)
     {
+        _isUpdating = true;
+        
         _time += deltaTime;
 
-        for (var i = 0; i < _timersInUse.Count; )
+        var idx = _timers.First;
+
+        while (idx != -1)
         {
-            var timer = _timersInUse[i];
-            if (timer.IsTimeout(_time))
+            var next = _timers.Next(idx);
+            var meta = _timers.GetMetaData(idx);
+
+            // if duration was set to negative number, it implies
+            // the timer was canceled while updating in this
+            // case skip the check and release the current time
+            if (meta.Duration > 0)
             {
-                timer.Callback.OnTimeout(timer.Handle);
+                if (meta.IsTimeout(_time))
+                {
+                    _timers[idx].OnTimeout(idx);
 
-                timer.Duration = -1;
-                timer.Handle = -1;
-                timer.Callback = null;
+                    meta.Duration = -1;
 
-                _timersInUse.RemoveAt(i);
+                    _timers.Release(idx);
+                }
             }
             else
             {
-                i++;
+                _timers.Release(idx);
             }
+
+            idx = next;
         }
+
+        _isUpdating = false; 
     }
 
     public int SetTimeout(ITimeoutCallback callback, float duration)
     {
-        if (_available > 0 && duration > 0)
+        if (_timers.Available > 0 && duration > 0)
         {
-            for (var i = 0; i < _timers.Length; i++)
-            {
-                var idx = (i + _firstAvailable) % _timers.Length;
+            var idx = _timers.Assign(callback);
+            var meta = _timers.GetMetaData(idx);
+            meta.Duration = duration;
+            meta.StartTime = _time;
 
-                if (_timers[idx].Duration <= 0)
-                {
-                    _timers[idx].Initialize(idx, _time, duration, callback);
-                    _available--;
-                    _firstAvailable = (idx + 1) % _timers.Length;
-                    _timersInUse.Add(_timers[idx]);
-                    return idx;
-                }
-            }
+            return idx;
         }
-
+           
         return -1;
     }
 
     public void Cancel(int handle)
     {
-        if (_timers[handle].Duration > 0)
+        if (_isUpdating)
         {
-            for (var i = 0; i < _timersInUse.Count; i++)
-            {
-                if (_timersInUse[i].Handle == handle)
-                {
-                    _timers[handle].Duration = -1;
-                    _timers[handle].Callback = null;
-                    _timers[handle].Handle = -1;
-                    _timersInUse.RemoveAt(i);
-                    break;
-                }
-            }
+            // timer will be cleaned up during the next update
+            _timers.GetMetaData(handle).Duration = -1;
+        }
+        else
+        {
+            _timers.Release(handle);
         }
     }
 }
