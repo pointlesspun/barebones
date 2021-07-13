@@ -19,10 +19,14 @@ namespace BareBones.Common.Messages
         {
             public MessageBusListenerState state = MessageBusListenerState.None;
             public int topicFlags = 0;
+            public int handle = -1;
         }
 
         public const int MESSAGE_BUFFER_SIZE = 32;
         public const int MAX_LISTENERS = 32;
+
+        // only in #if UNITY_EDITOR
+        public bool debugLog = false;
 
         public int MessageCount => _readBufferLength;
 
@@ -69,14 +73,30 @@ namespace BareBones.Common.Messages
             {
                 var meta = _listeners.GetMetaData(handle);
                 meta.topicFlags = topicFlags;
+                meta.handle = handle;
                 if (_isUpdating)
                 {
                     modifiedListeners++;
                     meta.state = MessageBusListenerState.Staged;
+
+#if UNITY_EDITOR
+                    if (debugLog)
+                    {
+                        Debug.Log("[MessageBus " + _listeners.Count + "/" + _listeners.Capacity + "] ++ Staging: " + listener + "@" + handle + ".");
+                    }
+#endif
                 }
                 else
                 {
                     meta.state = MessageBusListenerState.Active;
+
+#if UNITY_EDITOR
+                    if (debugLog)
+                    {
+                        Debug.Log("[MessageBus " + _listeners.Count + "/" + _listeners.Capacity + "] ++ Subscribing: " + listener + "@" + handle + ".");
+                    }
+#endif
+
                 }
             }
             else
@@ -105,11 +125,26 @@ namespace BareBones.Common.Messages
                     modifiedListeners++;
                 }
                 meta.state = MessageBusListenerState.FlaggedForRemoval;
+
+#if UNITY_EDITOR
+                if (debugLog)
+                {
+                    Debug.Log("[MessageBus " + _listeners.Count + "/" + _listeners.Capacity + " ] -- Flag for removal: " + _listeners[handle]+ "@" + handle + ".");
+                }
+#endif
             }
             else
             { 
                 meta.state = MessageBusListenerState.None;
+                meta.handle = -1;
                 _listeners.Release(handle);
+
+#if UNITY_EDITOR
+                if (debugLog)
+                {
+                    Debug.Log("[MessageBus " + _listeners.Count + "/" + _listeners.Capacity + " ] -- Unsubscribing: " + _listeners[handle] + "@" + handle + ".");
+                }
+#endif
             }
         }
 
@@ -196,10 +231,26 @@ namespace BareBones.Common.Messages
                 {
                     meta.state = MessageBusListenerState.Active;
                     updatedListeners++;
+
+#if UNITY_EDITOR
+                    if (debugLog)
+                    {
+                        Debug.Log("[MessageBus " + _listeners.Count + "/" + _listeners.Capacity + "] ++ Activating: " + _listeners[idx] + "@" + meta.handle + ".");
+                    }
+#endif
+
                 }
                 else if (meta.state == MessageBusListenerState.FlaggedForRemoval)
                 {
+#if UNITY_EDITOR
+                    if (debugLog)
+                    {
+                        Debug.Log("[MessageBus " + _listeners.Count + "/" + _listeners.Capacity + "] -- Releasing: " + _listeners[idx] + "@" + meta.handle + ".");
+                    }
+#endif
+
                     meta.state = MessageBusListenerState.None;
+                    meta.handle = -1;
                     _listeners.Release(idx);
                     updatedListeners++;
                 }
@@ -213,6 +264,16 @@ namespace BareBones.Common.Messages
             if (message != null)
             {
                 message.Initialize(topic, messageId, sender, payload);
+
+#if UNITY_EDITOR
+                if (debugLog)
+                {
+                    var buffer = _isUpdating ? _writeBufferLength : _readBufferLength;
+                    
+                    Debug.Log("[MessageBus " + buffer + "/" + _readBufferLength + " ] << Received " +  message + ".");
+                }
+#endif
+
             }
 
             return message != null;
@@ -277,6 +338,12 @@ namespace BareBones.Common.Messages
 
                 if ((message.topic & meta.topicFlags) > 0)
                 {
+#if UNITY_EDITOR
+                    if (debugLog)
+                    {
+                        Debug.Log("[MessageBus " + i + "/" + _readBufferLength + " ] >> Deliver " + message + " to " + listener + "@" + meta.handle + ".");
+                    }
+#endif
                     listener.HandleMessage(message);
                 }
             }

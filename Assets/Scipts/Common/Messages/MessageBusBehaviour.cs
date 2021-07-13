@@ -7,6 +7,8 @@ namespace BareBones.Common.Messages
         public int _messageSize = 32;
         public int _listenerSize = 32;
 
+        public bool _logActivity = false;
+
         private MessageBus _messageBus;
         private ResourceLocator _locator;
 
@@ -17,6 +19,7 @@ namespace BareBones.Common.Messages
             if (_messageBus == null && !_locator.Contains<IMessageBus>())
             {
                 _messageBus = _locator.Register<IMessageBus, MessageBus>(_messageSize, _listenerSize);
+                _messageBus.debugLog = _logActivity;
             }
         }
 

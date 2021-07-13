@@ -39,5 +39,10 @@ namespace BareBones.Common.Messages
 
             return this;
         }
+
+        public override string ToString()
+        {
+            return "(topic=" + topic + ", id=" + id + ", sender=" + sender + ", payload=" + payload + ")";
+        }
     }
 }
