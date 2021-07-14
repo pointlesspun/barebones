@@ -1,15 +1,17 @@
 ﻿using UnityEngine;
 
-public static class GameObjectUtil
+namespace BareBones.Common
 {
-    public static void ActivateHierarchyTree(this GameObject obj, bool value)
+    public static class GameObjectUtil
     {
-        obj.SetActive(value);
-
-        for (var j = 0; j < obj.transform.childCount; j++)
+        public static void ActivateHierarchyTree(this GameObject obj, bool value)
         {
-            obj.transform.GetChild(j).gameObject.SetActive(value);
+            obj.SetActive(value);
+
+            for (var j = 0; j < obj.transform.childCount; j++)
+            {
+                obj.transform.GetChild(j).gameObject.SetActive(value);
+            }
         }
     }
 }
-

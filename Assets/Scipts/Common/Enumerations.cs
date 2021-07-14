@@ -3,160 +3,150 @@ using System;
 using System.Collections.Generic;
 using UnityEngine.InputSystem.Utilities;
 
-public static class Enumerations
+namespace BareBones.Common
 {
-    public static int GetAvailableSlot<T>(this T[] array) where T : class
+    public static class Enumerations
     {
-        for (var i = 0; i < array.Length; i++)
+        public static int GetAvailableSlot<T>(this T[] array) where T : class
         {
-            if (array[i] == null)
+            for (var i = 0; i < array.Length; i++)
             {
-                return i;
+                if (array[i] == null)
+                {
+                    return i;
+                }
             }
+
+            return -1;
         }
 
-        return -1;
-    }
-
-    public static int InsertIntoAvailableSlot<T>(this T[] array, T obj) where T : class
-    {
-        var slotIndex = GetAvailableSlot(array);
-
-        if (slotIndex >= 0)
+        public static bool Any(this int[] array, int value)
         {
-            array[slotIndex] = obj;
-        }
-
-        return slotIndex;
-    }
-
-    public static bool Any(this int[] array, int value) 
-    {
-        for (var i = 0; i < array.Length; i++)
-        {
-            if (array[i] == value)
+            for (var i = 0; i < array.Length; i++)
             {
-                return true;
+                if (array[i] == value)
+                {
+                    return true;
+                }
             }
+
+            return false;
         }
 
-        return false;
-    }
-
-    public static bool Any<T>(this T[] array, T value) where T : class
-    {
-        for (var i = 0; i < array.Length; i++)
+        public static bool Any<T>(this T[] array, T value) where T : class
         {
-            if (array[i] == value)
+            for (var i = 0; i < array.Length; i++)
             {
-                return true;
+                if (array[i] == value)
+                {
+                    return true;
+                }
             }
+
+            return false;
         }
 
-        return false;
-    }
-
-    public static bool Any<T>(this ReadOnlyArray<T> array, T value) where T : class
-    {
-        for (var i = 0; i < array.Count; i++)
+        public static bool Any<T>(this ReadOnlyArray<T> array, T value) where T : class
         {
-            if (array[i] == value)
+            for (var i = 0; i < array.Count; i++)
             {
-                return true;
+                if (array[i] == value)
+                {
+                    return true;
+                }
             }
+
+            return false;
         }
 
-        return false;
-    }
-
-    public static List<TProperty> Select<TValue, TProperty>(
-        this ReadOnlyArray<TValue> array, 
-        Func<TValue, TProperty> predicate
-    ) where TValue : class where TProperty : class
-    {
-        var result = new List<TProperty>();
-
-        for (var i = 0; i < array.Count; i++)
+        public static List<TProperty> Select<TValue, TProperty>(
+            this ReadOnlyArray<TValue> array,
+            Func<TValue, TProperty> predicate
+        ) where TValue : class where TProperty : class
         {
-            if (array[i] != null)
+            var result = new List<TProperty>();
+
+            for (var i = 0; i < array.Count; i++)
             {
-                TProperty property = predicate(array[i]);
+                if (array[i] != null)
+                {
+                    TProperty property = predicate(array[i]);
 
-                result.Add(property);
+                    result.Add(property);
+                }
             }
+
+            return result;
         }
 
-        return result;
-    }
-
-    public static bool Any<T>(this T[] array, Func<T, bool> predicate) 
-    {
-        for (var i = 0; i < array.Length; i++)
+        public static bool Any<T>(this T[] array, Func<T, bool> predicate)
         {
-            if (predicate(array[i]))
+            for (var i = 0; i < array.Length; i++)
             {
-                return true;
+                if (predicate(array[i]))
+                {
+                    return true;
+                }
             }
+
+            return false;
         }
 
-        return false;
-    }
-
-    public static bool Any<T>(this IEnumerable<T> enumeration, Func<T, bool> predicate)
-    {
-        foreach (var value in enumeration)
+        public static bool Any<T>(this IEnumerable<T> enumeration, Func<T, bool> predicate)
         {
-            if (predicate(value))
+            foreach (var value in enumeration)
             {
-                return true;
+                if (predicate(value))
+                {
+                    return true;
+                }
             }
+
+            return false;
         }
 
-        return false;
-    }
-
-    public static T[] CreateArray<T>(int count)
-    {
-        var result = new T[count];
-
-        for (var i = 0; i < result.Length; i++)
+        public static T[] CreateArray<T>(int count)
         {
-            result[i] = Activator.CreateInstance<T>();
+            var result = new T[count];
+
+            for (var i = 0; i < result.Length; i++)
+            {
+                result[i] = Activator.CreateInstance<T>();
+            }
+
+            return result;
         }
 
-        return result;
-    }
-
-    public static T[] CreateArray<T>(int count, Func<int, T> factoryMethod)
-    {
-        var result = new T[count];
-
-        for (var i = 0; i < result.Length; i++)
+        public static T[] CreateArray<T>(int count, Func<int, T> factoryMethod)
         {
-            result[i] = factoryMethod(i);
+            var result = new T[count];
+
+            for (var i = 0; i < result.Length; i++)
+            {
+                result[i] = factoryMethod(i);
+            }
+
+            return result;
         }
 
-        return result;
-    }
-
-    public static T[] SetForEach<T>(this T[] array, Func<T, T> function)
-    {
-        for (var i = 0; i < array.Length; i++ )
+        public static T[] SetForEach<T>(this T[] array, Func<T, T> function)
         {
-            array[i] = function(array[i]);
+            for (var i = 0; i < array.Length; i++)
+            {
+                array[i] = function(array[i]);
+            }
+
+            return array;
         }
 
-        return array;
-    }
-
-    public static T[] ForEach<T>(this T[] array, Action<T> action)
-    {
-        for (var i = 0; i < array.Length; i++)
+        public static T[] ForEach<T>(this T[] array, Action<T> action)
         {
-            action(array[i]);
-        }
+            for (var i = 0; i < array.Length; i++)
+            {
+                action(array[i]);
+            }
 
-        return array;
+            return array;
+        }
     }
 }
-
