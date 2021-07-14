@@ -723,7 +723,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: '<b><u>Title</u></b>
+  m_text: '<b><u>Scene Title</u></b>
 
     <size=60%>Bare bones lobby</b>'
   m_isRightToLeft: 0
@@ -1258,6 +1258,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6aed5623ea2f02c4b9946f4e850148a3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _messageSize: 32
+  _listenerSize: 32
+  _logActivity: 0
 --- !u!4 &1541039147
 Transform:
   m_ObjectHideFlags: 0

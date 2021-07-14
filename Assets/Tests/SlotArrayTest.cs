@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Linq;
 using NUnit.Framework;
 using UnityEngine;
 
@@ -188,8 +187,7 @@ public class SlotArrayTest
     private void ReleaseAllInRandomOrder<T>(SlotArray<T, object> array) where T : class
     {
         var idxArray = Enumerations.CreateArray(array.Capacity, (idx) => idx)
-                            .OrderBy(v => Random.Range(0, array.Capacity))
-                            .ToArray();
+                            .OrderBy(v => Random.Range(0, array.Capacity));
 
         for (var i = 0; i < idxArray.Length; i++)
         {

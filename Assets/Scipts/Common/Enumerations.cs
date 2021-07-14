@@ -79,6 +79,29 @@ namespace BareBones.Common
             return result;
         }
 
+        public static T1[] OrderBy<T1, T2>(this T1[] array, Func<T1, T2> select) where T2 : IComparable
+        {
+            Array.Sort(array, delegate (T1 v1, T1 v2)
+            {
+                return select(v1).CompareTo(select(v2));
+            });
+
+            return array;
+        }
+
+        public static T FirstOrDefault<T>(this IEnumerable<T> enumeration, Func<T, bool> predicate)
+        {
+            foreach (var t in enumeration)
+            {
+                if (predicate(t))
+                {
+                    return t;
+                }
+            }
+
+            return default;
+        }
+
         public static bool Any<T>(this T[] array, Func<T, bool> predicate)
         {
             for (var i = 0; i < array.Length; i++)

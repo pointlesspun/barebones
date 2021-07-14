@@ -30,13 +30,13 @@
 	* [done] check player registry
 	* [done] add tests for enumeration & clear on SlotArray
 * [later] adjust slotarray to allow for object pooling ? it's possible but I'm not sure if it will add anything and 
-it requires the slotarray to work differently than it does now. I do want (eventually) a generic, tested object pool]
+it requires the slotarray to work differently than it does now. I do want (eventually) a generic, tested object pool.
 * [in-progress] general clean up & unit test & documentation & publish
 	* [done] move code to services and add namespaces
 	* [done] fix for player bullets moving erratically over time. prolly because of impacts with enemies before they were recycled. reset
 	  movement direction, angular velocity on reset. 
-	* [clean-up] Is ObjectPoolBehaviour used ??
-	* Update to latest unity version 
+	* [done] Is ObjectPoolBehaviour used ??
+	* [done] Update to latest unity version 
 	* Replace all Linq references with Enumerations
 	* Organize Scene hierarchy -> /Scene/... /System/...
 	* add document outlining
