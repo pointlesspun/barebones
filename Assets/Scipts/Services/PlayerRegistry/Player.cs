@@ -1,9 +1,10 @@
 ﻿using UnityEngine;
 using UnityEngine.InputSystem;
 
-using BareBones.Common.Messages;
+using BareBones.Common;
+using BareBones.Services.Messages;
 
-namespace BareBones.Common.Behaviours
+namespace BareBones.Services.PlayerRegistry
 {
     public enum AgentControllerSource
     {
@@ -11,7 +12,7 @@ namespace BareBones.Common.Behaviours
         FirstChild
     }
 
-    public class PlayerRoot : MonoBehaviour, IMessageListener
+    public class Player : MonoBehaviour, IMessageListener
     {
         public string _playerName;
         public int _score;
@@ -25,13 +26,13 @@ namespace BareBones.Common.Behaviours
 
         private IMessageBus _messageBus;
         private int _messageListenerHandle;
-        private AgentController _controller;
+        private IAgentController _controller;
 
         private int _id;
 
         public int Id => _id;
 
-        public bool IsAlive => _controller != null && _controller.gameObject.activeSelf;
+        public bool IsAlive => _controller != null && _controller.IsActive;
 
         public void OnEnable()
         {
@@ -62,7 +63,7 @@ namespace BareBones.Common.Behaviours
                 case AgentControllerSource.ControlledObject:
                     if (_controlledObject != null)
                     {
-                        _controller = _controlledObject.GetComponent<AgentController>();
+                        _controller = _controlledObject.GetComponent<IAgentController>();
                     }
                     else
                     {
@@ -73,7 +74,8 @@ namespace BareBones.Common.Behaviours
                 case AgentControllerSource.FirstChild:
                     if (transform.childCount >= 0)
                     {
-                        _controller = transform.GetChild(0).gameObject.GetComponent<AgentController>();
+                        _controlledObject = transform.GetChild(0).gameObject;
+                        _controller = _controlledObject.GetComponent<IAgentController>();
                     }
                     else
                     {
@@ -91,7 +93,7 @@ namespace BareBones.Common.Behaviours
             }
         }
 
-        public PlayerRoot Initialize(int id, string name, PlayerInput input, int[] deviceIds)
+        public Player Initialize(int id, string name, PlayerInput input, int[] deviceIds)
         {
             _id = id;
             _playerName = name;
@@ -145,10 +147,10 @@ namespace BareBones.Common.Behaviours
         {
             // was the controlled object destroyed ?
 #pragma warning disable CS0252
-            if (message.id == MessageIds.EntityDestroyed && message.sender == _controller.gameObject)
+            if (message.id == MessageIds.EntityDestroyed && message.sender == _controlledObject)
 #pragma warning restore CS0252
             {
-                _controller.gameObject.SetActive(false);
+                _controller.SetActive(false);
                 _messageBus.Send(MessageTopics.Player, MessageIds.PlayerDied, gameObject, null);
             }
         }

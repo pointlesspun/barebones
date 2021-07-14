@@ -2,67 +2,70 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-[Serializable]
-public class ObjectPool
+namespace BareBones.Services.ObjectPool
 {
-    public int Id { get; private set; }
-    
-    public GameObject ParentObject { get; private set; }
-
-    private readonly List<PoolObject> _available = new List<PoolObject>();
-
-    public ObjectPool(int id, int count, GameObject prefab, GameObject parentObject)
+    [Serializable]
+    public class ObjectPool
     {
-        Id = id;
-        ParentObject = parentObject;
+        public int Id { get; private set; }
 
-        for (var i = 0; i < count; i++)
+        public GameObject ParentObject { get; private set; }
+
+        private readonly List<PoolObject> _available = new List<PoolObject>();
+
+        public ObjectPool(int id, int count, GameObject prefab, GameObject parentObject)
         {
-            var obj = GameObject.Instantiate(prefab, parentObject.transform);
-            var config = obj.GetComponent<PoolObject>();
+            Id = id;
+            ParentObject = parentObject;
 
-            obj.name = parentObject.name + "@" + id + "-" + i;
-            
-
-            if (config == null)
+            for (var i = 0; i < count; i++)
             {
-                config = obj.AddComponent<PoolObject>();
+                var obj = GameObject.Instantiate(prefab, parentObject.transform);
+                var config = obj.GetComponent<PoolObject>();
+
+                obj.name = parentObject.name + "@" + id + "-" + i;
+
+
+                if (config == null)
+                {
+                    config = obj.AddComponent<PoolObject>();
+                }
+
+                config.poolId = Id;
+                config.deferRelease = false;
+                config.isReleased = true;
+                obj.SetActive(false);
+
+                _available.Add(config);
+            }
+        }
+
+        public PoolObject Obtain()
+        {
+            if (_available.Count > 0)
+            {
+                var result = _available[0];
+                _available.RemoveAt(0);
+
+                result.gameObject.SetActive(true);
+                result.deferRelease = false;
+                result.isReleased = false;
+
+                return result;
             }
 
-            config.poolId = Id;
-            config.deferRelease = false;
-            config.isReleased = true;
-            obj.SetActive(false);
-
-            _available.Add(config);
+            return null;
         }
-    }
 
-    public PoolObject Obtain()
-    {
-        if (_available.Count > 0)
+        public void Release(PoolObject meta)
         {
-            var result = _available[0];
-            _available.RemoveAt(0);
+            Debug.Assert(meta.poolId == Id);
 
-            result.gameObject.SetActive(true);
-            result.deferRelease = false;
-            result.isReleased = false;
+            meta.gameObject.SetActive(false);
+            meta.isReleased = true;
 
-            return result;
+            _available.Add(meta);
         }
-
-        return null;
     }
 
-    public void Release(PoolObject meta)
-    {
-        Debug.Assert(meta.poolId == Id);
-
-        meta.gameObject.SetActive(false);
-        meta.isReleased = true;
-
-        _available.Add(meta);
-    }
 }
-

@@ -7,8 +7,10 @@ using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Users;
 
 using BareBones.Common;
-using BareBones.Common.Messages;
 using BareBones.Common.Behaviours;
+using BareBones.Services.Messages;
+using BareBones.Services.ObjectPool;
+using BareBones.Services.PlayerRegistry;
 
 namespace BareBones.Scene.Lobby
 {
@@ -39,17 +41,16 @@ namespace BareBones.Scene.Lobby
 
             private InputAction _action;
 
-            private IPlayerRegistry<PlayerRoot> _registry;
+            private IPlayerRegistry<Player> _registry;
 
             private IMessageBus _messageBus;
             private int _listenerHandle;
 
             private IObjectPoolCollection _pool;
 
-
             public void Start()
             {
-                _registry = ResourceLocator._instance.Resolve<IPlayerRegistry<PlayerRoot>>();
+                _registry = ResourceLocator._instance.Resolve<IPlayerRegistry<Player>>();
                 _pool = ResourceLocator._instance.Resolve<IObjectPoolCollection>();
 
                 _action = new InputAction();
@@ -182,13 +183,13 @@ namespace BareBones.Scene.Lobby
                 }
             }
 
-            private PlayerRoot RegisterPlayer(InputDevice device)
+            private Player RegisterPlayer(InputDevice device)
             {
                 var (devices, controlScheme, deviceIds) = CreateInputConfiguration(device);
 
                 var poolObject = _pool.Obtain((int)PoolIdEnum.Players);
 
-                var root = poolObject.GetComponent<PlayerRoot>();
+                var root = poolObject.GetComponent<Player>();
                 var input = poolObject.GetComponent<PlayerInput>();
                 var id = _registry.RegisterPlayer(root);
 

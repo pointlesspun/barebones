@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace BareBones.Common.Behaviours
+namespace BareBones.Common
 {
     public static class PhysicsControl
     {
@@ -29,5 +29,4 @@ namespace BareBones.Common.Behaviours
             );
         }
     }
-
 }

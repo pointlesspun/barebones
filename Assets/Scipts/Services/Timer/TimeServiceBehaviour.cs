@@ -2,40 +2,42 @@
 
 using BareBones.Common;
 
-public class TimeServiceBehaviour : MonoBehaviour
+namespace BareBones.Services.TimeService
 {
-    public int timerSlotCount = 8;
-    private BasicTimeService _timeService;
-
-    public void Awake()
+    public class TimeServiceBehaviour : MonoBehaviour
     {
-        if (_timeService == null && !ResourceLocator._instance.Contains<ITimeService>())
+        public int timerSlotCount = 8;
+        private BasicTimeService _timeService;
+
+        public void Awake()
         {
-            _timeService = ResourceLocator._instance.Register <ITimeService, BasicTimeService> (timerSlotCount, 0);
+            if (_timeService == null && !ResourceLocator._instance.Contains<ITimeService>())
+            {
+                _timeService = ResourceLocator._instance.Register<ITimeService, BasicTimeService>(timerSlotCount, 0);
+            }
         }
-    }
 
-    public void Update()
-    {
-        _timeService.Update(Time.deltaTime);
-    }
-
-    public int SetTimeout(ITimeoutCallback callback, float duration)
-    {
-        return _timeService.SetTimeout(callback, duration);
-    }
-
-    public void Cancel(int handle)
-    {
-        _timeService.Cancel(handle);
-    }
-
-    public void OnDestroy()
-    {
-        if (_timeService != null)
+        public void Update()
         {
-            ResourceLocator._instance.Deregister<ITimeService>(_timeService);
+            _timeService.Update(Time.deltaTime);
+        }
+
+        public int SetTimeout(ITimeoutCallback callback, float duration)
+        {
+            return _timeService.SetTimeout(callback, duration);
+        }
+
+        public void Cancel(int handle)
+        {
+            _timeService.Cancel(handle);
+        }
+
+        public void OnDestroy()
+        {
+            if (_timeService != null)
+            {
+                ResourceLocator._instance.Deregister<ITimeService>(_timeService);
+            }
         }
     }
 }
-

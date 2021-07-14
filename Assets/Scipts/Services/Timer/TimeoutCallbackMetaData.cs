@@ -1,27 +1,31 @@
 ﻿using System;
 
-[Serializable]
-public class TimeoutCallbackMetaData
+namespace BareBones.Services.TimeService
 {
-    public float Duration
+
+    [Serializable]
+    public class TimeoutCallbackMetaData
     {
-        get;
-        set;
+        public float Duration
+        {
+            get;
+            set;
+        }
+
+        public float StartTime
+        {
+            get;
+            set;
+        }
+
+
+        public void Initialize(float time, float duration)
+        {
+            Duration = duration;
+            StartTime = time;
+        }
+
+        public bool IsTimeout(float time) => time >= (StartTime + Duration);
     }
 
-    public float StartTime
-    {
-        get;
-        set;
-    }
-
- 
-    public void Initialize(float time, float duration)
-    {
-        Duration = duration;
-        StartTime = time;
-    }
-
-    public bool IsTimeout(float time) => time >= (StartTime + Duration);
 }
-

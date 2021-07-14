@@ -1,10 +1,13 @@
 ﻿
-public interface ITimeService
+namespace BareBones.Services.TimeService
 {
-    int SetTimeout(ITimeoutCallback callback, float duration);
+    public interface ITimeService
+    {
+        int SetTimeout(ITimeoutCallback callback, float duration);
 
-    void Cancel(int handle);
+        void Cancel(int handle);
 
-    void Update(float deltaTime);
+        void Update(float deltaTime);
+    }
+
 }
-

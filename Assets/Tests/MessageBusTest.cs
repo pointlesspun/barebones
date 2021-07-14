@@ -1,7 +1,9 @@
 ﻿using System;
-using BareBones.Common.Messages;
+
 using NUnit.Framework;
 using UnityEngine.TestTools;
+
+using BareBones.Services.Messages;
 
 public class MessageBusServiceTest
 {

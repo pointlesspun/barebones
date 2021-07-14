@@ -1,14 +1,17 @@
+
 using System.Collections.Generic;
 
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-namespace BareBones.Common.Behaviours
+using BareBones.Common;
+
+namespace BareBones.Game
 {
     /**
      * Translates input into movement
      */
-    public class AgentController : MonoBehaviour
+    public class AgentController : MonoBehaviour, IAgentController
     {
         public float _speed;
 
@@ -27,7 +30,9 @@ namespace BareBones.Common.Behaviours
         private bool _isFiring = false;
         private Vector2 _directionInput = Vector2.zero;
 
-        void Start()
+        public bool IsActive => gameObject.activeSelf;
+
+        public void Start()
         {
             _body = gameObject.GetComponent<Rigidbody>();
 
@@ -43,7 +48,7 @@ namespace BareBones.Common.Behaviours
             }
         }
 
-        void Update()
+        public void Update()
         {
             if (_isFiring)
             {
@@ -76,9 +81,14 @@ namespace BareBones.Common.Behaviours
             }
         }
 
-        void OnDrawGizmosSelected()
+        public void OnDrawGizmosSelected()
         {
             Gizmos.DrawWireCube(_boundingBox.center, _boundingBox.extents * 2.0f);
+        }
+
+        public void SetActive(bool value)
+        {
+            gameObject.SetActive(value);
         }
     }
 }

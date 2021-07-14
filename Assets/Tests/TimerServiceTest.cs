@@ -1,6 +1,8 @@
 ﻿using System;
 using NUnit.Framework;
 
+using BareBones.Services.TimeService;
+
 public class TimerServiceTest
 {
     class TestCallback : ITimeoutCallback

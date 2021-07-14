@@ -2,30 +2,32 @@
 
 using BareBones.Common;
 
-public class PoolObject : MonoBehaviour
+namespace BareBones.Services.ObjectPool
 {
-    public int poolId;
-    public bool isReleased = false;
-    public bool deferRelease = false;
-
-    private IObjectPoolCollection _pool;
-
-    public void Start()
+    public class PoolObject : MonoBehaviour
     {
-        _pool = ResourceLocator._instance.Resolve<IObjectPoolCollection>();
-    }
+        public int poolId;
+        public bool isReleased = false;
+        public bool deferRelease = false;
 
-    public void Release()
-    {
-        if (deferRelease)
+        private IObjectPoolCollection _pool;
+
+        public void Start()
         {
-            isReleased = true;
-            gameObject.SetActive(false);
+            _pool = ResourceLocator._instance.Resolve<IObjectPoolCollection>();
         }
-        else
+
+        public void Release()
         {
-            _pool.Release(this);
+            if (deferRelease)
+            {
+                isReleased = true;
+                gameObject.SetActive(false);
+            }
+            else
+            {
+                _pool.Release(this);
+            }
         }
     }
 }
-

@@ -1,7 +1,9 @@
 ﻿using System;
 using UnityEngine;
 
-namespace BareBones.Common.Messages
+using BareBones.Common;
+
+namespace BareBones.Services.Messages
 {
 
     [Serializable]

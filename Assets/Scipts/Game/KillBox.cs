@@ -1,5 +1,7 @@
 using UnityEngine;
 
+using BareBones.Services.ObjectPool;
+
 namespace BareBones.Game
 {
     public class KillBox : MonoBehaviour

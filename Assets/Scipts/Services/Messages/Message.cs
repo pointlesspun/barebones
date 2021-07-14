@@ -1,7 +1,7 @@
 ﻿
 using System;
 
-namespace BareBones.Common.Messages
+namespace BareBones.Services.Messages
 {
     [Serializable]
     public class Message

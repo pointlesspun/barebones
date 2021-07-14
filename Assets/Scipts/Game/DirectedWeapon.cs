@@ -2,6 +2,7 @@ using UnityEngine;
 
 using BareBones.Common;
 using BareBones.Common.Behaviours;
+using BareBones.Services.ObjectPool;
 
 namespace BareBones.Game
 {

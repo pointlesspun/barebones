@@ -2,7 +2,7 @@
 using UnityEngine;
 
 using BareBones.Common;
-using BareBones.Common.Messages;
+using BareBones.Services.Messages;
 
 namespace BareBones.Scene.Lobby
 {

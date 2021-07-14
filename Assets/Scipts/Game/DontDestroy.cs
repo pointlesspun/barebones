@@ -2,7 +2,7 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-using BareBones.Common.Messages;
+using BareBones.Services.Messages;
 
 namespace BareBones.Common.Behaviours
 {

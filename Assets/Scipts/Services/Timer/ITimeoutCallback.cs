@@ -1,5 +1,8 @@
-﻿public interface ITimeoutCallback
+﻿namespace BareBones.Services.TimeService
 {
-    void OnTimeout(int handle);
+    public interface ITimeoutCallback
+    {
+        void OnTimeout(int handle);
+    }
 }
 

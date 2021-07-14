@@ -2,7 +2,7 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace BareBones.Common.Behaviours
+namespace BareBones.Scene
 {
     public class LoadScene : MonoBehaviour
     {

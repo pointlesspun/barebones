@@ -1,7 +1,10 @@
-﻿public enum PoolIdEnum
+﻿namespace BareBones.Services.ObjectPool
 {
-    Players = 0,
-    PlayerBullets = 1,
-    EnemyDrones = 2,
-    Other = 3
+    public enum PoolIdEnum
+    {
+        Players = 0,
+        PlayerBullets = 1,
+        EnemyDrones = 2,
+        Other = 3
+    }
 }

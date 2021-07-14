@@ -1,7 +1,7 @@
 ﻿
 using UnityEngine;
 
-namespace BareBones.Common.Behaviours
+namespace BareBones.Game
 {
     public interface IWeapon
     {

@@ -1,4 +1,4 @@
-﻿namespace BareBones.Common.Messages
+﻿namespace BareBones.Services.Messages
 {
     public interface IMessageListener
     {       

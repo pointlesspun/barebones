@@ -4,8 +4,9 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 
 using BareBones.Common;
-using BareBones.Common.Messages;
-using BareBones.Common.Behaviours;
+using BareBones.Services.Messages;
+using BareBones.Services.PlayerRegistry;
+using BareBones.Services.TimeService;
 
 namespace BareBones.Scene.Game
 {
@@ -17,7 +18,7 @@ namespace BareBones.Scene.Game
          */
         public float _gameOverTimeout = 1.0f;
 
-        private IPlayerRegistry<PlayerRoot> _playerRegistry;
+        private IPlayerRegistry<Player> _playerRegistry;
         private ITimeService _timeService;
 
         private int _timeOutHandle = -1;
@@ -28,7 +29,7 @@ namespace BareBones.Scene.Game
         private void Start()
         {
             _messageBus.Send(MessageTopics.Scene, MessageIds.SceneStarted, gameObject, null);
-            _playerRegistry = ResourceLocator._instance.Resolve<IPlayerRegistry<PlayerRoot>>();
+            _playerRegistry = ResourceLocator._instance.Resolve<IPlayerRegistry<Player>>();
             _timeService = ResourceLocator._instance.Resolve<ITimeService>();
         }
 

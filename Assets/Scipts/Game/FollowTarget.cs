@@ -1,6 +1,6 @@
 using UnityEngine;
 
-using BareBones.Common.Behaviours;
+using BareBones.Common;
 
 namespace BareBones.Game
 {

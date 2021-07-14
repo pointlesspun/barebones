@@ -1,6 +1,8 @@
 using UnityEngine;
 
-namespace BareBones.Common.Messages
+using BareBones.Common;
+
+namespace BareBones.Services.Messages
 {
     public class MessageBusBehaviour : MonoBehaviour
     {
