@@ -9,7 +9,7 @@ namespace BareBones.Game
 
         private Rigidbody _body;
 
-        void Start()
+        public void OnEnable()
         {
             _body = gameObject.GetComponent<Rigidbody>();
 
@@ -18,7 +18,7 @@ namespace BareBones.Game
             _body.velocity = gameObject.transform.up * initialVelocity;
         }
 
-        private void Update()
+        public void Update()
         {
             _body.AddForce(gameObject.transform.up * force);
         }

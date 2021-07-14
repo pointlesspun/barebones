@@ -38,7 +38,7 @@ it requires the slotarray to work differently than it does now. I do want (event
 
 general clean up & unit test & documentation & publish
 	- [done] move code to services and add namespaces
-	- [bug] player bullets move erratically. prolly because of impacts with enemies before they were recycled. reset
+	- [done] fix for player bullets moving erratically over time. prolly because of impacts with enemies before they were recycled. reset
 	  movement direction, angular velocity on reset. 
 	- [clean up] Is ObjectPoolBehaviour used ??
 	- Replace all Linq references with Enumerations
@@ -47,4 +47,4 @@ general clean up & unit test & documentation & publish
 		- intentions
 		- high level operation
 		- services
-		- 
+	- add to github
