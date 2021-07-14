@@ -4,7 +4,8 @@
     "references": [
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner",
-        "BareBonesAssembly"
+        "BareBonesAssembly",
+        "Unity.InputSystem"
     ],
     "includePlatforms": [
         "Editor"

@@ -58,10 +58,12 @@ public class SlotArray<TData, TMetaData> : IEnumerable<TData> where TData : clas
 
         for (var i = 0; i < _slots.Length; i++)
         {
-            _slots[i]._next = -1;
-            _slots[i]._previous = -1;
+            _slots[i]._next = i + 1;
+            _slots[i]._previous = i-1;
             _slots[i]._data = default;
         }
+
+        _slots[_slots.Length - 1]._next = -1;
     }
 
     public int Assign(TData data)

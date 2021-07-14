@@ -31,7 +31,7 @@
 	- [done] update timers
 	- [done] test timer service
 	- [done] check player registry
-	- add tests for enumeration & clear on SlotArray
+	- [done] add tests for enumeration & clear on SlotArray
 
 adjust slotarray to allow for object pooling ?
 

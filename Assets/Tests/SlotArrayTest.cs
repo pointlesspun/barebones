@@ -229,11 +229,57 @@ public class SlotArrayTest
         ObtainAndReleaseAll<object>(new SlotArray<object, object>(objCount), Enumerations.CreateArray<object>(objCount), 1);
     }
 
+    
     [Test]
+    [Description("Monkey test, just obtain and release all at random multiple times and hope nothing breaks.")]
     public void TestObtainAndReleaseAllMultiple()
     {
+        // fix the random seed, in case something does break it helps reproducing the same test case
         Random.InitState(42);
         var objCount = 10;
         ObtainAndReleaseAll<object>(new SlotArray<object, object>(objCount), Enumerations.CreateArray<object>(objCount), 100);
+    }
+
+    [Test]
+    [Description("See if enumeration works as intended.")]
+    public void TestObtainAllAndEnumerate()
+    {
+        var objCount = 10;
+        var values = Enumerations.CreateArray<object>(10);
+        var array = new SlotArray<object, object>(objCount);
+
+        ObtainAll<object>(array, values);
+        
+        foreach (var obj in array)
+        {
+            Assert.IsTrue(values.Any(o => o == obj));
+        }
+    }
+
+    [Test]
+    [Description("All elements should be removed and available again.")]
+    public void TestObtainAllAndClear()
+    {
+        var objCount = 10;
+        var values = Enumerations.CreateArray<object>(10);
+        var array = new SlotArray<object, object>(objCount);
+
+        // repeat a couple of times
+        for (var j = 0; j < 3; j++)
+        {
+            ObtainAll<object>(array, values);
+
+            foreach (var obj in array)
+            {
+                Assert.IsTrue(values.Any(o => o == obj));
+            }
+
+            array.Clear();
+
+            for (var i = 0; i < array.Capacity; i++)
+            {
+                Assert.IsTrue(array[i] == null);
+            }
+        }
     }
 }
