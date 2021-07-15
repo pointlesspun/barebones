@@ -37,9 +37,9 @@ it requires the slotarray to work differently than it does now. I do want (event
 	  movement direction, angular velocity on reset. 
 	* [done] Is ObjectPoolBehaviour used ??
 	* [done] Update to latest unity version 
-	* Replace all Linq references with Enumerations
-	* Organize Scene hierarchy -> /Scene/... /System/...
-	* add document outlining
+	* [done] Replace all Linq references with Enumerations
+	* [done] Organize Scene hierarchy -> /Scene/... /System/...
+	* [done] add document outlining
 		* intentions
 		* high level operation
 		* services
