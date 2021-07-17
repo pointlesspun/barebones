@@ -67,5 +67,4 @@ namespace BareBones.Services.ObjectPool
             _available.Add(meta);
         }
     }
-
 }
