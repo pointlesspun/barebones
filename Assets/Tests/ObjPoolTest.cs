@@ -57,7 +57,7 @@ public class ObjPoolTest
 
         Assert.IsTrue(objPool.Available == 0);
 
-        Assert.True(objPool.GetVersion(result.handle) == 1);
+        Assert.True(objPool.GetVersion(result.handle) == 3);
         Assert.True(objPool.GetSlotHandle(result.handle) == 0);
         Assert.True(result.obj == obj);
     }
@@ -70,9 +70,9 @@ public class ObjPoolTest
         var objPool = new ObjPool<object>(obj);
 
         objPool.Obtain();
-        var illegalHandle = 1 << objPool.VersionShift;
+        var illegalHandle = 2 << objPool.VersionShift;
 
-        Assert.IsTrue(objPool.GetVersion(illegalHandle) == 1);
+        Assert.IsTrue(objPool.GetVersion(illegalHandle) == 2);
 
         LogAssert.Expect(UnityEngine.LogType.Error, new Regex(@"^ObjPool\.Release Fail.*$"));
         objPool.Release(illegalHandle);
@@ -124,6 +124,45 @@ public class ObjPoolTest
             Assert.IsTrue(buffer.Count == 0);
             Assert.IsTrue(objPool.Available == count);
         }
+    }
+
+    [Test]
+    [Description("Obtain all and test if clear works.")]
+    public void ClearTest()
+    {
+        var count = 20;
+        var objPool = new ObjPool<object>(count);
+
+        UnityEngine.Random.InitState(42);
+
+        for (var it = 0; it < 10; it++)
+        {
+            var obtainCount = UnityEngine.Random.Range(0, objPool.Available);
+            for (var i = 0; i < obtainCount; i++)
+            {
+                objPool.Obtain();
+            }
+
+            objPool.Clear();
+
+            Assert.IsTrue(objPool.Available == objPool.Capacity);
+        }
+    }
+
+    [Test]
+    [Description("Obtain and release with state=release to check the obj is not available immediately.")]
+    public void ReleaseWithReleasedStateTest()
+    {
+        var objPool = new ObjPool<object>(1);
+        var objTuple = objPool.Obtain();
+
+        objPool.Release(objTuple.handle, ObjectPoolState.Released);
+        Assert.IsTrue(objPool.Available == 0);
+        Assert.IsTrue(objPool.GetVersion(objTuple.handle) == 1);
+
+        objPool.Release(objTuple.handle);
+        Assert.IsTrue(objPool.Available == 1);
+        Assert.IsTrue(objPool.GetVersion(objPool.Obtain().handle) == 3);
     }
 
     [Test]
@@ -217,15 +256,14 @@ public class ObjPoolTest
             VersionShift = 8
         };
 
-        for (var it = 0; it < 256; it++)
+        for (var it = 0; it < 128; it++)
         {
             var (handle, obj) = objPool.Obtain();
             objPool.Release(handle);
-            Assert.IsTrue(it == objPool.GetVersion(handle));
+            Assert.IsTrue((it*2)+1 == objPool.GetVersion(handle));
         }
 
         var version = objPool.GetVersion((objPool.Obtain().handle));
-        Assert.IsTrue(version == 0);
+        Assert.IsTrue(version == 1);
     }
-
 }

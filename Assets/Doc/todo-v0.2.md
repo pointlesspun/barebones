@@ -3,8 +3,9 @@
 * [in progress] Rewrite ObjectPool as SlotArray (by simply inversing the use case)
     - [done] ... and tested
     - [done] check what happens if the version loops
-    - Test objPool clear
-    - Test release with state = released
+    - [done] Test objPool clear
+    - [done] Test release with state = released
+    - [done] Increase version both on obtain and release
     - Add sweep to objPool
     - add obj pool behaviour, add sweep
     - update collection 

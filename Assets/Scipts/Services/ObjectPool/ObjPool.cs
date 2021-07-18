@@ -76,13 +76,13 @@ namespace BareBones.Services.ObjectPool
             
             Debug.Assert(meta._state == ObjectPoolState.Available);
 
-            var result = (handle: poolId | (meta._version << VersionShift), 
-                            obj: _pool.Release(poolId));
+            meta._state = ObjectPoolState.InUse;
+            meta._version = (meta._version + 1) & VersionMask;
 
             //Debug.Log("obtained: " + poolId + "(" + _pool.GetSlot(poolId) + ") , version" + meta._version);
 
-            meta._state = ObjectPoolState.InUse;
-            return result;
+            return (handle: poolId | (meta._version << VersionShift), 
+                            obj: _pool.Release(poolId));
         }
 
         public void Clear()
@@ -109,8 +109,7 @@ namespace BareBones.Services.ObjectPool
 
             var meta = _pool.GetMetaData(poolId);
 
-            if (meta._version == GetVersion(handle)
-                && meta._state == ObjectPoolState.InUse)
+            if (meta._version == GetVersion(handle) && meta._state != ObjectPoolState.Available)
             {
                 if (state == ObjectPoolState.Available)
                 {
