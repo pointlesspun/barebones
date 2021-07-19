@@ -23,6 +23,7 @@ namespace BareBones.Services.ObjectPool
             public T _obj;
             public ObjectPoolState _state;
             public int _version;
+            public Action<T> _onRelease;
         }
 
         private SlotArray<T, ObjMetaData> _pool;
@@ -35,13 +36,18 @@ namespace BareBones.Services.ObjectPool
 
         public int Capacity => _pool.Capacity;
 
-        public ObjPool(int count) : this(count, (idx) => Activator.CreateInstance<T>())
+        public int PoolId { get; set; } = -1;
+        
+
+        public ObjPool(int count, int id = -1) : this(count, (idx) => Activator.CreateInstance<T>())
         {
+            PoolId = id;
         }
 
-        public ObjPool(int count, Func<int, T> factory)
+        public ObjPool(int count, Func<int, T> factory, Action<T> onRelease = null, int id = -1)
         {
             _pool = new SlotArray<T, ObjMetaData>(count, (idx) => new ObjMetaData());
+            PoolId = id;
 
             for (var i = 0; i < count; i++)
             {
@@ -50,6 +56,7 @@ namespace BareBones.Services.ObjectPool
                 meta._obj = _pool[slot];
                 meta._state = ObjectPoolState.Available;
                 meta._version = 0;
+                meta._onRelease = onRelease;
             }
         }
 
@@ -64,6 +71,32 @@ namespace BareBones.Services.ObjectPool
                 meta._obj = _pool[slot];
                 meta._state = ObjectPoolState.Available;
                 meta._version = 0;
+            }
+        }
+
+        public ObjectPoolState GetState(int handle)
+        {
+            return _pool.GetMetaData(GetSlotHandle(handle))._state;
+        }
+
+        public void Sweep(Func<T, bool> shouldRelease)
+        {
+            for (var i = _pool.FirstAvailable; i != -1; i = _pool.Next(i))
+            {
+                var meta = _pool.GetMetaData(i);
+
+                switch (meta._state)
+                {
+                    case ObjectPoolState.InUse:
+                        if (shouldRelease(meta._obj))
+                        {
+                            meta._state = ObjectPoolState.Released;
+                        }
+                        break;
+                    case ObjectPoolState.Released:
+                        Release(meta, i);
+                        break;
+                }
             }
         }
 
@@ -113,9 +146,7 @@ namespace BareBones.Services.ObjectPool
             {
                 if (state == ObjectPoolState.Available)
                 {
-                    meta._version = (meta._version + 1) & VersionMask;
-                    _pool.Assign(meta._obj, poolId);
-                    //Debug.Log("released: " + poolId + "(" + _pool.GetSlot(poolId) + "), version" + meta._version);
+                    Release(meta, poolId);
                 }
 
                 _pool.GetMetaData(poolId)._state = state;
@@ -125,6 +156,27 @@ namespace BareBones.Services.ObjectPool
                 Debug.LogError("ObjPool.Release Fail. PoolId: " + poolId + ", version (expected version: " + meta._version + " handle version:" + GetVersion(handle) +
                         ") or object state ( expected state: " + ObjectPoolState.Available + " actual state " + meta._state + " ) incorrect, object will not be released");
             }
+        }
+
+        public T GetManagedObject(int idx)
+        {
+            return _pool.GetMetaData(idx)._obj;
+        }
+
+
+        private void Release(ObjMetaData meta, int poolId)
+        {
+            meta._version = (meta._version + 1) & VersionMask;
+            meta._state = ObjectPoolState.Available;
+            
+            if (meta._onRelease != null)
+            {
+                meta._onRelease(meta._obj);
+            }
+
+            _pool.Assign(meta._obj, poolId);
+
+            //Debug.Log("released: " + poolId + "(" + _pool.GetSlot(poolId) + "), version" + meta._version);
         }
     }
 }

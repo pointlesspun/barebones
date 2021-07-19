@@ -35,6 +35,8 @@ namespace BareBones.Common
 
         public int First => _firstInUse;
 
+        public int FirstAvailable => _firstAvailable;
+
         public TData this[int idx] => _slots[idx]._data;
 
         public SlotArray(int capacity) : this(capacity, (idx) => default(TMetaData))

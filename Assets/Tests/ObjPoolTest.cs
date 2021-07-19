@@ -32,7 +32,7 @@ public class ObjPoolTest
 
         var result = objPool.Obtain();
 
-        Assert.True(objPool.GetVersion(result.handle) == 0);
+        Assert.True(objPool.GetVersion(result.handle) == 1);
         Assert.True(objPool.GetSlotHandle(result.handle) == 0);
         Assert.True(result.obj == obj);
 
@@ -196,7 +196,7 @@ public class ObjPoolTest
         gameObject.AddComponent<LinearMovement>();
         gameObject.AddComponent<FollowTarget>();
 
-        var objectCount = 10;
+        var objectCount = 20;
         var iterationCount = 250;
 
         var objPool = new ObjPool<GameObject>(objectCount, (idx) => GameObject.Instantiate(gameObject));
@@ -265,5 +265,40 @@ public class ObjPoolTest
 
         var version = objPool.GetVersion((objPool.Obtain().handle));
         Assert.IsTrue(version == 1);
+    }
+
+    [Test]
+    [Description("Check if sweep releases up objects in stages .")]
+    public void SweepTest()
+    {
+        var objPool = new ObjPool<GameObject>(2, (idx) =>
+        {
+            var result = new GameObject();
+            result.SetActive(true);
+            return result;
+        });
+
+        var obj1Ref = objPool.Obtain();
+        var obj2Ref = objPool.Obtain();
+
+        objPool.Sweep((g) => !g.activeSelf);
+
+        Assert.IsTrue(objPool.Available == 0);
+        Assert.IsTrue(objPool.GetState(obj1Ref.handle) == ObjectPoolState.InUse);
+        Assert.IsTrue(objPool.GetState(obj2Ref.handle) == ObjectPoolState.InUse);
+
+        obj1Ref.obj.SetActive(false);
+
+        objPool.Sweep((g) => !g.activeSelf);
+
+        Assert.IsTrue(objPool.Available == 0);
+        Assert.IsTrue(objPool.GetState(obj1Ref.handle) == ObjectPoolState.Released);
+        Assert.IsTrue(objPool.GetState(obj2Ref.handle) == ObjectPoolState.InUse);
+
+        objPool.Sweep((g) => !g.activeSelf);
+
+        Assert.IsTrue(objPool.Available == 1);
+        Assert.IsTrue(objPool.GetState(obj1Ref.handle) == ObjectPoolState.Available);
+        Assert.IsTrue(objPool.GetState(obj2Ref.handle) == ObjectPoolState.InUse);
     }
 }

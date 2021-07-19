@@ -134,5 +134,4 @@ namespace BareBones.Services.ObjectPool
             return new ObjectPool((int)config.preferredId, config.size, config.prefab, poolObject);
         }
     }
-
 }

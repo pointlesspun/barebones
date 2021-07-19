@@ -6,9 +6,18 @@
     - [done] Test objPool clear
     - [done] Test release with state = released
     - [done] Increase version both on obtain and release
-    - Add sweep to objPool
-    - add obj pool behaviour, add sweep
-    - update collection 
+    - [done] Add sweep to objPool
+    - [done] add obj pool behaviour, add sweep
+    - [done] update collection 
+    - [done] complete awake test
+    - [done] test obtain
+    - [done] test sweep
+    - Implement a scene demonstrating the object pool
+        - have three object pools
+        - spawn randomly objects from the pool
+        - deactivate objects after some time, letting sweep put them back into the pool
+    - Replace old object pool
+        
 * Add Score
 * Add title screen 
 * Use correct button to join on game pad
