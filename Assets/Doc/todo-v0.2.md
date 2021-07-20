@@ -12,11 +12,12 @@
     - [done] complete awake test
     - [done] test obtain
     - [done] test sweep
-    - Implement a scene demonstrating the object pool
+    - [done] Implement a scene demonstrating the object pool
         - have three object pools
         - spawn randomly objects from the pool
         - deactivate objects after some time, letting sweep put them back into the pool
-    - Replace old object pool
+    - [in-progress] Replace old object pool
+    - Document obj pool demo
         
 * Add Score
 * Add title screen 

@@ -21,7 +21,7 @@ namespace BareBones.Services.ObjectPool
 
         void RemovePool(int poolId, bool destroyGameObjects = true);
 
-        PoolObjectHandle? Obtain(int poolId);
+        PoolObjectHandle? Obtain(int poolIdx);
 
         void Release(in PoolObjectHandle handle);
     }

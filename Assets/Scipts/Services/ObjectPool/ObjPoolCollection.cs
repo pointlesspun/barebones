@@ -17,6 +17,8 @@ namespace BareBones.Services.ObjectPool
 
         public bool _sweep = true;
 
+        public bool _addDebugNamesToPool = false;
+
         private List<ObjPool<GameObject>> _poolCollection;
 
         private Dictionary<int, GameObject> _poolParents;
@@ -39,6 +41,8 @@ namespace BareBones.Services.ObjectPool
             }
             else
             {
+                locator.Register<IObjPoolCollection>(this);
+
                 if (_poolCollection == null)
                 {
                     _poolCollection = new List<ObjPool<GameObject>>();
@@ -47,16 +51,14 @@ namespace BareBones.Services.ObjectPool
                     if (poolCollectionConfig.Length > 0)
                     {
                         poolCollectionConfig.ForEach(config =>
-                           AddPool(config.name, (int)config.preferredId, config.size, config.prefab, false));
+                           AddPool(config.name, MapId(config.preferredId), config.size, config.prefab, false));
                         _poolCollection.OrderBy(p => p.PoolId);
                     }
                     else
                     {
                         Debug.LogWarning("No custom PoolCollection Configuration defined.");
                     }
-                }
-
-                locator.Register<IObjPoolCollection>(this);
+                }              
             }
         }
 
@@ -76,9 +78,9 @@ namespace BareBones.Services.ObjectPool
             }
         }
 
-        public PoolObjectHandle? Obtain(int poolId)
+        public PoolObjectHandle? Obtain(int poolIdx)
         {
-            var pool = _poolCollection[poolId];
+            var pool = _poolCollection[poolIdx];
             if (pool.Available > 0)
             {
                 var handleTuple = pool.Obtain();
@@ -89,11 +91,11 @@ namespace BareBones.Services.ObjectPool
                 {
                     gameObject = handleTuple.obj,
                     objectHandle = handleTuple.handle,
-                    poolId = poolId
+                    poolId = poolIdx
                 };
             }
 
-            Debug.LogWarning("pool " + poolId + ", has run empty.");
+            Debug.LogWarning("pool " + poolIdx + ", has run empty.");
 
             return null;
         }
@@ -212,6 +214,11 @@ namespace BareBones.Services.ObjectPool
             poolObject.transform.parent = transform;
             poolObject.name = name;
 
+            if (_addDebugNamesToPool)
+            {
+                poolObject.AddComponent<ChildCountDebug>();
+            }
+
             return new ObjPool<GameObject>(
                 size, (idx) =>
                 {
@@ -232,6 +239,23 @@ namespace BareBones.Services.ObjectPool
                 },
                 id
             );
+        }
+
+        private int MapId(PoolIdEnum id)
+        {
+            if (id < PoolIdEnum.AutoIndex)
+            {
+                return (int)id;
+            }
+
+            var idx = (int)PoolIdEnum.AutoIndex;
+
+            while (_poolCollection.Any( pool => pool.PoolId == idx))
+            {
+                idx++;
+            }
+
+            return idx;
         }
     }
 }

@@ -81,9 +81,10 @@ namespace BareBones.Services.ObjectPool
 
         public void Sweep(Func<T, bool> shouldRelease)
         {
-            for (var i = _pool.FirstAvailable; i != -1; i = _pool.Next(i))
+            for (var i = _pool.FirstAvailable; i != -1;)
             {
-                var meta = _pool.GetMetaData(i);
+                var meta = _pool.GetMetaData(i);                
+                var next = _pool.Next(i);
 
                 switch (meta._state)
                 {
@@ -97,6 +98,8 @@ namespace BareBones.Services.ObjectPool
                         Release(meta, i);
                         break;
                 }
+
+                i = next;
             }
         }
 
