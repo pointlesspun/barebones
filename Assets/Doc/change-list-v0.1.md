@@ -1,4 +1,4 @@
-﻿# To-do list v1.0
+﻿# Change List v0.1
 
 * [done] Finish Timerservice - add behaviour
 * [done] Scenelogic - add time out
@@ -43,4 +43,4 @@ it requires the slotarray to work differently than it does now. I do want (event
 		* intentions
 		* high level operation
 		* services
-	* add to github
+	* [done]add to github

@@ -1,32 +1,18 @@
 using UnityEngine;
 
-using BareBones.Services.ObjectPool;
-
 namespace BareBones.Game
 {
     public class KillBox : MonoBehaviour
     {
         public Bounds killBoxDimensions;
 
-        private PoolObject _metaInformation;
-
-        private void Start()
-        {
-            _metaInformation = GetComponent<PoolObject>();
-        }
-
         void Update()
         {
             if (!killBoxDimensions.Contains(gameObject.transform.position))
             {
-                if (_metaInformation != null)
-                {
-                    _metaInformation.Release();
-                }
-                else
-                {
-                    Destroy(gameObject);
-                }
+                // xxx assumption here is this object is pooled and will be cleaned up 
+                // the objectpool's sweep
+                gameObject.SetActive(false);
             }
         }
 

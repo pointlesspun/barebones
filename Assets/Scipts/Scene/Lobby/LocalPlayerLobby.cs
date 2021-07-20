@@ -34,10 +34,10 @@ namespace BareBones.Scene.Lobby
             public string parentString;
 
             public string[] joinActionPaths = new string[] {
-        "<Gamepad>/buttonSouth",
-        "<Mouse>/leftButton",
-        "<Keyboard>/space"
-    };
+                "<Gamepad>/buttonSouth",
+                "<Mouse>/leftButton",
+                "<Keyboard>/space"
+            };
 
             private InputAction _action;
 
@@ -45,14 +45,12 @@ namespace BareBones.Scene.Lobby
 
             private IMessageBus _messageBus;
             private int _listenerHandle;
-
             private IObjectPoolCollection _pool;
 
             public void Start()
             {
                 _registry = ResourceLocator._instance.Resolve<IPlayerRegistry<Player>>();
                 _pool = ResourceLocator._instance.Resolve<IObjectPoolCollection>();
-
                 _action = new InputAction();
 
                 foreach (var path in joinActionPaths)
@@ -90,8 +88,6 @@ namespace BareBones.Scene.Lobby
                     && !HasPlayerRegistered(context.action.activeControl.device))
                 {
                     var newPlayerRoot = RegisterPlayer(context.control.device);
-
-                    //_registry.RegisterPlayer(newPlayerRoot);
 
                     switch (playerParentTransform)
                     {
@@ -179,7 +175,8 @@ namespace BareBones.Scene.Lobby
                     playerRoot._input.user.UnpairDevices();
                     _registry.DeregisterPlayer(registryIdx);
 
-                    ((GameObject)message.sender).GetComponent<PoolObject>().Release();
+                    // xxx obj pool collection will clean this up
+                    playerRoot.gameObject.SetActive(false);
                 }
             }
 
@@ -187,8 +184,8 @@ namespace BareBones.Scene.Lobby
             {
                 var (devices, controlScheme, deviceIds) = CreateInputConfiguration(device);
 
-                var poolObject = _pool.Obtain((int)PoolIdEnum.Players);
-
+                var poolObjectHandle = _pool.Obtain((int)PoolIdEnum.Players);
+                var poolObject = poolObjectHandle.Value.gameObject;
                 var root = poolObject.GetComponent<Player>();
                 var input = poolObject.GetComponent<PlayerInput>();
                 var id = _registry.RegisterPlayer(root);

@@ -2,7 +2,6 @@ using UnityEngine;
 
 using BareBones.Common;
 using BareBones.Services.Messages;
-using BareBones.Services.ObjectPool;
 
 namespace BareBones.Game
 {
@@ -14,10 +13,6 @@ namespace BareBones.Game
 
         public bool isInvulnerable = false;
 
-        public bool deferDestruction = false;
-
-        private PoolObject _meta;
-
         private IMessageBus _messageBus;
 
         void OnEnable()
@@ -28,7 +23,6 @@ namespace BareBones.Game
         void Start()
         {
             _messageBus = ResourceLocator._instance.Resolve<IMessageBus>();
-            _meta = GetComponent<PoolObject>();
         }
 
         public void OnHit(float damage)
@@ -41,14 +35,9 @@ namespace BareBones.Game
                 {
                     _messageBus.Send(MessageTopics.Entity, MessageIds.EntityDestroyed, gameObject, null);
 
-                    if (_meta != null)
-                    {
-                        _meta.Release();
-                    }
-                    else if (!deferDestruction)
-                    {
-                        Destroy(gameObject);
-                    }
+                    // xxx assumption here is this object is pooled and will be cleaned up 
+                    // the objectpool's sweep
+                    gameObject.SetActive(false);
                 }
             }
         }

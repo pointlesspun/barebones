@@ -52,12 +52,17 @@ namespace BareBones.Services.PlayerRegistry
 
             for (var i = 0; i < initialActivePlayers; i++)
             {
-                var playerPoolObject = _objectPool.Obtain((int)PoolIdEnum.Players);
-                var rootId = _registry.RegisterPlayer(playerPoolObject.GetComponent<Player>());
-                var root = _registry[rootId];
+                var playerHandle = _objectPool.Obtain((int)PoolIdEnum.Players);
 
-                root._deviceIds = CaptureDeviceIds(i);
-                playerPoolObject.gameObject.ActivateHierarchyTree(true);
+                if (playerHandle.HasValue)
+                {
+                    var playerObject = playerHandle.Value.gameObject;
+                    var rootId = _registry.RegisterPlayer(playerObject.GetComponent<Player>());
+                    var root = _registry[rootId];
+
+                    root._deviceIds = CaptureDeviceIds(i);
+                    playerObject.ActivateHierarchyTree(true);
+                }
             }
         }
 

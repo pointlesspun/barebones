@@ -9,12 +9,17 @@ namespace BareBones.Common
     [Serializable]
     public class SlotArray<TData, TMetaData> : IEnumerable<TData> where TData : class
     {
-        private class Slot
+        public class Slot
         {
             public TMetaData _metaData;
             public TData _data;
             public int _next = -1;
             public int _previous = -1;
+
+            public override string ToString()
+            {
+                return _previous + " <- " + _data + " -> " + _next;
+            }
         }
 
         private Slot[] _slots;
@@ -29,6 +34,8 @@ namespace BareBones.Common
         public int Count => _slots.Length - Available;
 
         public int First => _firstInUse;
+
+        public int FirstAvailable => _firstAvailable;
 
         public TData this[int idx] => _slots[idx]._data;
 
@@ -71,37 +78,55 @@ namespace BareBones.Common
 
         public int Assign(TData data)
         {
-            if (_available > 0)
-            {
-                var slotIdx = _firstAvailable;
-                var slot = _slots[slotIdx];
+            return _available > 0
+                ? Assign(data, _firstAvailable)
+                : -1;
+        }
 
+        public int Assign(TData data, int slotIdx)
+        {
+            Debug.Assert(slotIdx >= 0 && slotIdx < _slots.Length);
+            Debug.Assert(!IsInUse(slotIdx));
+
+            var slot = _slots[slotIdx];
+
+            if (slotIdx == _firstAvailable)
+            {
                 _firstAvailable = slot._next;
 
                 if (_firstAvailable != -1)
                 {
                     _slots[_firstAvailable]._previous = -1;
                 }
-
-                slot._data = data;
-                slot._next = _firstInUse;
-
-                if (slot._next != -1)
-                {
-                    _slots[slot._next]._previous = slotIdx;
-                }
-
-                _firstInUse = slotIdx;
-
-                _available--;
-
-                return slotIdx;
             }
 
-            return -1;
+            if (slot._next != -1)
+            {
+                _slots[slot._next]._previous = slot._previous;
+            }
+
+            if (slot._previous != -1)
+            {
+                _slots[slot._previous]._next = slot._next;
+            }
+
+            slot._data = data;
+            slot._next = _firstInUse;
+            slot._previous = -1;
+
+            if (_firstInUse != -1)
+            {
+                _slots[_firstInUse]._previous = slotIdx;
+            }
+
+            _firstInUse = slotIdx;
+
+            _available--;
+
+            return slotIdx;
         }
 
-        public void Release(int handle)
+        public TData Release(int handle)
         {
             Debug.Assert(handle >= 0 && handle < _slots.Length);
             Debug.Assert(_slots[handle] != null);
@@ -128,6 +153,8 @@ namespace BareBones.Common
                 _slots[_firstAvailable]._previous = handle;
             }
 
+            var result = slot._data;
+
             slot._next = _firstAvailable;
             slot._previous = -1;
             slot._data = default;
@@ -135,6 +162,8 @@ namespace BareBones.Common
             _firstAvailable = handle;
 
             _available++;
+
+            return result;
         }
 
         public IEnumerator<TData> GetEnumerator()
@@ -151,9 +180,27 @@ namespace BareBones.Common
 
         public TMetaData GetMetaData(int idx) => _slots[idx]._metaData;
 
+        public Slot GetSlot(int idx) => _slots[idx];
+
         public int Next(int idx) => _slots[idx]._next;
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+        public bool IsInUse(int idx)
+        {
+            if (idx >= 0 && idx < _slots.Length)
+            {
+                var i = _firstInUse;
+
+                while (i != -1 && i != idx)
+                {
+                    i = _slots[i]._next;
+                }
+                return i == idx;
+            }
+
+            return false;
+        }
     }
 
     public static class SlotArrayExtensions

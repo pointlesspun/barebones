@@ -282,4 +282,29 @@ public class SlotArrayTest
             }
         }
     }
+
+    [Test]
+    [Description("Function should show which slots are in use.")]
+    public void IsInUseTest()
+    {
+        var objCount = 5;
+        var values = Enumerations.CreateArray<object>(objCount);
+        var array = new SlotArray<object, object>(objCount);
+
+        ObtainAll<object>(array, values);
+
+        for (var i = 0; i < objCount; i++)
+        {
+            Assert.IsTrue(array.IsInUse(i));
+        }
+
+        array.Release(1);
+        array.Release(3);
+
+        Assert.IsTrue(array.IsInUse(0));
+        Assert.IsFalse(array.IsInUse(1));
+        Assert.IsTrue(array.IsInUse(2));
+        Assert.IsFalse(array.IsInUse(3));
+        Assert.IsTrue(array.IsInUse(4));
+    }
 }

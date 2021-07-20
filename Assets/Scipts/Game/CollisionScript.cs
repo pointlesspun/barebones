@@ -1,6 +1,6 @@
-using UnityEngine;
+using System;
 
-using BareBones.Services.ObjectPool;
+using UnityEngine;
 
 namespace BareBones.Game
 {
@@ -8,7 +8,7 @@ namespace BareBones.Game
     {
         public float damage;
 
-        public bool destroyOnImpact = true;
+        public OnEndOfLifeAction _onImpactAction = OnEndOfLifeAction.None;
 
         public float bounceReverseForce = 0;
         public float impactCooldown = 0.0f;
@@ -18,12 +18,10 @@ namespace BareBones.Game
         private float _lastImpact = float.MinValue;
 
         private Rigidbody _body;
-        private PoolObject _meta;
 
         public void Start()
         {
             _body = GetComponent<Rigidbody>();
-            _meta = GetComponent<PoolObject>();
         }
 
         void OnCollisionEnter(Collision collision)
@@ -37,15 +35,21 @@ namespace BareBones.Game
                     hitpointsOther.OnHit(damage);
                 }
 
-                if (destroyOnImpact)
+                if (_onImpactAction != OnEndOfLifeAction.None)
                 {
-                    if (_meta != null)
+                    switch (_onImpactAction)
                     {
-                        _meta.Release();
-                    }
-                    else
-                    {
-                        Destroy(gameObject);
+                        case OnEndOfLifeAction.Disable:
+                            // xxx assumption here is this object is pooled and will be cleaned up 
+                            // the objectpool's sweep
+                            gameObject.SetActive(false);
+                            break;
+                        case OnEndOfLifeAction.Destroy:
+                            GameObject.Destroy(gameObject);
+                            break;
+                        case OnEndOfLifeAction.Release:
+                        default:
+                            throw new NotImplementedException();
                     }
                 }
                 else if (bounceReverseForce > 0 && _body != null)

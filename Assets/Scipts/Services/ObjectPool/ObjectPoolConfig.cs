@@ -10,6 +10,6 @@ namespace BareBones.Services.ObjectPool
         public string name;
         public int size;
         public GameObject prefab;
-        public PoolIdEnum preferredId = PoolIdEnum.Other;
+        public PoolIdEnum preferredId = PoolIdEnum.AutoIndex;
     }
 }
