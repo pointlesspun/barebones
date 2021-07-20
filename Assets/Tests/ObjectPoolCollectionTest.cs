@@ -12,11 +12,11 @@ using BareBones.Services.ObjectPool;
 
 public class ObjectPoolCollectionTest
 {
-    private ObjPoolCollection CreatePoolCollection(int collectionCount, int poolSize, string prefabName = "pooled prefab")
+    private ObjectPoolCollection CreatePoolCollection(int collectionCount, int poolSize, string prefabName = "pooled prefab")
     {
         var obj = new GameObject();
 
-        var collectionBehaviour = obj.AddComponent<ObjPoolCollection>();
+        var collectionBehaviour = obj.AddComponent<ObjectPoolCollection>();
         var maxId = Enum.GetValues(typeof(PoolIdEnum)).Length;
 
         collectionBehaviour.poolCollectionConfig = new ObjectPoolConfig[collectionCount];
@@ -44,7 +44,7 @@ public class ObjectPoolCollectionTest
     public void AwakeTest()
     {
         var locator = ResourceLocator._instance;
-        ObjPoolCollection behaviour = null;
+        ObjectPoolCollection behaviour = null;
 
         try
         {
@@ -54,7 +54,7 @@ public class ObjectPoolCollectionTest
             behaviour.Awake();
 
 #pragma warning disable CS0252
-            Assert.IsTrue(locator.Resolve<IObjPoolCollection>() == behaviour);
+            Assert.IsTrue(locator.Resolve<IObjectPoolCollection>() == behaviour);
 #pragma warning restore CS0252
 
             Assert.IsTrue(behaviour.PoolCount == 1);
@@ -73,7 +73,7 @@ public class ObjectPoolCollectionTest
         finally {
             if (behaviour != null)
             {
-                locator.Deregister<IObjPoolCollection>(behaviour);
+                locator.Deregister<IObjectPoolCollection>(behaviour);
             }
         }
 
@@ -84,7 +84,7 @@ public class ObjectPoolCollectionTest
     public void ObtainAndReleaseTest()
     {
         var locator = ResourceLocator._instance;
-        ObjPoolCollection collection = null;
+        ObjectPoolCollection collection = null;
 
         try
         {
@@ -118,7 +118,7 @@ public class ObjectPoolCollectionTest
         {
             if (collection != null)
             {
-                locator.Deregister<IObjPoolCollection>(collection);
+                locator.Deregister<IObjectPoolCollection>(collection);
             }
         }
     }
@@ -128,7 +128,7 @@ public class ObjectPoolCollectionTest
     public void RemovePoolTest()
     {
         var locator = ResourceLocator._instance;
-        ObjPoolCollection collection = null;
+        ObjectPoolCollection collection = null;
 
         try
         {
@@ -151,7 +151,7 @@ public class ObjectPoolCollectionTest
         {
             if (collection != null)
             {
-                locator.Deregister<IObjPoolCollection>(collection);
+                locator.Deregister<IObjectPoolCollection>(collection);
             }
         }
     }
@@ -161,7 +161,7 @@ public class ObjectPoolCollectionTest
     public void RemovePoolWithoutDestroyingGameObjectsTest()
     {
         var locator = ResourceLocator._instance;
-        ObjPoolCollection collection = null;
+        ObjectPoolCollection collection = null;
 
         try
         {
@@ -184,7 +184,7 @@ public class ObjectPoolCollectionTest
         {
             if (collection != null)
             {
-                locator.Deregister<IObjPoolCollection>(collection);
+                locator.Deregister<IObjectPoolCollection>(collection);
             }
         }
     }
@@ -194,7 +194,7 @@ public class ObjectPoolCollectionTest
     public void AddDuplicateIdTest()
     {
         var locator = ResourceLocator._instance;
-        ObjPoolCollection collection = null;
+        ObjectPoolCollection collection = null;
 
         try
         {
@@ -213,7 +213,7 @@ public class ObjectPoolCollectionTest
         {
             if (collection != null)
             {
-                locator.Deregister<IObjPoolCollection>(collection);
+                locator.Deregister<IObjectPoolCollection>(collection);
             }
         }
     }
@@ -223,7 +223,7 @@ public class ObjectPoolCollectionTest
     public void UpdateAndSweepTest()
     {
         var locator = ResourceLocator._instance;
-        ObjPoolCollection collection = null;
+        ObjectPoolCollection collection = null;
 
         try
         {
@@ -260,7 +260,7 @@ public class ObjectPoolCollectionTest
         {
             if (collection != null)
             {
-                locator.Deregister<IObjPoolCollection>(collection);
+                locator.Deregister<IObjectPoolCollection>(collection);
             }
         }
     }

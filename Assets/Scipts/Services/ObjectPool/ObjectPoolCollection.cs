@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿
+using System.Collections.Generic;
 
 using UnityEngine;
 
@@ -10,9 +11,17 @@ namespace BareBones.Services.ObjectPool
     {
         public ObjectPoolConfig[] poolCollectionConfig;
 
-        public ObjectPool this[int index] => _poolCollection[index];
+        public int PoolCount => _poolCollection.Count;
 
-        private List<ObjectPool> _poolCollection;
+        public ObjectPool<GameObject> this[int index] => _poolCollection[index];
+
+        public bool _sweep = true;
+
+        public bool _addDebugNamesToPool = false;
+
+        private List<ObjectPool<GameObject>> _poolCollection;
+
+        private Dictionary<int, GameObject> _poolParents;
 
         public void Awake()
         {
@@ -26,62 +35,81 @@ namespace BareBones.Services.ObjectPool
 #pragma warning restore CS0252
                 {
                     // merge this config with the existing one
-                    other.Add(poolCollectionConfig);
+                    poolCollectionConfig.ForEach(config =>
+                           other.AddPool(config.name, MapId(config.preferredId), config.size, config.prefab));
+
                     Destroy(gameObject);
                 }
             }
             else
             {
+                locator.Register<IObjectPoolCollection>(this);
+
                 if (_poolCollection == null)
                 {
-                    _poolCollection = new List<ObjectPool>();
+                    _poolCollection = new List<ObjectPool<GameObject>>();
+                    _poolParents = new Dictionary<int, GameObject>();
 
                     if (poolCollectionConfig.Length > 0)
                     {
-                        poolCollectionConfig.OrderBy(p => (int)p.preferredId);
-                        Add(poolCollectionConfig);
+                        poolCollectionConfig.ForEach(config =>
+                           AddPool(config.name, MapId(config.preferredId), config.size, config.prefab, false));
+                        _poolCollection.OrderBy(p => p.PoolId);
                     }
                     else
                     {
                         Debug.LogWarning("No custom PoolCollection Configuration defined.");
                     }
-                }
-
-                locator.Register<IObjectPoolCollection>(this);
+                }              
             }
         }
 
-        public PoolObject Obtain(int poolId)
+        public void Update()
         {
-            return _poolCollection[poolId].Obtain();
-        }
-
-        public PoolObject Obtain(int poolId, Transform transform, in Vector3 localStartPosition, in Quaternion rotation)
-        {
-            var result = _poolCollection[poolId].Obtain();
-
-            if (result != null)
+            if (_sweep)
             {
-                if (transform != null)
+                for (var i = 0; i < _poolCollection.Count; i++)
                 {
-                    result.gameObject.transform.parent = transform;
-                }
-                result.gameObject.transform.localPosition = localStartPosition;
-                result.gameObject.transform.rotation = rotation;
-            }
-            else
-            {
-                Debug.LogWarning("pool " + poolId + ", has run empty.");
-            }
+                    var pool = _poolCollection[i];
 
-            return result;
+                    if (pool.Available < pool.Capacity)
+                    {
+                        pool.Sweep((obj) => !obj.activeInHierarchy);
+                    }
+                }
+            }
         }
 
-        public void Release(PoolObject meta)
+        public PoolObjectHandle? Obtain(int poolIdx)
         {
-            var pool = _poolCollection[meta.poolId];
-            pool.Release(meta);
-            meta.gameObject.transform.parent = pool.ParentObject.transform;
+            var pool = _poolCollection[poolIdx];
+            if (pool.Available > 0)
+            {
+                var handleTuple = pool.Obtain();
+
+                handleTuple.obj.SetActive(true);
+
+                return new PoolObjectHandle()
+                {
+                    gameObject = handleTuple.obj,
+                    objectHandle = handleTuple.handle,
+                    poolId = poolIdx
+                };
+            }
+
+            Debug.LogWarning("pool " + poolIdx + ", has run empty.");
+
+            return null;
+        }
+
+        public void Release(in PoolObjectHandle handle)
+        {
+            _poolCollection[handle.poolId].Release(handle.objectHandle);
+        }
+
+        public int GetAvailable(int poolId)
+        {
+            return _poolCollection[poolId].Available;
         }
 
         public void OnDestroy()
@@ -92,46 +120,149 @@ namespace BareBones.Services.ObjectPool
             }
         }
 
-        public void Add(ObjectPoolConfig[] config)
+        public void RemovePool(int poolId, bool destroyGameObjects = true)
         {
-            for (var i = 0; i < config.Length; i++)
+            var pool = _poolCollection[poolId];
+            var poolParent = _poolParents[poolId];
+
+            if (destroyGameObjects)
             {
-                if (config[i].size > 0)
+                for (var i = 0; i < pool.Capacity; i++)
                 {
-                    if (config[i].prefab != null)
+                    var obj = pool.GetManagedObject(i);
+
+                    if (obj != null)
                     {
-                        if (_poolCollection.FindIndex(0, pool => pool.Id == (int)config[i].preferredId) >= 0)
+                        if (Application.isPlaying)
                         {
-                            Debug.LogWarning("Pool collection already contains objects for pool id: " + config[i].preferredId);
-                            Debug.LogWarning("New pool will be ignored.");
+                            GameObject.Destroy(obj);
                         }
-                        else
+                        else 
                         {
-                            _poolCollection.Add(CreateObjectPool(config[i]));
+                            GameObject.DestroyImmediate(obj);
                         }
+                    }
+                }
+
+                if (poolParent != null)
+                {
+                    if (Application.isPlaying)
+                    {
+                        GameObject.Destroy(poolParent);
                     }
                     else
                     {
-                        Debug.LogError("Pool " + i + ": has a null prefab.");
+                        GameObject.DestroyImmediate(poolParent);
+                    }
+                }
+
+                pool.Clear();
+            }
+            else
+            {
+                if (poolParent != null)
+                {
+                    poolParent.transform.parent = null;
+                }
+            }
+
+            _poolParents.Remove(poolId);
+            _poolCollection.RemoveAt(poolId);
+        }
+
+        public void AddPool(string name, int id, int size, GameObject prefab)
+        {
+            AddPool(name, id, size, prefab, true);
+        }
+
+        public void AddPool(string name, int id, int size, GameObject prefab, bool sortCollectionById)
+        {
+            if (size > 0)
+            {
+                if (prefab != null)
+                {
+                    if (_poolCollection.FindIndex(pool => pool != null && pool.PoolId == id) >= 0)
+                    {
+                        Debug.LogWarning("Duplicate Id: Pool collection already contains objects for pool id: " + id);
+                        Debug.LogWarning("New pool will be ignored.");
+                    }
+                    else
+                    {
+                        _poolCollection.Add(CreateObjectPool(name, id, size, prefab));
                     }
                 }
                 else
                 {
-                    Debug.LogError("Pool " + i + ": has size " + config[i].size + ".");
+                    Debug.LogError("Pool " + id + ": has a null prefab.");
                 }
             }
+            else
+            {
+                Debug.LogError("Pool " + id + ": has size " + size + ".");
+            }
 
-            _poolCollection.Sort((a, b) => a.Id.CompareTo(b.Id));
+            if (sortCollectionById)
+            {
+                _poolCollection.OrderBy((p) => p.PoolId);
+            }
         }
 
-        private ObjectPool CreateObjectPool(ObjectPoolConfig config)
+        public bool IsInUse(in PoolObjectHandle handle)
+        {
+            return _poolCollection[handle.poolId].IsInUse(handle.objectHandle);
+        }
+
+        private ObjectPool<GameObject> CreateObjectPool(string name, int id, int size, GameObject prefab)
         {
             var poolObject = new GameObject();
 
-            poolObject.transform.parent = transform;
-            poolObject.name = config.name;
+            _poolParents[id] = poolObject;
 
-            return new ObjectPool((int)config.preferredId, config.size, config.prefab, poolObject);
+            poolObject.transform.parent = transform;
+            poolObject.name = name;
+
+            if (_addDebugNamesToPool)
+            {
+                poolObject.AddComponent<ChildCountDebug>();
+            }
+
+            return new ObjectPool<GameObject>(
+                size, (idx) =>
+                {
+                    var result = GameObject.Instantiate(prefab);
+                    result.transform.parent = poolObject.transform;
+                    result.SetActive(false);
+                    result.name = prefab.name + "-" + idx;
+                    return result;
+                },
+                (obj) => {
+                    
+                    if (obj.activeInHierarchy)
+                    {
+                        obj.SetActive(false);
+                    }
+
+                    obj.transform.parent = poolObject.transform;
+                },
+                id
+            );
+        }
+
+        private int MapId(PoolIdEnum id)
+        {
+            if (id < PoolIdEnum.AutoIndex)
+            {
+                return (int)id;
+            }
+
+            var idx = (int)PoolIdEnum.AutoIndex;
+
+            while (_poolCollection.Any( pool => pool.PoolId == idx))
+            {
+                idx++;
+            }
+
+            return idx;
         }
     }
 }

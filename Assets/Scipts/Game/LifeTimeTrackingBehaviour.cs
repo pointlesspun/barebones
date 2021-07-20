@@ -4,7 +4,7 @@ using UnityEngine;
 
 public enum OnEndOfLifeAction
 {
-    Nothing,
+    None,
     Disable,
     Destroy,
     Release
@@ -12,7 +12,7 @@ public enum OnEndOfLifeAction
 
 public class LifeTimeTrackingBehaviour : MonoBehaviour
 {
-    public OnEndOfLifeAction _actionAtEndOfLife = OnEndOfLifeAction.Nothing;
+    public OnEndOfLifeAction _actionAtEndOfLife = OnEndOfLifeAction.None;
 
     public float _minLifeTime = 1.0f;
     public float _maxLifeTime = 10.0f;
@@ -24,7 +24,7 @@ public class LifeTimeTrackingBehaviour : MonoBehaviour
 
     public bool HasExceededLifeTime => _startTime >= 0 && (Time.time - _startTime) > _lifeTime;
 
-    private IObjPoolCollection _pool;
+    private IObjectPoolCollection _pool;
 
     public void OnEnable()
     {
@@ -36,7 +36,7 @@ public class LifeTimeTrackingBehaviour : MonoBehaviour
 
         if (_pool == null)
         {
-            _pool = ResourceLocator._instance.Resolve<IObjPoolCollection>();
+            _pool = ResourceLocator._instance.Resolve<IObjectPoolCollection>();
         }
     }
 
@@ -46,7 +46,7 @@ public class LifeTimeTrackingBehaviour : MonoBehaviour
         {
             switch (_actionAtEndOfLife)
             {
-                case OnEndOfLifeAction.Nothing:
+                case OnEndOfLifeAction.None:
                     break;
                 case OnEndOfLifeAction.Disable:
                     gameObject.SetActive(false);

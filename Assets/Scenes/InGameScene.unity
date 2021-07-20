@@ -149,22 +149,24 @@ MonoBehaviour:
   m_GameObject: {fileID: 184122406}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1405537862889d44cb730f878b259431, type: 3}
+  m_Script: {fileID: 11500000, guid: 002d3cc80ce4c3c4ab73ec56a13136b5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   poolCollectionConfig:
-  - name: Player
+  - name: Players
     size: 3
     prefab: {fileID: 6088996382232634106, guid: b135444aff8d75f47bdba7a1a5752ab5, type: 3}
     preferredId: 0
   - name: PlayerBullets
-    size: 16
+    size: 64
     prefab: {fileID: 961087259538992065, guid: 6f6ec0647979a8645ba46389b61a761c, type: 3}
     preferredId: 1
   - name: Enemies
-    size: 16
+    size: 64
     prefab: {fileID: 7094439361023709064, guid: ececb53ba28b19e4c8dc7f80e830682e, type: 3}
     preferredId: 2
+  _sweep: 1
+  _addDebugNamesToPool: 0
 --- !u!4 &184122408
 Transform:
   m_ObjectHideFlags: 0

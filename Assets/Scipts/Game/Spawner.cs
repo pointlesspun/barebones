@@ -36,7 +36,7 @@ namespace BareBones.Game
         public float initialDelay = 0.0f;
 
         private int _current = 0;
-        private List<PoolObject> _aliveObjects = new List<PoolObject>();
+        private readonly List<PoolObjectHandle> _aliveObjects = new List<PoolObjectHandle>();
         private float _lastSpawnTime = -1.0f;
         private GameObject[] _activePlayers;
 
@@ -69,12 +69,11 @@ namespace BareBones.Game
 
         private void SpawnObject()
         {
-            var spawnedObject = _pool.Obtain((int)poolId);
+            var spawnedObjectHandle = _pool.Obtain((int)poolId);
 
-            if (spawnedObject != null)
+            if (spawnedObjectHandle.HasValue)
             {
-                // spawner will release the object to the pool
-                spawnedObject.deferRelease = true;
+                var spawnedObject = spawnedObjectHandle.Value.gameObject;
 
                 if (locationProviderComponent != null)
                 {
@@ -97,7 +96,7 @@ namespace BareBones.Game
                 _lastSpawnTime = Time.time;
 
                 _current++;
-                _aliveObjects.Add(spawnedObject);
+                _aliveObjects.Add(spawnedObjectHandle.Value);
 
                 if (max >= 0 && _current >= max)
                 {
@@ -115,12 +114,9 @@ namespace BareBones.Game
             var i = 0;
             while (i < _aliveObjects.Count)
             {
-                var meta = _aliveObjects[i];
-                if (meta.isReleased)
+                if (!_pool.IsInUse(_aliveObjects[i]))
                 {
                     _aliveObjects.RemoveAt(i);
-                    meta.deferRelease = false;
-                    meta.Release();
                 }
                 else
                 {

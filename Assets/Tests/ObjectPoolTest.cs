@@ -1,23 +1,23 @@
-﻿using System;
+﻿using System.Diagnostics;
+using System.Text.RegularExpressions;
+using System.Collections.Generic;
 
 using NUnit.Framework;
+
+using UnityEngine;
 using UnityEngine.TestTools;
 
 using BareBones.Services.ObjectPool;
-using System.Text.RegularExpressions;
-using System.Collections.Generic;
-using UnityEngine;
 using BareBones.Game;
-using System.Diagnostics;
 
-public class ObjPoolTest
+public class ObjectPoolTest
 {
     [Test]
     [Description("Trivial test to see if absolute minimum of functionalities, the constructor, works")]
     public void ConstructorTest()
     {
         var count = 3;
-        var objPool = new ObjPool<object>(count);
+        var objPool = new ObjectPool<object>(count);
 
         Assert.IsTrue(objPool.Available == count);
         Assert.IsTrue(objPool.Capacity == count);
@@ -28,7 +28,7 @@ public class ObjPoolTest
     public void ObtainSingleTest()
     {
         var obj = new object();
-        var objPool = new ObjPool<object>(obj);
+        var objPool = new ObjectPool<object>(obj);
 
         var result = objPool.Obtain();
 
@@ -45,7 +45,7 @@ public class ObjPoolTest
     public void ObtainAndReleaseSingleTest()
     {
         var obj = new object();
-        var objPool = new ObjPool<object>(obj);
+        var objPool = new ObjectPool<object>(obj);
 
         var result = objPool.Obtain();
 
@@ -67,7 +67,7 @@ public class ObjPoolTest
     public void ReleaseInvalidVersionTest()
     {
         var obj = new object();
-        var objPool = new ObjPool<object>(obj);
+        var objPool = new ObjectPool<object>(obj);
 
         objPool.Obtain();
         var illegalHandle = 2 << objPool.VersionShift;
@@ -79,7 +79,7 @@ public class ObjPoolTest
     }
 
 
-    private List<(int handle, T obj)> Obtain<T>(List<(int handle, T obj)> buffer, ObjPool<T> pool, int count) where T : class
+    private List<(int handle, T obj)> Obtain<T>(List<(int handle, T obj)> buffer, ObjectPool<T> pool, int count) where T : class
     {
         for (var i = 0; i < count && pool.Available > 0; i++)
         {
@@ -89,7 +89,7 @@ public class ObjPoolTest
         return buffer;
     }
 
-    private List<(int handle, T obj)> Release<T>(List<(int handle, T obj)> buffer, ObjPool<T> pool, int count) where T : class
+    private List<(int handle, T obj)> Release<T>(List<(int handle, T obj)> buffer, ObjectPool<T> pool, int count) where T : class
     {
         for (var i = 0; i < count && buffer.Count > 0; i++)
         {
@@ -107,7 +107,7 @@ public class ObjPoolTest
     public void ObtainAndReleaseAllTest()
     {
         var count = 20;
-        var objPool = new ObjPool<object>(count);
+        var objPool = new ObjectPool<object>(count);
         var buffer = new List<(int handle, object obj)>();
 
         UnityEngine.Random.InitState(42);
@@ -131,7 +131,7 @@ public class ObjPoolTest
     public void ClearTest()
     {
         var count = 20;
-        var objPool = new ObjPool<object>(count);
+        var objPool = new ObjectPool<object>(count);
 
         UnityEngine.Random.InitState(42);
 
@@ -153,7 +153,7 @@ public class ObjPoolTest
     [Description("Obtain and release with state=release to check the obj is not available immediately.")]
     public void ReleaseWithReleasedStateTest()
     {
-        var objPool = new ObjPool<object>(1);
+        var objPool = new ObjectPool<object>(1);
         var objTuple = objPool.Obtain();
 
         objPool.Release(objTuple.handle, ObjectPoolState.Released);
@@ -170,7 +170,7 @@ public class ObjPoolTest
     public void ObtainAndReleaseSomeTest()
     {
         var count = 120;
-        var objPool = new ObjPool<object>(count);
+        var objPool = new ObjectPool<object>(count);
         var buffer = new List<(int handle, object obj)>();
 
         UnityEngine.Random.InitState(42);
@@ -199,7 +199,7 @@ public class ObjPoolTest
         var objectCount = 20;
         var iterationCount = 250;
 
-        var objPool = new ObjPool<GameObject>(objectCount, (idx) => GameObject.Instantiate(gameObject));
+        var objPool = new ObjectPool<GameObject>(objectCount, (idx) => GameObject.Instantiate(gameObject));
         var handleBuffer = new List<(int handle, GameObject obj)>();
         var gameObjectBuffer = new List<GameObject>();
 
@@ -250,7 +250,7 @@ public class ObjPoolTest
     [Description("Check if version looping works as expected.")]
     public void VersionLoopTest()
     {
-        var objPool = new ObjPool<object>(1)
+        var objPool = new ObjectPool<object>(1)
         {
             VersionMask = 0xff,
             VersionShift = 8
@@ -271,7 +271,7 @@ public class ObjPoolTest
     [Description("Check if sweep releases up objects in stages .")]
     public void SweepTest()
     {
-        var objPool = new ObjPool<GameObject>(2, (idx) =>
+        var objPool = new ObjectPool<GameObject>(2, (idx) =>
         {
             var result = new GameObject();
             result.SetActive(true);

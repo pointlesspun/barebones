@@ -16,12 +16,12 @@ public class RandomSpawner : MonoBehaviour
 
     public OnEndOfLifeAction _onEndOfLifeAction = OnEndOfLifeAction.Disable;
 
-    private IObjPoolCollection _objectPool;
+    private IObjectPoolCollection _objectPool;
     private float _lastSpawnTime = -99999.0f;
 
     public void Start()
     {
-        _objectPool = ResourceLocator._instance.Resolve<IObjPoolCollection>();
+        _objectPool = ResourceLocator._instance.Resolve<IObjectPoolCollection>();
 
         Debug.Assert(_objectPool != null);
     }

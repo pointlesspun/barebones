@@ -37,13 +37,17 @@ namespace BareBones.Game
         {
             if (Time.time - lastFiredBullet > cooldown)
             {
-                _pool.Obtain(
-                    (int)bulletPoolId,
-                    transform,
-                    localStartPosition,
-                    gameObject.transform.rotation
-                );
+                var handle = _pool.Obtain((int)bulletPoolId);
 
+                if (handle.HasValue)
+                {
+                    var obj = handle.Value.gameObject;
+
+                    obj.transform.localPosition = localStartPosition;
+                    obj.transform.rotation = gameObject.transform.rotation;
+                    obj.transform.parent = gameObject.transform.transform;
+                }
+                
                 lastFiredBullet = Time.time;
             }
         }

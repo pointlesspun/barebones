@@ -16,7 +16,8 @@
         - have three object pools
         - spawn randomly objects from the pool
         - deactivate objects after some time, letting sweep put them back into the pool
-    - [in-progress] Replace old object pool
+    - [done] Replace old object pool
+    - Remove Nullable PoolObjectHandle in favor of a static NULL_HANDLE
     - Document obj pool demo
         
 * Add Score

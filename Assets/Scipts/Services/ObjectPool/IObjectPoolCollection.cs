@@ -2,16 +2,29 @@
 
 namespace BareBones.Services.ObjectPool
 {
+    public struct PoolObjectHandle
+    {
+        public int poolId;
+        public int objectHandle;
+        public GameObject gameObject;
+    }
+
     public interface IObjectPoolCollection
     {
-        ObjectPool this[int index] { get; }
+        ObjectPool<GameObject> this[int idx] { get; }
 
-        void Add(ObjectPoolConfig[] config);
+        int PoolCount { get; }
 
-        PoolObject Obtain(int poolId);
+        int GetAvailable(int poolId);
 
-        PoolObject Obtain(int poolId, Transform transform, in Vector3 localStartPosition, in Quaternion rotation);
+        void AddPool(string name, int id, int size, GameObject prefab);
 
-        void Release(PoolObject meta);
+        void RemovePool(int poolId, bool destroyGameObjects = true);
+
+        PoolObjectHandle? Obtain(int poolIdx);
+
+        void Release(in PoolObjectHandle handle);
+
+        bool IsInUse(in PoolObjectHandle handle);
     }
 }
