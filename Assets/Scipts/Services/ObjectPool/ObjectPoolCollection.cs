@@ -80,7 +80,7 @@ namespace BareBones.Services.ObjectPool
             }
         }
 
-        public PoolObjectHandle? Obtain(int poolIdx)
+        public PoolObjectHandle Obtain(int poolIdx)
         {
             var pool = _poolCollection[poolIdx];
             if (pool.Available > 0)
@@ -99,7 +99,7 @@ namespace BareBones.Services.ObjectPool
 
             Debug.LogWarning("pool " + poolIdx + ", has run empty.");
 
-            return null;
+            return PoolObjectHandle.NullHandle;
         }
 
         public void Release(in PoolObjectHandle handle)

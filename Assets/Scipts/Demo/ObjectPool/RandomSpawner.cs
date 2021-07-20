@@ -50,16 +50,16 @@ public class RandomSpawner : MonoBehaviour
         {
             var objReference = _objectPool.Obtain(poolIdx);
 
-            if (objReference.HasValue)
+            if (objReference.gameObject != null)
             {
-                var gameObj = objReference.Value.gameObject;
+                var gameObj = objReference.gameObject;
                 var lifeTimeBehaviour = gameObj.GetComponent<LifeTimeTrackingBehaviour>();
 
                 gameObj.transform.localScale = Vector3.one * Random.Range(_minScale, _maxScale);
                 gameObj.transform.position = transform.position + Random.insideUnitSphere * _areaRadius;
                 gameObj.transform.parent = transform;
 
-                lifeTimeBehaviour._handle = objReference.Value;
+                lifeTimeBehaviour._handle = objReference;
                 lifeTimeBehaviour._actionAtEndOfLife = _onEndOfLifeAction; 
             }
         }

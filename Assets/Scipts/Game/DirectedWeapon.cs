@@ -39,9 +39,9 @@ namespace BareBones.Game
             {
                 var handle = _pool.Obtain((int)bulletPoolId);
 
-                if (handle.HasValue)
+                if (handle.gameObject != null)
                 {
-                    var obj = handle.Value.gameObject;
+                    var obj = handle.gameObject;
 
                     obj.transform.localPosition = localStartPosition;
                     obj.transform.rotation = gameObject.transform.rotation;

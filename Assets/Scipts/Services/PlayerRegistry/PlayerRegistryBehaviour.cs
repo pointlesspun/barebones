@@ -54,9 +54,9 @@ namespace BareBones.Services.PlayerRegistry
             {
                 var playerHandle = _objectPool.Obtain((int)PoolIdEnum.Players);
 
-                if (playerHandle.HasValue)
+                if (playerHandle.gameObject != null)
                 {
-                    var playerObject = playerHandle.Value.gameObject;
+                    var playerObject = playerHandle.gameObject;
                     var rootId = _registry.RegisterPlayer(playerObject.GetComponent<Player>());
                     var root = _registry[rootId];
 

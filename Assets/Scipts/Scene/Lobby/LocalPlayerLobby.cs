@@ -185,7 +185,7 @@ namespace BareBones.Scene.Lobby
                 var (devices, controlScheme, deviceIds) = CreateInputConfiguration(device);
 
                 var poolObjectHandle = _pool.Obtain((int)PoolIdEnum.Players);
-                var poolObject = poolObjectHandle.Value.gameObject;
+                var poolObject = poolObjectHandle.gameObject;
                 var root = poolObject.GetComponent<Player>();
                 var input = poolObject.GetComponent<PlayerInput>();
                 var id = _registry.RegisterPlayer(root);

@@ -95,24 +95,24 @@ public class ObjectPoolCollectionTest
             var handle2 = collection.Obtain(0);
             var handle3 = collection.Obtain(0);
 
-            Assert.IsTrue(handle1.HasValue);
-            Assert.IsTrue(handle2.HasValue);
-            Assert.IsFalse(handle3.HasValue);
+            Assert.IsTrue(handle1.gameObject != null);
+            Assert.IsTrue(handle2.gameObject != null);
+            Assert.IsTrue(handle3.gameObject == null);
 
-            Assert.IsTrue(handle1.Value.gameObject.activeInHierarchy);
-            Assert.IsTrue(handle2.Value.gameObject.activeInHierarchy);
+            Assert.IsTrue(handle1.gameObject.activeInHierarchy);
+            Assert.IsTrue(handle2.gameObject.activeInHierarchy);
 
             Assert.IsTrue(collection.GetAvailable(0) == 0);
             Assert.IsTrue(collection.GetAvailable(1) == 2);
 
-            collection.Release(handle1.Value);
-            collection.Release(handle2.Value);
+            collection.Release(handle1);
+            collection.Release(handle2);
 
             Assert.IsTrue(collection.GetAvailable(0) == 2);
             Assert.IsTrue(collection.GetAvailable(1) == 2);
 
-            Assert.IsFalse(handle1.Value.gameObject.activeInHierarchy);
-            Assert.IsFalse(handle2.Value.gameObject.activeInHierarchy);
+            Assert.IsFalse(handle1.gameObject.activeInHierarchy);
+            Assert.IsFalse(handle2.gameObject.activeInHierarchy);
         }
         finally
         {
@@ -144,8 +144,8 @@ public class ObjectPoolCollectionTest
 
             Assert.IsTrue(collection.PoolCount == 1);
             Assert.IsTrue(collection.transform.childCount == 1);
-            Assert.IsTrue(handle1.Value.gameObject == null);
-            Assert.IsTrue(handle2.Value.gameObject == null);
+            Assert.IsTrue(handle1.gameObject == null);
+            Assert.IsTrue(handle2.gameObject == null);
         }
         finally
         {
@@ -177,8 +177,8 @@ public class ObjectPoolCollectionTest
 
             Assert.IsTrue(collection.PoolCount == 1);
             Assert.IsTrue(collection.transform.childCount == 1);
-            Assert.IsTrue(handle1.Value.gameObject != null);
-            Assert.IsTrue(handle2.Value.gameObject != null);
+            Assert.IsTrue(handle1.gameObject != null);
+            Assert.IsTrue(handle2.gameObject != null);
         }
         finally
         {
@@ -230,8 +230,8 @@ public class ObjectPoolCollectionTest
             collection = CreatePoolCollection(2, 2);
             collection.Awake();
 
-            var obj1 = collection.Obtain(0).Value.gameObject;
-            var obj2 = collection.Obtain(1).Value.gameObject;
+            var obj1 = collection.Obtain(0).gameObject;
+            var obj2 = collection.Obtain(1).gameObject;
 
             collection.Update();
 

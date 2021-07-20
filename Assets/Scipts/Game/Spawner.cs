@@ -71,9 +71,9 @@ namespace BareBones.Game
         {
             var spawnedObjectHandle = _pool.Obtain((int)poolId);
 
-            if (spawnedObjectHandle.HasValue)
+            if (spawnedObjectHandle.gameObject != null)
             {
-                var spawnedObject = spawnedObjectHandle.Value.gameObject;
+                var spawnedObject = spawnedObjectHandle.gameObject;
 
                 if (locationProviderComponent != null)
                 {
@@ -96,7 +96,7 @@ namespace BareBones.Game
                 _lastSpawnTime = Time.time;
 
                 _current++;
-                _aliveObjects.Add(spawnedObjectHandle.Value);
+                _aliveObjects.Add(spawnedObjectHandle);
 
                 if (max >= 0 && _current >= max)
                 {

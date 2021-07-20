@@ -4,6 +4,13 @@ namespace BareBones.Services.ObjectPool
 {
     public struct PoolObjectHandle
     {
+        public static readonly PoolObjectHandle NullHandle = new PoolObjectHandle()
+        {
+            gameObject = null,
+            objectHandle = -1,
+            poolId = -1,
+        };
+
         public int poolId;
         public int objectHandle;
         public GameObject gameObject;
@@ -21,7 +28,7 @@ namespace BareBones.Services.ObjectPool
 
         void RemovePool(int poolId, bool destroyGameObjects = true);
 
-        PoolObjectHandle? Obtain(int poolIdx);
+        PoolObjectHandle Obtain(int poolIdx);
 
         void Release(in PoolObjectHandle handle);
 
