@@ -1,5 +1,7 @@
 ﻿using BareBones.Common;
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace BareBones.Services.ObjectPool
@@ -13,7 +15,7 @@ namespace BareBones.Services.ObjectPool
 
     [Serializable]
 
-    public class ObjectPool<T> where T : class
+    public class ObjectPool<T> : IEnumerable<T> where T : class
     {
         public int VersionMask = 0xffff;
         public int VersionShift = 16;
@@ -37,6 +39,7 @@ namespace BareBones.Services.ObjectPool
         public int Capacity => _pool.Capacity;
 
         public int PoolId { get; set; } = -1;
+
         
 
         public ObjectPool(int count, int id = -1) : this(count, (idx) => Activator.CreateInstance<T>())
@@ -187,6 +190,19 @@ namespace BareBones.Services.ObjectPool
             return _pool.GetMetaData(idx)._obj;
         }
 
+        public IEnumerator<T> GetEnumerator()
+        {
+            var idx = _pool.FirstAvailable;
+
+            while (idx != -1)
+            {
+                var meta = _pool.GetMetaData(idx);
+                yield return meta._obj;
+                idx = _pool.Next(idx);
+            }
+        }
+
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
         private void Release(ObjMetaData meta, int poolId)
         {
@@ -199,8 +215,6 @@ namespace BareBones.Services.ObjectPool
             }
 
             _pool.Assign(meta._obj, poolId);
-
-            //Debug.Log("released: " + poolId + "(" + _pool.GetSlot(poolId) + "), version" + meta._version);
         }
     }
 }

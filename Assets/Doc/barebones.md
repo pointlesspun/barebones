@@ -35,6 +35,39 @@ Each scene contains a top level 'Scene' and 'System' object. The Scene object co
 
 The current only contains two scenes. The Lobby scene and the InGame scene. 
 
+### ObjectPool
+
+Central to the object management is the concept of an Object and the ObjectPool Collection. Note that for most type of games for which Barebones provides a solution, object pooling is probably not necessary. The only reason it's included because its something fun and technical to work on/with. 
+
+The idea behind ObjectPooling is that you scope out which and how many GameObjects you are planning to use at one time and then pre-create and re-use these GameObjects. Support for this feature comes in the shape of the ObjectPoolCollection component. This collection is composed out of N object pools which can be configured by adding 'Pool Collection Configs" in the inspector. Each config takes:
+
+* A human readable name,
+* A size ie how many objects do you plan to use
+* The prefab, what are objects in this pool based on
+* A preferred id, ie what id does the code or other gameobjects use to find these pools. This id comes with several standard values for players, player bullets, enemies and so on. Feel free to expand this enumeration in the code as needed. 
+
+The objectpool implementation works under several assumptions:
+
+* Objects can be either self managed, ie when they are no longer needed and return (Release) themselves to an objectpool OR 
+* Objects are assumed to be no longer needed when they are deactivated. The ObjectpPool Collection will clean them up eventually.
+* Access to the pooled objects by other objects happens sparingly and via references called PoolHandles. The best practice is to hold on to a pool handle and validate it when needed. If the handle is valid only then dereference the gameobject. Alternatively one could iterate over a few selected pools to get access to active objects in these specific groups. Eg:
+
+```csharp
+		var smallEnemyPoolIdx = 0;
+        var mediumEnemyPoolIdx = 1;
+        var largeEnemyPoolIdx = 2;
+
+		...
+
+        // only attack small and medium enemies
+        foreach (GameObject enemyObject in collection.Enumerate(smallEnemyPoolIdx, mediumEnemyPoolIdx))
+        {
+            Attack(enemyObject);
+        }
+```
+  
+An example of the object can be found int the 'ObjectPool' (demo) Scene. A spawner obtains objects (rotating cubes) from the poolcollection and activates them. The cubes deactivate themselves after a short period. The Objectpool Collection in the scene will every update sweep through each object pool to reclaim inactive cubes (which in turn will be obtained by the spawner). If one desires, one can turn off the sweep flag in the Object Pool Collection which will have the spawner run out of cubes. Alternatively one could reduce the number of spawned objects to see the pools grow to their original sizes, or change the end-of-lifetime action in the cubes from 'Deactive' to 'Release' to see if there's a perceptable difference in performance with the sweep turned off. 
+
 ### The Message Bus
 To avoid hard coupling between components and gameobjects a message bus is used (thus implementing a 'soft' coupling). Components can subscribe to this message bus if they implement the IMessageListener interface and/or send (broadcast) messages to this bus. One thing to note is that the message bus does not make any guarantees about when a message will be delivered to its listeners, DO NOT make implementations relying on guaranteed order of delivery. 
 

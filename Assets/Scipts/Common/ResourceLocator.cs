@@ -21,6 +21,12 @@ namespace BareBones.Common
             return Register<T, T>();
         }
 
+        public void Clear()
+        {
+            _namedResources.Clear();
+            _typedResources.Clear();
+        }
+
         public TClass Register<TInterface, TClass>() where TClass : TInterface
         {
             Debug.Assert(!_typedResources.ContainsKey(typeof(TInterface)),

@@ -12,6 +12,13 @@ using BareBones.Services.ObjectPool;
 
 public class ObjectPoolCollectionTest
 {
+    private ObjectPoolCollection CreateAndAwakePoolCollection(int collectionCount, int poolSize, string prefabName = "pooled prefab")
+    {
+        var result = CreatePoolCollection(collectionCount, poolSize, prefabName);
+        result.Awake();
+        return result;
+    }
+
     private ObjectPoolCollection CreatePoolCollection(int collectionCount, int poolSize, string prefabName = "pooled prefab")
     {
         var obj = new GameObject();
@@ -37,6 +44,12 @@ public class ObjectPoolCollectionTest
         }
 
         return collectionBehaviour;
+    }
+
+    [SetUp]
+    public void InitTest()
+    {
+        ResourceLocator._instance.Clear();
     }
 
     [Test]
@@ -70,7 +83,8 @@ public class ObjectPoolCollectionTest
             Assert.IsTrue(poolObject.transform.GetChild(0).gameObject.activeInHierarchy == false);
             Assert.IsTrue(poolObject.transform.GetChild(0).name.IndexOf(prefabName) >= 0);
         }
-        finally {
+        finally
+        {
             if (behaviour != null)
             {
                 locator.Deregister<IObjectPoolCollection<GameObject>>(behaviour);
@@ -104,7 +118,7 @@ public class ObjectPoolCollectionTest
 
             Assert.IsTrue(gameObject1.activeInHierarchy);
             Assert.IsTrue(gameObject2.activeInHierarchy);
-          
+
             Assert.IsTrue(collection.GetAvailable(0) == 0);
             Assert.IsTrue(collection.GetAvailable(1) == 2);
 
@@ -237,9 +251,8 @@ public class ObjectPoolCollectionTest
 
         try
         {
-            collection = CreatePoolCollection(2, 2);
-            collection.Awake();
-
+            collection = CreateAndAwakePoolCollection(2, 2);
+            
             var obj1 = collection.Dereference(collection.Obtain(0));
             var obj2 = collection.Dereference(collection.Obtain(1));
 
@@ -272,6 +285,27 @@ public class ObjectPoolCollectionTest
             {
                 locator.Deregister<IObjectPoolCollection<GameObject>>(collection);
             }
+        }
+    }
+
+    [Test]
+    [Description("Test if the collection can enumerate over all objects in use in select pools.")]
+    public void EnumerateTest()
+    {
+        var collection = CreateAndAwakePoolCollection(3, 3);
+
+        var smallEnemyPoolIdx = 0;
+        var mediumEnemyPoolIdx = 1;
+        var largeEnemyPoolIdx = 2;
+
+        var obj1 = collection.Dereference(collection.Obtain(smallEnemyPoolIdx));
+        var obj2 = collection.Dereference(collection.Obtain(mediumEnemyPoolIdx));
+        var obj3 = collection.Dereference(collection.Obtain(largeEnemyPoolIdx));
+
+        // only check pool 0 and 1 ignore 2
+        foreach (var o in collection.Enumerate(smallEnemyPoolIdx, mediumEnemyPoolIdx))
+        {
+            Assert.IsTrue(o == obj1 || o == obj2);
         }
     }
 }

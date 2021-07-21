@@ -18,7 +18,7 @@
         - deactivate objects after some time, letting sweep put them back into the pool
     - [done] Replace old object pool
     - [done] Remove Nullable PoolObjectHandle in favor of a static NULL_HANDLE
-    - Document object pool & demo
+    - [done] Document object pool & demo
         
 * Add Score
 * Add title screen 

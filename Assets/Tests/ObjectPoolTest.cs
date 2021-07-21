@@ -9,6 +9,7 @@ using UnityEngine.TestTools;
 
 using BareBones.Services.ObjectPool;
 using BareBones.Game;
+using System.Linq;
 
 public class ObjectPoolTest
 {
@@ -260,7 +261,7 @@ public class ObjectPoolTest
         {
             var (handle, obj) = objPool.Obtain();
             objPool.Release(handle);
-            Assert.IsTrue((it*2)+1 == objPool.GetVersion(handle));
+            Assert.IsTrue((it * 2) + 1 == objPool.GetVersion(handle));
         }
 
         var version = objPool.GetVersion((objPool.Obtain().handle));
@@ -300,5 +301,22 @@ public class ObjectPoolTest
         Assert.IsTrue(objPool.Available == 1);
         Assert.IsTrue(objPool.GetState(obj1Ref.handle) == ObjectPoolState.Available);
         Assert.IsTrue(objPool.GetState(obj2Ref.handle) == ObjectPoolState.InUse);
+    }
+
+    [Test]
+    [Description("Check if the objectpool can enumerate over all objects in use.")]
+    public void EnumerationTest()
+    {
+        var objPool = new ObjectPool<GameObject>(3, (idx) =>
+        {
+            var result = new GameObject();
+            result.SetActive(true);
+            return result;
+        });
+
+        var obj1Ref = objPool.Obtain();
+        var obj2Ref = objPool.Obtain();
+
+        objPool.All(obj => obj == obj1Ref.obj || obj == obj2Ref.obj);
     }
 }
