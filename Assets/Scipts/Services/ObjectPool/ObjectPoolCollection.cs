@@ -1,4 +1,4 @@
-﻿
+﻿using System;
 using System.Collections.Generic;
 
 using UnityEngine;
@@ -7,7 +7,7 @@ using BareBones.Common;
 
 namespace BareBones.Services.ObjectPool
 {
-    public class ObjectPoolCollection : MonoBehaviour, IObjectPoolCollection
+    public class ObjectPoolCollection : MonoBehaviour, IObjectPoolCollection<GameObject>
     {
         public ObjectPoolConfig[] poolCollectionConfig;
 
@@ -27,23 +27,23 @@ namespace BareBones.Services.ObjectPool
         {
             var locator = ResourceLocator._instance;
 
-            if (locator.Contains<IObjectPoolCollection>())
+            if (locator.Contains<IObjectPoolCollection<GameObject>>())
             {
-                IObjectPoolCollection other = locator.Resolve<IObjectPoolCollection>();
+                IObjectPoolCollection<GameObject> other = locator.Resolve<IObjectPoolCollection<GameObject>>();
 #pragma warning disable CS0252
                 if (other != this)
 #pragma warning restore CS0252
                 {
                     // merge this config with the existing one
                     poolCollectionConfig.ForEach(config =>
-                           other.AddPool(config.name, MapId(config.preferredId), config.size, config.prefab));
+                           other.AddPool(config._name, MapId(config.preferredId), config._size, config._prefab));
 
                     Destroy(gameObject);
                 }
             }
             else
             {
-                locator.Register<IObjectPoolCollection>(this);
+                locator.Register<IObjectPoolCollection<GameObject>>(this);
 
                 if (_poolCollection == null)
                 {
@@ -53,7 +53,7 @@ namespace BareBones.Services.ObjectPool
                     if (poolCollectionConfig.Length > 0)
                     {
                         poolCollectionConfig.ForEach(config =>
-                           AddPool(config.name, MapId(config.preferredId), config.size, config.prefab, false));
+                           AddPool(config._name, MapId(config.preferredId), config._size, config._prefab, false));
                         _poolCollection.OrderBy(p => p.PoolId);
                     }
                     else
@@ -68,14 +68,19 @@ namespace BareBones.Services.ObjectPool
         {
             if (_sweep)
             {
-                for (var i = 0; i < _poolCollection.Count; i++)
-                {
-                    var pool = _poolCollection[i];
+                Sweep((obj) => !obj.activeInHierarchy);
+            }
+        }
 
-                    if (pool.Available < pool.Capacity)
-                    {
-                        pool.Sweep((obj) => !obj.activeInHierarchy);
-                    }
+        public void Sweep(Func<GameObject, bool> predicate)
+        {
+            for (var i = 0; i < _poolCollection.Count; i++)
+            {
+                var pool = _poolCollection[i];
+
+                if (pool.Available < pool.Capacity)
+                {
+                    pool.Sweep(predicate);
                 }
             }
         }
@@ -85,15 +90,14 @@ namespace BareBones.Services.ObjectPool
             var pool = _poolCollection[poolIdx];
             if (pool.Available > 0)
             {
-                var handleTuple = pool.Obtain();
+                var (handle, obj) = pool.Obtain();
 
-                handleTuple.obj.SetActive(true);
+                obj.SetActive(true);
 
                 return new PoolObjectHandle()
                 {
-                    gameObject = handleTuple.obj,
-                    objectHandle = handleTuple.handle,
-                    poolId = poolIdx
+                    _objectHandle = handle,
+                    _poolIdx = poolIdx
                 };
             }
 
@@ -104,26 +108,21 @@ namespace BareBones.Services.ObjectPool
 
         public void Release(in PoolObjectHandle handle)
         {
-            _poolCollection[handle.poolId].Release(handle.objectHandle);
-        }
-
-        public int GetAvailable(int poolId)
-        {
-            return _poolCollection[poolId].Available;
+            _poolCollection[handle._poolIdx].Release(handle._objectHandle);
         }
 
         public void OnDestroy()
         {
             if (this._poolCollection != null)
             {
-                ResourceLocator._instance.Deregister<IObjectPoolCollection>(this);
+                ResourceLocator._instance.Deregister<IObjectPoolCollection<GameObject>>(this);
             }
         }
 
-        public void RemovePool(int poolId, bool destroyGameObjects = true)
+        public void RemovePool(int poolIdx, bool destroyGameObjects = true)
         {
-            var pool = _poolCollection[poolId];
-            var poolParent = _poolParents[poolId];
+            var pool = _poolCollection[poolIdx];
+            var poolParent = _poolParents[poolIdx];
 
             if (destroyGameObjects)
             {
@@ -166,8 +165,8 @@ namespace BareBones.Services.ObjectPool
                 }
             }
 
-            _poolParents.Remove(poolId);
-            _poolCollection.RemoveAt(poolId);
+            _poolParents.Remove(poolIdx);
+            _poolCollection.RemoveAt(poolIdx);
         }
 
         public void AddPool(string name, int id, int size, GameObject prefab)
@@ -205,11 +204,6 @@ namespace BareBones.Services.ObjectPool
             {
                 _poolCollection.OrderBy((p) => p.PoolId);
             }
-        }
-
-        public bool IsInUse(in PoolObjectHandle handle)
-        {
-            return _poolCollection[handle.poolId].IsInUse(handle.objectHandle);
         }
 
         private ObjectPool<GameObject> CreateObjectPool(string name, int id, int size, GameObject prefab)

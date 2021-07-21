@@ -24,7 +24,7 @@ public class LifeTimeTrackingBehaviour : MonoBehaviour
 
     public bool HasExceededLifeTime => _startTime >= 0 && (Time.time - _startTime) > _lifeTime;
 
-    private IObjectPoolCollection _pool;
+    private IObjectPoolCollection<GameObject> _pool;
 
     public void OnEnable()
     {
@@ -36,7 +36,7 @@ public class LifeTimeTrackingBehaviour : MonoBehaviour
 
         if (_pool == null)
         {
-            _pool = ResourceLocator._instance.Resolve<IObjectPoolCollection>();
+            _pool = ResourceLocator._instance.Resolve<IObjectPoolCollection<GameObject>>();
         }
     }
 

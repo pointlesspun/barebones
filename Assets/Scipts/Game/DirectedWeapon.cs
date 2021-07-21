@@ -1,26 +1,32 @@
 using UnityEngine;
 
 using BareBones.Common;
-using BareBones.Common.Behaviours;
 using BareBones.Services.ObjectPool;
 
 namespace BareBones.Game
 {
     public class DirectedWeapon : MonoBehaviour, IWeapon
     {
-        public PoolIdEnum bulletPoolId;
+        public PoolIdEnum _bulletPoolId;
 
-        public int bulletsPerShot = 1;
+        public int _bulletsPerShot = 1;
 
-        public float cooldown = 0.25f;
+        public float _cooldown = 0.25f;
 
-        private float lastFiredBullet = -1.0f;
+        private float _lastFiredBullet = -1.0f;
 
-        private IObjectPoolCollection _pool;
+        private IObjectPoolCollection<GameObject> _poolCollection;
+        private int _bulletPoolIdx;
 
         public void Start()
         {
-            _pool = ResourceLocator._instance.Resolve<IObjectPoolCollection>();
+            _poolCollection = ResourceLocator._instance.Resolve<IObjectPoolCollection<GameObject>>();
+
+            Debug.Assert(_poolCollection != null, "Expected to find a IObjectPoolCollection<GameObject> declared in the ResourceLocator.");
+
+            _bulletPoolIdx = _poolCollection.FindPoolIdx(_bulletPoolId);
+
+            Debug.Assert(_bulletPoolIdx != -1, "No pool with pool id " + _bulletPoolId + " declared in the object poolCollection.");
         }
 
         public void Fire()
@@ -35,20 +41,20 @@ namespace BareBones.Game
 
         public void Fire(Transform transform, in Vector3 localStartPosition)
         {
-            if (Time.time - lastFiredBullet > cooldown)
+            if (Time.time - _lastFiredBullet > _cooldown)
             {
-                var handle = _pool.Obtain((int)bulletPoolId);
+                var handle = _poolCollection.Obtain(_bulletPoolIdx);
 
-                if (handle.gameObject != null)
+                if (handle.HasReference)
                 {
-                    var obj = handle.gameObject;
+                    var obj = _poolCollection.Dereference(handle);
 
                     obj.transform.localPosition = localStartPosition;
                     obj.transform.rotation = gameObject.transform.rotation;
                     obj.transform.parent = gameObject.transform.transform;
                 }
                 
-                lastFiredBullet = Time.time;
+                _lastFiredBullet = Time.time;
             }
         }
     }

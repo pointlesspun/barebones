@@ -45,13 +45,19 @@ namespace BareBones.Scene.Lobby
 
             private IMessageBus _messageBus;
             private int _listenerHandle;
-            private IObjectPoolCollection _pool;
+
+            private IObjectPoolCollection<GameObject> _poolCollection;
+            private int _poolIdx;
 
             public void Start()
             {
                 _registry = ResourceLocator._instance.Resolve<IPlayerRegistry<Player>>();
-                _pool = ResourceLocator._instance.Resolve<IObjectPoolCollection>();
                 _action = new InputAction();
+
+                _poolCollection = ResourceLocator._instance.Resolve<IObjectPoolCollection<GameObject>>();
+                Debug.Assert(_poolCollection != null, "Expected to find a IObjectPoolCollection<GameObject> declared in the ResourceLocator.");
+                _poolIdx = _poolCollection.FindPoolIdx(PoolIdEnum.Players);
+                Debug.Assert(_poolIdx != -1, "No pool with pool id " + PoolIdEnum.Players + " declared in the object poolCollection.");
 
                 foreach (var path in joinActionPaths)
                 {
@@ -87,29 +93,32 @@ namespace BareBones.Scene.Lobby
                     && _registry.AvailableSlots > 0
                     && !HasPlayerRegistered(context.action.activeControl.device))
                 {
-                    var newPlayerRoot = RegisterPlayer(context.control.device);
+                    var newPlayerRoot = TryRegisterPlayer(context.control.device);
 
-                    switch (playerParentTransform)
+                    if (newPlayerRoot != null)
                     {
-                        case PlayerParentTransform.GameObject:
-                            newPlayerRoot.gameObject.transform.parent = parentObject.transform;
-                            break;
-                        case PlayerParentTransform.Path:
-                            newPlayerRoot.gameObject.transform.parent = transform.Find(parentString);
-                            break;
-                        case PlayerParentTransform.Tag:
-                            AttachToParentByTag(newPlayerRoot.gameObject, parentString);
-                            break;
-                        case PlayerParentTransform.Tag_Path:
-                            AttachToParentByTagPath(newPlayerRoot.gameObject, parentString);
-                            break;
-                        case PlayerParentTransform.None:
-                        default:
-                            break;
+                        switch (playerParentTransform)
+                        {
+                            case PlayerParentTransform.GameObject:
+                                newPlayerRoot.gameObject.transform.parent = parentObject.transform;
+                                break;
+                            case PlayerParentTransform.Path:
+                                newPlayerRoot.gameObject.transform.parent = transform.Find(parentString);
+                                break;
+                            case PlayerParentTransform.Tag:
+                                AttachToParentByTag(newPlayerRoot.gameObject, parentString);
+                                break;
+                            case PlayerParentTransform.Tag_Path:
+                                AttachToParentByTagPath(newPlayerRoot.gameObject, parentString);
+                                break;
+                            case PlayerParentTransform.None:
+                            default:
+                                break;
 
+                        }
+
+                        _messageBus.Send(MessageTopics.Player, MessageIds.PlayerJoined, gameObject, newPlayerRoot.Id);
                     }
-
-                    _messageBus.Send(MessageTopics.Player, MessageIds.PlayerJoined, gameObject, newPlayerRoot.Id);
                 }
             }
 
@@ -180,32 +189,41 @@ namespace BareBones.Scene.Lobby
                 }
             }
 
-            private Player RegisterPlayer(InputDevice device)
+            private Player TryRegisterPlayer(InputDevice device)
             {
                 var (devices, controlScheme, deviceIds) = CreateInputConfiguration(device);
 
-                var poolObjectHandle = _pool.Obtain((int)PoolIdEnum.Players);
-                var poolObject = poolObjectHandle.gameObject;
-                var root = poolObject.GetComponent<Player>();
-                var input = poolObject.GetComponent<PlayerInput>();
-                var id = _registry.RegisterPlayer(root);
+                var poolObjectHandle = _poolCollection.Obtain(_poolIdx);
 
-                input.user.UnpairDevices();
-                devices.ForEach(dev => InputUser.PerformPairingWithDevice(dev, user: input.user));
+                if (poolObjectHandle.HasReference)
+                {
+                    var poolObject = _poolCollection.Dereference(poolObjectHandle);
+                    var root = poolObject.GetComponent<Player>();
+                    var input = poolObject.GetComponent<PlayerInput>();
+                    var id = _registry.RegisterPlayer(root);
 
-                input.defaultControlScheme = controlScheme;
-                input.SwitchCurrentControlScheme(controlScheme);
+                    input.user.UnpairDevices();
+                    devices.ForEach(dev => InputUser.PerformPairingWithDevice(dev, user: input.user));
 
-                var name = playerPrefab.name + " " + id;
+                    input.defaultControlScheme = controlScheme;
+                    input.SwitchCurrentControlScheme(controlScheme);
 
-                input.gameObject.name = name;
+                    var name = playerPrefab.name + " " + id;
 
-                return root.Initialize(
-                    id,
-                    name,
-                    input,
-                    deviceIds
-                );
+                    input.gameObject.name = name;
+
+                    return root.Initialize(
+                        id,
+                        name,
+                        input,
+                        deviceIds
+                    );
+                }
+                else
+                {
+                    Debug.LogError("LocalPlayerLobby.TryRegisterPlayer: No more player objects available.");
+                    return null;
+                }
             }
 
             private (InputDevice[] devices, string controlScheme, int[] deviceIds)

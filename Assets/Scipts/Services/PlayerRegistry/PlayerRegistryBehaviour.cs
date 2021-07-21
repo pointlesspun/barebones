@@ -14,7 +14,8 @@ namespace BareBones.Services.PlayerRegistry
         public int initialActivePlayers = 0;
 
         private PlayerRegistry<Player> _registry;
-        private IObjectPoolCollection _objectPool;
+        private IObjectPoolCollection<GameObject> _poolCollection;
+        private int _poolIdx;
         private ILocationProvider _startLocationProvider;
         private IMessageBus _messageBus;
         private int _listenerHandle;
@@ -48,20 +49,31 @@ namespace BareBones.Services.PlayerRegistry
 
         public void Start()
         {
-            _objectPool = ResourceLocator._instance.Resolve<IObjectPoolCollection>();
+            _poolCollection = ResourceLocator._instance.Resolve<IObjectPoolCollection<GameObject>>();
+            Debug.Assert(_poolCollection != null, "Expected to find a IObjectPoolCollection<GameObject> declared in the ResourceLocator.");
+            _poolIdx = _poolCollection.FindPoolIdx(PoolIdEnum.Players);
+            Debug.Assert(_poolIdx != -1, "No pool with pool id " + PoolIdEnum.Players + " declared in the object poolCollection.");
 
+            // This handles the case where the starting scene is not the lobby but
+            // some in-game scene and we want to run/test the scene. Normally
+            // the lobby would do the setup for the players, when starting without 
+            // the lobby the registry can create those players itself.
             for (var i = 0; i < initialActivePlayers; i++)
             {
-                var playerHandle = _objectPool.Obtain((int)PoolIdEnum.Players);
+                var playerHandle = _poolCollection.Obtain((int)PoolIdEnum.Players);
 
-                if (playerHandle.gameObject != null)
+                if (playerHandle.HasReference)
                 {
-                    var playerObject = playerHandle.gameObject;
+                    var playerObject = _poolCollection.Dereference(playerHandle);
                     var rootId = _registry.RegisterPlayer(playerObject.GetComponent<Player>());
                     var root = _registry[rootId];
 
                     root._deviceIds = CaptureDeviceIds(i);
                     playerObject.ActivateHierarchyTree(true);
+                }
+                else
+                {
+                    Debug.LogError("No more player objects available in the pool");
                 }
             }
         }

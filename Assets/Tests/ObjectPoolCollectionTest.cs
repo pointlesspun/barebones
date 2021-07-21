@@ -26,13 +26,13 @@ public class ObjectPoolCollectionTest
             collectionBehaviour.poolCollectionConfig[i] =
                 new ObjectPoolConfig()
                 {
-                    name = "pool(" + i + ")",
-                    prefab = new GameObject()
+                    _name = "pool(" + i + ")",
+                    _prefab = new GameObject()
                     {
                         name = prefabName
                     },
                     preferredId = (PoolIdEnum)(i % maxId),
-                    size = poolSize
+                    _size = poolSize
                 };
         }
 
@@ -54,7 +54,7 @@ public class ObjectPoolCollectionTest
             behaviour.Awake();
 
 #pragma warning disable CS0252
-            Assert.IsTrue(locator.Resolve<IObjectPoolCollection>() == behaviour);
+            Assert.IsTrue(locator.Resolve<IObjectPoolCollection<GameObject>>() == behaviour);
 #pragma warning restore CS0252
 
             Assert.IsTrue(behaviour.PoolCount == 1);
@@ -62,7 +62,7 @@ public class ObjectPoolCollectionTest
             Assert.IsTrue(behaviour[0].Capacity == 1);
 
             Assert.IsTrue(behaviour.transform.childCount == 1);
-            Assert.IsTrue(behaviour.transform.GetChild(0).name == behaviour.poolCollectionConfig[0].name);
+            Assert.IsTrue(behaviour.transform.GetChild(0).name == behaviour.poolCollectionConfig[0]._name);
 
             var poolObject = behaviour.transform.GetChild(0).gameObject;
 
@@ -73,7 +73,7 @@ public class ObjectPoolCollectionTest
         finally {
             if (behaviour != null)
             {
-                locator.Deregister<IObjectPoolCollection>(behaviour);
+                locator.Deregister<IObjectPoolCollection<GameObject>>(behaviour);
             }
         }
 
@@ -95,13 +95,16 @@ public class ObjectPoolCollectionTest
             var handle2 = collection.Obtain(0);
             var handle3 = collection.Obtain(0);
 
-            Assert.IsTrue(handle1.gameObject != null);
-            Assert.IsTrue(handle2.gameObject != null);
-            Assert.IsTrue(handle3.gameObject == null);
+            Assert.IsTrue(handle1.HasReference);
+            Assert.IsTrue(handle2.HasReference);
+            Assert.IsTrue(!handle3.HasReference);
 
-            Assert.IsTrue(handle1.gameObject.activeInHierarchy);
-            Assert.IsTrue(handle2.gameObject.activeInHierarchy);
+            var gameObject1 = collection.Dereference(handle1);
+            var gameObject2 = collection.Dereference(handle2);
 
+            Assert.IsTrue(gameObject1.activeInHierarchy);
+            Assert.IsTrue(gameObject2.activeInHierarchy);
+          
             Assert.IsTrue(collection.GetAvailable(0) == 0);
             Assert.IsTrue(collection.GetAvailable(1) == 2);
 
@@ -111,14 +114,14 @@ public class ObjectPoolCollectionTest
             Assert.IsTrue(collection.GetAvailable(0) == 2);
             Assert.IsTrue(collection.GetAvailable(1) == 2);
 
-            Assert.IsFalse(handle1.gameObject.activeInHierarchy);
-            Assert.IsFalse(handle2.gameObject.activeInHierarchy);
+            Assert.IsFalse(gameObject1.activeInHierarchy);
+            Assert.IsFalse(gameObject2.activeInHierarchy);
         }
         finally
         {
             if (collection != null)
             {
-                locator.Deregister<IObjectPoolCollection>(collection);
+                locator.Deregister<IObjectPoolCollection<GameObject>>(collection);
             }
         }
     }
@@ -140,18 +143,21 @@ public class ObjectPoolCollectionTest
             var handle1 = collection.Obtain(0);
             var handle2 = collection.Obtain(0);
 
+            var gameObject1 = collection.Dereference(handle1);
+            var gameObject2 = collection.Dereference(handle2);
+
             collection.RemovePool(0);
 
             Assert.IsTrue(collection.PoolCount == 1);
             Assert.IsTrue(collection.transform.childCount == 1);
-            Assert.IsTrue(handle1.gameObject == null);
-            Assert.IsTrue(handle2.gameObject == null);
+            Assert.IsTrue(gameObject1 == null);
+            Assert.IsTrue(gameObject2 == null);
         }
         finally
         {
             if (collection != null)
             {
-                locator.Deregister<IObjectPoolCollection>(collection);
+                locator.Deregister<IObjectPoolCollection<GameObject>>(collection);
             }
         }
     }
@@ -173,18 +179,22 @@ public class ObjectPoolCollectionTest
             var handle1 = collection.Obtain(0);
             var handle2 = collection.Obtain(0);
 
+            var gameObject1 = collection.Dereference(handle1);
+            var gameObject2 = collection.Dereference(handle2);
+
+            // remove the pool without destroying the gameobjects
             collection.RemovePool(0, false);
 
             Assert.IsTrue(collection.PoolCount == 1);
             Assert.IsTrue(collection.transform.childCount == 1);
-            Assert.IsTrue(handle1.gameObject != null);
-            Assert.IsTrue(handle2.gameObject != null);
+            Assert.IsTrue(gameObject1 != null);
+            Assert.IsTrue(gameObject2 != null);
         }
         finally
         {
             if (collection != null)
             {
-                locator.Deregister<IObjectPoolCollection>(collection);
+                locator.Deregister<IObjectPoolCollection<GameObject>>(collection);
             }
         }
     }
@@ -213,7 +223,7 @@ public class ObjectPoolCollectionTest
         {
             if (collection != null)
             {
-                locator.Deregister<IObjectPoolCollection>(collection);
+                locator.Deregister<IObjectPoolCollection<GameObject>>(collection);
             }
         }
     }
@@ -230,8 +240,8 @@ public class ObjectPoolCollectionTest
             collection = CreatePoolCollection(2, 2);
             collection.Awake();
 
-            var obj1 = collection.Obtain(0).gameObject;
-            var obj2 = collection.Obtain(1).gameObject;
+            var obj1 = collection.Dereference(collection.Obtain(0));
+            var obj2 = collection.Dereference(collection.Obtain(1));
 
             collection.Update();
 
@@ -260,7 +270,7 @@ public class ObjectPoolCollectionTest
         {
             if (collection != null)
             {
-                locator.Deregister<IObjectPoolCollection>(collection);
+                locator.Deregister<IObjectPoolCollection<GameObject>>(collection);
             }
         }
     }

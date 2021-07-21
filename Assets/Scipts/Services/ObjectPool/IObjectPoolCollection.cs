@@ -1,37 +1,38 @@
-﻿using UnityEngine;
+﻿using System;
 
 namespace BareBones.Services.ObjectPool
 {
-    public struct PoolObjectHandle
+    /**
+     * Contains a collection of object pools where each objectpool manages
+     * a specifc prefab. The general use is:
+     * 
+     *  - add one or more pools via 'AddPool()'
+     *  - obtain gameobject handles via 'Obtain()'
+     *  - deref the handle to get access to the actual game object via 'Dereference()'
+     *  - either release objects via 'Release()' or call 'Sweep()' 
+     *    back into its respective pool
+     */
+    public interface IObjectPoolCollection<T> where T : class
     {
-        public static readonly PoolObjectHandle NullHandle = new PoolObjectHandle()
-        {
-            gameObject = null,
-            objectHandle = -1,
-            poolId = -1,
-        };
+        /** Returns the pool in the given index */
+        ObjectPool<T> this[int idx] { get; }
 
-        public int poolId;
-        public int objectHandle;
-        public GameObject gameObject;
-    }
-
-    public interface IObjectPoolCollection
-    {
-        ObjectPool<GameObject> this[int idx] { get; }
-
+        /** Returns the number of pools */
         int PoolCount { get; }
+        
+        /** Add a pool to the collection */
+        void AddPool(string name, int idx, int size, T prefab);
 
-        int GetAvailable(int poolId);
+        /** Remove a pool from the collection */
+        void RemovePool(int poolIdx, bool destroyObjects = true);
 
-        void AddPool(string name, int id, int size, GameObject prefab);
-
-        void RemovePool(int poolId, bool destroyGameObjects = true);
-
+        /** Object an object from the given pool */
         PoolObjectHandle Obtain(int poolIdx);
 
-        void Release(in PoolObjectHandle handle);
+        /** Iterates over all pools releasing objects which match the predicate */
+        void Sweep(Func<T, bool> predicate);
 
-        bool IsInUse(in PoolObjectHandle handle);
-    }
+        /** Release an object back to its pool */
+        void Release(in PoolObjectHandle handle);
+    }   
 }

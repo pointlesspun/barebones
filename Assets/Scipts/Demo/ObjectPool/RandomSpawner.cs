@@ -16,12 +16,12 @@ public class RandomSpawner : MonoBehaviour
 
     public OnEndOfLifeAction _onEndOfLifeAction = OnEndOfLifeAction.Disable;
 
-    private IObjectPoolCollection _objectPool;
+    private IObjectPoolCollection<GameObject> _objectPool;
     private float _lastSpawnTime = -99999.0f;
 
     public void Start()
     {
-        _objectPool = ResourceLocator._instance.Resolve<IObjectPoolCollection>();
+        _objectPool = ResourceLocator._instance.Resolve<IObjectPoolCollection<GameObject>>();
 
         Debug.Assert(_objectPool != null);
     }
@@ -50,9 +50,9 @@ public class RandomSpawner : MonoBehaviour
         {
             var objReference = _objectPool.Obtain(poolIdx);
 
-            if (objReference.gameObject != null)
+            if (objReference.HasReference)
             {
-                var gameObj = objReference.gameObject;
+                var gameObj = _objectPool.Dereference(objReference);
                 var lifeTimeBehaviour = gameObj.GetComponent<LifeTimeTrackingBehaviour>();
 
                 gameObj.transform.localScale = Vector3.one * Random.Range(_minScale, _maxScale);

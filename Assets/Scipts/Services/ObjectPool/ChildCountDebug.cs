@@ -10,6 +10,7 @@ namespace BareBones.Services.ObjectPool
      */
     public class ChildCountDebug : MonoBehaviour
     {
+        /** Name of the gameobject when Start is called */
         private string _baseName;
 
         public void Start()

@@ -18,7 +18,7 @@ namespace BareBones.Game
 
     public class Spawner : MonoBehaviour
     {
-        public PoolIdEnum poolId;
+        public PoolIdEnum _poolId;
 
         public TargetGroupEnum targetSelection = TargetGroupEnum.Players;
         public GameObject target;
@@ -44,11 +44,15 @@ namespace BareBones.Game
         // want to pick on the same player every time.
         private int _lastTargetedPlayer = -1;
 
-        private IObjectPoolCollection _pool;
+        private IObjectPoolCollection<GameObject> _poolCollection;
+        private int _poolIdx;
 
         public void Start()
         {
-            _pool = ResourceLocator._instance.Resolve<IObjectPoolCollection>();
+            _poolCollection = ResourceLocator._instance.Resolve<IObjectPoolCollection<GameObject>>();
+            Debug.Assert(_poolCollection != null, "Expected to find a IObjectPoolCollection<GameObject> declared in the ResourceLocator.");
+            _poolIdx = _poolCollection.FindPoolIdx(_poolId);
+            Debug.Assert(_poolIdx != -1, "No pool with pool id " + _poolId + " declared in the object poolCollection.");
         }
 
         void Update()
@@ -69,11 +73,11 @@ namespace BareBones.Game
 
         private void SpawnObject()
         {
-            var spawnedObjectHandle = _pool.Obtain((int)poolId);
+            var spawnedObjectHandle = _poolCollection.Obtain(_poolIdx);
 
-            if (spawnedObjectHandle.gameObject != null)
+            if (spawnedObjectHandle.HasReference)
             {
-                var spawnedObject = spawnedObjectHandle.gameObject;
+                var spawnedObject = _poolCollection.Dereference(spawnedObjectHandle);
 
                 if (locationProviderComponent != null)
                 {
@@ -105,7 +109,7 @@ namespace BareBones.Game
             }
             else
             {
-                Debug.LogWarning("Spawner cannot get any more objects from pool " + poolId + ".");
+                Debug.LogWarning("Spawner cannot get any more objects from pool " + _poolId + ".");
             }
         }
 
@@ -114,7 +118,7 @@ namespace BareBones.Game
             var i = 0;
             while (i < _aliveObjects.Count)
             {
-                if (!_pool.IsInUse(_aliveObjects[i]))
+                if (!_poolCollection.IsInUse(_aliveObjects[i]))
                 {
                     _aliveObjects.RemoveAt(i);
                 }

@@ -86,6 +86,20 @@ namespace BareBones.Services.ObjectPool
             return meta._state == ObjectPoolState.InUse && GetVersion(handle) == meta._version;
         }
 
+        public T Dereference(int handle)
+        {
+            var meta = _pool.GetMetaData(GetSlotHandle(handle));
+            if ((meta._state == ObjectPoolState.InUse || meta._state == ObjectPoolState.Released)
+                && GetVersion(handle) == meta._version)
+            {
+                return meta._obj;
+            }
+
+            Debug.LogError("Dereferencing object " + meta._obj + " with handle " + handle + " which is no longer in use or  the version does not match.");
+
+            return default(T);
+        }
+
         public void Sweep(Func<T, bool> shouldRelease)
         {
             for (var i = _pool.FirstAvailable; i != -1;)
