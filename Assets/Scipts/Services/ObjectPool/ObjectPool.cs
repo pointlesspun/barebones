@@ -40,6 +40,10 @@ namespace BareBones.Services.ObjectPool
 
         public int PoolId { get; set; } = -1;
 
+        public int First => _pool.FirstAvailable;
+
+        public int Next(int idx) => _pool.Next(idx);
+
         
 
         public ObjectPool(int count, int id = -1) : this(count, (idx) => Activator.CreateInstance<T>())
@@ -98,7 +102,7 @@ namespace BareBones.Services.ObjectPool
                 return meta._obj;
             }
 
-            Debug.LogError("Dereferencing object " + meta._obj + " with handle " + handle + " which is no longer in use or  the version does not match.");
+            Debug.Log("Dereferencing object " + meta._obj + " with handle " + handle + " which is no longer in use or  the version does not match.");
 
             return default(T);
         }
@@ -131,19 +135,23 @@ namespace BareBones.Services.ObjectPool
         {
             Debug.Assert(_pool.Available < _pool.Capacity);
 
-            var poolId = _pool.First;
-            var meta = _pool.GetMetaData(poolId);
+            var slotIdx = _pool.First;
+            var meta = _pool.GetMetaData(slotIdx);
             
             Debug.Assert(meta._state == ObjectPoolState.Available);
 
             meta._state = ObjectPoolState.InUse;
             meta._version = (meta._version + 1) & VersionMask;
 
-            //Debug.Log("obtained: " + poolId + "(" + _pool.GetSlot(poolId) + ") , version" + meta._version);
-
-            return (handle: poolId | (meta._version << VersionShift), 
-                            obj: _pool.Release(poolId));
+            return CreateHandle(meta, slotIdx);
         }
+
+        public (int handle, T obj) GetHandle(int idx) => CreateHandle(_pool.GetMetaData(idx), idx);
+
+        public int GetReference(int idx) => idx | (_pool.GetMetaData(idx)._version << VersionShift);
+
+        private (int handle, T obj) CreateHandle(ObjMetaData meta, int slotIdx) =>
+            (handle: slotIdx | (meta._version << VersionShift), obj: _pool.Release(slotIdx));
 
         public void Clear()
         {
@@ -185,11 +193,8 @@ namespace BareBones.Services.ObjectPool
             }
         }
 
-        public T GetManagedObject(int idx)
-        {
-            return _pool.GetMetaData(idx)._obj;
-        }
-
+        public T Read(int idx) => _pool.GetMetaData(idx)._obj;
+        
         public IEnumerator<T> GetEnumerator()
         {
             var idx = _pool.FirstAvailable;

@@ -289,7 +289,23 @@ public class ObjectPoolCollectionTest
     }
 
     [Test]
-    [Description("Test if the collection can enumerate over all objects in use in select pools.")]
+    [Description("Test if releasing a handle will no longer yield a valid gameobject on Dereference.")]
+    public void DereferenceTest()
+    {
+        var collection = CreateAndAwakePoolCollection(1, 1);
+
+        var obj1 = collection.Dereference(collection.Obtain(0));
+        var handle = collection.GetHandle(0, 0);
+        
+        Assert.IsTrue(collection.Dereference(handle) == obj1);
+
+        collection.Release(handle);
+
+        Assert.IsTrue(collection.Dereference(handle) == null);
+    }
+
+    [Test]
+    [Description("Test if the collection can enumerate over all objects in use in the selected pools.")]
     public void EnumerateTest()
     {
         var collection = CreateAndAwakePoolCollection(3, 3);
@@ -301,11 +317,150 @@ public class ObjectPoolCollectionTest
         var obj1 = collection.Dereference(collection.Obtain(smallEnemyPoolIdx));
         var obj2 = collection.Dereference(collection.Obtain(mediumEnemyPoolIdx));
         var obj3 = collection.Dereference(collection.Obtain(largeEnemyPoolIdx));
+        var count = 0;
 
         // only check pool 0 and 1 ignore 2
-        foreach (var o in collection.Enumerate(smallEnemyPoolIdx, mediumEnemyPoolIdx))
+        foreach (var o in collection.ReadOnlyEnumeration(smallEnemyPoolIdx, mediumEnemyPoolIdx))
         {
             Assert.IsTrue(o == obj1 || o == obj2);
+            count++;
         }
+
+        Assert.IsTrue(count == 2);
+    }
+
+    [Test]
+    [Description("Test if the collection can enumerate over all objects in use in ALL the pools.")]
+    public void EnumerateAllTest()
+    {
+        var collection = CreateAndAwakePoolCollection(3, 3);
+
+        var obj1 = collection.Dereference(collection.Obtain(0));
+        var obj2 = collection.Dereference(collection.Obtain(1));
+        var obj3 = collection.Dereference(collection.Obtain(2));
+
+        var count = 0;
+
+        // only check pool 0 and 1 ignore 2
+        foreach (var o in collection.ReadOnlyEnumeration())
+        {
+            Assert.IsTrue(o == obj1 || o == obj2 || o == obj3);
+            count++;
+        }
+
+        Assert.IsTrue(count == 3);
+    }
+
+    [Test]
+    [Description("Test if the collection can find a match in ALL the pools.")]
+    public void FindFirstInAllTest()
+    {
+        var collection = CreateAndAwakePoolCollection(3, 3);
+
+        var obj1 = collection.Dereference(collection.Obtain(0));
+        var obj2 = collection.Dereference(collection.Obtain(1));
+        var obj3 = collection.Dereference(collection.Obtain(2));
+        var testName = "__test";
+
+        obj3.name = testName;
+
+        var handle = collection.First(gameObj => gameObj.name == testName);
+
+        Assert.IsTrue(collection.Dereference(handle) == obj3);
+
+        handle = collection.First(gameObj => gameObj.name == "this name does not exist");
+        
+        Assert.IsTrue(handle.HasReference == false);
+        Assert.IsTrue(collection.Dereference(handle) == null);
+    }
+
+    [Test]
+    [Description("Test if the collection can find a match in some of the pools.")]
+    public void FindFirstInSomeTest()
+    {
+        var collection = CreateAndAwakePoolCollection(3, 3);
+
+        var obj1 = collection.Dereference(collection.Obtain(0));
+        var obj2 = collection.Dereference(collection.Obtain(1));
+        var obj3 = collection.Dereference(collection.Obtain(2));
+        var testName = "__test";
+
+        obj1.name = testName;
+        obj3.name = testName;
+
+        var handle = collection.First(gameObj => gameObj.name == testName, 0, 1);
+
+        Assert.IsTrue(collection.Dereference(handle) == obj1);
+
+        handle = collection.First(gameObj => gameObj.name == testName, 2);
+
+        Assert.IsTrue(collection.Dereference(handle) == obj3);
+    }
+
+    [Test]
+    [Description("Test if the collection can find ALL the matches in ALL the pools.")]
+    public void WhereInAllTest()
+    {
+        var collection = CreateAndAwakePoolCollection(3, 3);
+
+        var obj1 = collection.Dereference(collection.Obtain(0));
+        var obj2 = collection.Dereference(collection.Obtain(1));
+        var obj3 = collection.Dereference(collection.Obtain(2));
+        var testName = "__test";
+
+        obj1.name = testName;
+        obj3.name = testName;
+
+        var handles = new PoolObjectHandle[3];
+        var count = collection.Where(gameObj => gameObj.name == testName, handles);
+
+        Assert.IsTrue(count == 2);
+        Assert.IsTrue(collection.Dereference(handles[0]) == obj1);
+        Assert.IsTrue(collection.Dereference(handles[1]) == obj3);
+    }
+
+    [Test]
+    [Description("Test if the collection can find ALL the matches in SOME of the pools.")]
+    public void WhereInSomeTest()
+    {
+        var collection = CreateAndAwakePoolCollection(3, 3);
+
+        var obj1 = collection.Dereference(collection.Obtain(0));
+        var obj2 = collection.Dereference(collection.Obtain(1));
+        var obj3 = collection.Dereference(collection.Obtain(2));
+        var testName = "__test";
+
+        obj1.name = testName;
+        obj3.name = testName;
+
+        var handles = new PoolObjectHandle[3];
+        var count = collection.Where(gameObj => gameObj.name == testName, handles, 0);
+
+        Assert.IsTrue(count == 1);
+        Assert.IsTrue(collection.Dereference(handles[0]) == obj1);
+    }
+
+    [Test]
+    [Description("Find the furthest and nearest object using the find best extension.")]
+    public void FindBestTest()
+    {
+        var collection = CreateAndAwakePoolCollection(3, 1);
+
+        var obj1 = collection.Dereference(collection.Obtain(0));
+        var obj2 = collection.Dereference(collection.Obtain(1));
+        var obj3 = collection.Dereference(collection.Obtain(2));
+
+        obj1.transform.position = new Vector3(10, 10, 0);
+        obj2.transform.position = new Vector3(50, 50, 0);
+        obj3.transform.position = new Vector3(100, 100, 0);
+
+        var furthest = new Func<GameObject, float>(gameObj => (gameObj.transform.position - obj3.transform.position).sqrMagnitude);
+        var nearest = new Func<GameObject, float>(gameObj => 1000.0f - (gameObj.transform.position - obj3.transform.position).sqrMagnitude);
+
+        var handle = collection.FindBest(furthest, 0, 1);
+        Assert.IsTrue(collection.Dereference(handle) == obj1);
+
+        handle = collection.FindBest(nearest, 0, 1);
+        Assert.IsTrue(collection.Dereference(handle) == obj2);
     }
 }

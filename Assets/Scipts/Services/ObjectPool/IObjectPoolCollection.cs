@@ -20,6 +20,8 @@ namespace BareBones.Services.ObjectPool
         /** Returns the number of pools */
         int PoolCount { get; }
         
+
+
         /** Add a pool to the collection */
         void AddPool(string name, int idx, int size, T prefab);
 
@@ -28,6 +30,9 @@ namespace BareBones.Services.ObjectPool
 
         /** Object an object from the given pool */
         PoolObjectHandle Obtain(int poolIdx);
+
+        /** Returns a handle to an object in the given pool with the given index */
+        PoolObjectHandle GetHandle(int poolIdx, int objIdx);
 
         /** Iterates over all pools releasing objects which match the predicate */
         void Sweep(Func<T, bool> predicate);

@@ -106,6 +106,13 @@ namespace BareBones.Services.ObjectPool
             return PoolObjectHandle.NullHandle;
         }
 
+        public PoolObjectHandle GetHandle(int poolIdx, int objIdx) =>
+            new PoolObjectHandle()
+            {
+                _objectHandle = _poolCollection[poolIdx].GetReference(objIdx),
+                _poolIdx = poolIdx
+            };
+
         public void Release(in PoolObjectHandle handle)
         {
             _poolCollection[handle._poolIdx].Release(handle._objectHandle);
@@ -128,7 +135,7 @@ namespace BareBones.Services.ObjectPool
             {
                 for (var i = 0; i < pool.Capacity; i++)
                 {
-                    var obj = pool.GetManagedObject(i);
+                    var obj = pool.Read(i);
 
                     if (obj != null)
                     {
