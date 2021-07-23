@@ -21,8 +21,9 @@
     - [done] Document object pool & demo
 
 * [in-progress]
-    -  Add more tests to nested structure
+    - Add more tests to nested structure
     - general clean up of the property file      
+    
 * Add Score
 * Add title screen 
 * Use correct button to join on game pad

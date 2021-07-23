@@ -4,108 +4,10 @@ using BareBones.Services.PropertyTable;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine;
 
 public class PropertyTableParserTest
 {
-    [Test]
-    [Description("Test if a simple property table with a single string can be parsed.")]
-    public void SingleStringPropertiesTest()
-    {
-        var table = PropertyTableParser.ReadProperties("foo: bar");
-
-        Assert.IsTrue(((string)table["foo"]) == "bar");
-    }
-
-    [Test]
-    [Description("Test if a simple property table with multiple strings can be parsed.")]
-    public void MultipleStringPropertiesTest()
-    {
-        var table = PropertyTableParser.ReadProperties("one: two\nthree:   \"four\"  ");
-
-        Assert.IsTrue(((string)table["one"]) == "two");
-        Assert.IsTrue(((string)table["three"]) == "four");
-    }
-
-    [Test]
-    [Description("Test if a property table with integers can be parsed.")]
-    public void MultipleIntsPropertiesTest()
-    {
-        var table = PropertyTableParser.ReadProperties("one: 1 \ntwenty one :   21  ");
-
-        Assert.IsTrue(((int)table["one"]) == 1);
-        Assert.IsTrue(((int)table["twenty one"]) == 21);
-    }
-
-    [Test]
-    [Description("Test if a property table with floats can be parsed.")]
-    public void MultipleFloatsPropertiesTest()
-    {
-        var table = PropertyTableParser.Read("one: 1.0 \n42 :   42.42\n -1f: -1f\n");
-
-        Assert.IsTrue(((float)table["one"]) == 1.0);
-        Assert.IsTrue(((float)table["42"]) == 42.42f);
-        Assert.IsTrue(((float)table["-1f"]) == -1.0f);
-    }
-
-    [Test]
-    [Description("Test if a property table with booleans can be parsed.")]
-    public void MultipleBooleanPropertiesTest()
-    {
-        var table = PropertyTableParser.ReadProperties("true: false\nfalse:true");
-
-        Assert.IsTrue(((bool)table["true"]) == false);
-        Assert.IsTrue(((bool)table["false"]) == true);
-    }
-
-    [Test]
-    [Description("Test if a property table with unicode characters will be parsed.")]
-    public void UniCodeStringPropertiesTest()
-    {
-        var table = PropertyTableParser.Read("line: \"one" + PropertyTableParser.Comma 
-            + " two" + PropertyTableParser.Comma  
-            + " three.\"\n");
-
-        Assert.IsTrue(((string)table["line"]) == "one, two, three.");       
-    }
-
-    [Test]
-    [Description("Test if a property table with an array will be parsed.")]
-    public void ArrayPropertiesTest()
-    {
-        var comma = PropertyTableParser.Comma;
-        var table = PropertyTableParser.Read("array: [1,2.1f,foo,\"bar" + comma + " qaz\" ,true]");
-
-        var array = (object[])table["array"];
-
-        Assert.IsTrue((int)array[0] == 1);
-        Assert.IsTrue((float)array[1] == 2.1f);
-        Assert.IsTrue((string)array[2] == "foo");
-        Assert.IsTrue((string)array[3] == "bar, qaz");
-        Assert.IsTrue((bool)array[4] == true);
-    }
-
-    [Test]
-    [Description("Test if a property table with an inner array will be parsed.")]
-    public void InnerArrayPropertiesTest()
-    {
-        var table = PropertyTableParser.Read("array: [[1,2,3], [a, b, c], end]");
-
-        var array = (object[])table["array"];
-        var inner1 = array[0] as object[];
-        var inner2 = array[1] as object[];
-
-        Assert.IsTrue((int)inner1[0] == 1);
-        Assert.IsTrue((int)inner1[1] == 2);
-        Assert.IsTrue((int)inner1[2] == 3);
-
-        Assert.IsTrue((string)inner2[0] == "a");
-        Assert.IsTrue((string)inner2[1] == "b");
-        Assert.IsTrue((string)inner2[2] == "c");
-
-        Assert.IsTrue((string)array[2] == "end");
-    }
-        
-
     [Test]
     [Description("Parse a string with no or whitespace only characters.")]
     public void _ParseStringPropertyValueEmptyTest()
@@ -569,6 +471,8 @@ public class PropertyTableParserTest
     {
         var input = new string[] {
             "{key:{key:'value'}}",
+            "{key3:{key2-1:{key:'value'}\n}}",
+            "{key1:{key:'value'}, key2  \n:\n[1,2,3] ,key3:{key2-1:{key:'value'}\n}}",
         };
 
         var expectedValues = new Dictionary<string, object>[] {
@@ -580,11 +484,57 @@ public class PropertyTableParserTest
                         {"key", "value"}
                     }
                 }
+            },
+            new Dictionary<string, object>()
+            {
+                {
+                    "key3",
+                    new Dictionary<string, object>()
+                    {
+                        {
+                            "key2-1",
+                            new Dictionary<string, object>()
+                            {
+                                {"key", "value"}
+                            }
+                        }
+                    }
+                }
+            },
+            new Dictionary<string, object>()
+            {
+                {
+                    "key1", 
+                    new Dictionary<string, object>()
+                    {
+                        {"key", "value"}
+                    }
+                },
+                {
+                    "key2",
+                    new List<object>()
+                    {
+                        1,2,3
+                    }
+                },
+                {
+                    "key3",
+                    new Dictionary<string, object>()
+                    {
+                        {
+                            "key2-1",
+                            new Dictionary<string, object>()
+                            {
+                                {"key", "value"}
+                            }
+                        }
+                    }
+                },
             }
         };
 
         for (var i = 0; i < input.Length; i++)
-        {
+        {       
             var testString = input[i];
             var (value, charactersRead) = PropertyTableParser.ParseStructureValue(testString, 0);
 
