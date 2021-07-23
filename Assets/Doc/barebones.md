@@ -60,13 +60,21 @@ The objectpool implementation works under several assumptions:
 		...
 
         // only attack small and medium enemies
-        foreach (GameObject enemyObject in collection.Enumerate(smallEnemyPoolIdx, mediumEnemyPoolIdx))
+        foreach (GameObject enemyObject in collection.ReadOnlyEnumeration(smallEnemyPoolIdx, mediumEnemyPoolIdx))
         {
-            Attack(enemyObject);
+            FireAt(enemyObject);
         }
 ```
-  
-An example of the object can be found int the 'ObjectPool' (demo) Scene. A spawner obtains objects (rotating cubes) from the poolcollection and activates them. The cubes deactivate themselves after a short period. The Objectpool Collection in the scene will every update sweep through each object pool to reclaim inactive cubes (which in turn will be obtained by the spawner). If one desires, one can turn off the sweep flag in the Object Pool Collection which will have the spawner run out of cubes. Alternatively one could reduce the number of spawned objects to see the pools grow to their original sizes, or change the end-of-lifetime action in the cubes from 'Deactive' to 'Release' to see if there's a perceptable difference in performance with the sweep turned off. 
+
+In this case we're accessing the gameobject directly and don't keep the pointer around, if we do want to hang on to the pointer we can request a handle via use a non read only query. Eg:
+
+```csharp
+	var mediumEnemyPoolIdx = 1;
+
+	var handle = collection.First(gameObj => gameObj.name == "target", mediumEnemyPoolIdx);
+```
+
+An example of the object pool collection can be found int the 'ObjectPool' (demo) Scene. A spawner obtains objects (rotating cubes) from the poolcollection and activates them. The cubes deactivate themselves after a short period. The Objectpool Collection in the scene will every update sweep through each object pool to reclaim inactive cubes (which in turn will be obtained by the spawner). If one desires, one can turn off the sweep flag in the Object Pool Collection which will have the spawner run out of cubes. Alternatively one could reduce the number of spawned objects to see the pools grow to their original sizes, or change the end-of-lifetime action in the cubes from 'Deactive' to 'Release' to see if there's a perceptable difference in performance with the sweep turned off. 
 
 ### The Message Bus
 To avoid hard coupling between components and gameobjects a message bus is used (thus implementing a 'soft' coupling). Components can subscribe to this message bus if they implement the IMessageListener interface and/or send (broadcast) messages to this bus. One thing to note is that the message bus does not make any guarantees about when a message will be delivered to its listeners, DO NOT make implementations relying on guaranteed order of delivery. 

@@ -32,7 +32,7 @@ namespace BareBones.Game
 
                 if (hitpointsOther != null)
                 {
-                    hitpointsOther.OnHit(damage);
+                    hitpointsOther.OnHit(damage, gameObject);
                 }
 
                 if (_onImpactAction != OnEndOfLifeAction.None)

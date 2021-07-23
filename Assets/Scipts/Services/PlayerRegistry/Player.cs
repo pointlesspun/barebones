@@ -146,12 +146,29 @@ namespace BareBones.Services.PlayerRegistry
         public void HandleMessage(Message message)
         {
             // was the controlled object destroyed ?
-#pragma warning disable CS0252
-            if (message.id == MessageIds.EntityDestroyed && message.sender == _controlledObject)
-#pragma warning restore CS0252
+            if (message.id == MessageIds.EntityDestroyed)
             {
-                _controller.SetActive(false);
-                _messageBus.Send(MessageTopics.Player, MessageIds.PlayerDied, gameObject, null);
+                if (message.sender is GameObject)
+                {
+                    GameObject sender = message.sender as GameObject;
+
+#pragma warning disable CS0252
+                    if (sender == _controlledObject)
+#pragma warning restore CS0252
+                    {
+                        _controller.SetActive(false);
+                        _messageBus.Send(MessageTopics.Player, MessageIds.PlayerDied, gameObject, null);
+                    }
+                    else if (sender.CompareTag("Enemy"))
+                    {
+                        // enemy died, check if it was hit by this player
+                        var source = message.payload as GameObject;
+                        if (source != null && source.HasParent(gameObject))
+                        {
+                            Debug.Log("SCORE!");
+                        }
+                    }
+                }
             }
         }
 

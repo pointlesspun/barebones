@@ -13,5 +13,19 @@ namespace BareBones.Common
                 obj.transform.GetChild(j).gameObject.SetActive(value);
             }
         }
+
+        public static bool HasParent(this GameObject obj, GameObject parent)
+        {
+            var current = obj;
+
+            while (current != null && current != parent)
+            {
+                current = current.transform.parent != null
+                            ? current.transform.parent.gameObject
+                            : null;
+            }
+
+            return current == parent;
+        }
     }
 }

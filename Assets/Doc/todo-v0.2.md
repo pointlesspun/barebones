@@ -1,6 +1,6 @@
 ﻿# To do v0.2
 
-* [in progress] Rewrite ObjectPool as SlotArray (by simply inversing the use case)
+* [done] Rewrite ObjectPool as SlotArray (by simply inversing the use case)
     - [done] ... and tested
     - [done] check what happens if the version loops
     - [done] Test objPool clear
@@ -19,7 +19,10 @@
     - [done] Replace old object pool
     - [done] Remove Nullable PoolObjectHandle in favor of a static NULL_HANDLE
     - [done] Document object pool & demo
-        
+
+* [in-progress]
+    -  Add more tests to nested structure
+    - general clean up of the property file      
 * Add Score
 * Add title screen 
 * Use correct button to join on game pad

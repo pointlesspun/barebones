@@ -15,17 +15,17 @@ namespace BareBones.Game
 
         private IMessageBus _messageBus;
 
-        void OnEnable()
+        public void OnEnable()
         {
             currentHitpoints = baselineHitpoints;
         }
 
-        void Start()
+        public void Start()
         {
             _messageBus = ResourceLocator._instance.Resolve<IMessageBus>();
         }
 
-        public void OnHit(float damage)
+        public void OnHit(float damage, GameObject source)
         {
             if (!isInvulnerable)
             {
@@ -33,7 +33,7 @@ namespace BareBones.Game
 
                 if (currentHitpoints <= 0)
                 {
-                    _messageBus.Send(MessageTopics.Entity, MessageIds.EntityDestroyed, gameObject, null);
+                    _messageBus.Send(MessageTopics.Entity, MessageIds.EntityDestroyed, gameObject, source);
 
                     // xxx assumption here is this object is pooled and will be cleaned up 
                     // the objectpool's sweep

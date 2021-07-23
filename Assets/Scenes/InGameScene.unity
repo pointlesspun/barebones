@@ -153,17 +153,17 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   poolCollectionConfig:
-  - name: Players
-    size: 3
-    prefab: {fileID: 6088996382232634106, guid: b135444aff8d75f47bdba7a1a5752ab5, type: 3}
+  - _name: 
+    _size: 3
+    _prefab: {fileID: 6088996382232634106, guid: b135444aff8d75f47bdba7a1a5752ab5, type: 3}
     preferredId: 0
-  - name: PlayerBullets
-    size: 64
-    prefab: {fileID: 961087259538992065, guid: 6f6ec0647979a8645ba46389b61a761c, type: 3}
+  - _name: 
+    _size: 64
+    _prefab: {fileID: 961087259538992065, guid: 6f6ec0647979a8645ba46389b61a761c, type: 3}
     preferredId: 1
-  - name: Enemies
-    size: 64
-    prefab: {fileID: 7094439361023709064, guid: ececb53ba28b19e4c8dc7f80e830682e, type: 3}
+  - _name: 
+    _size: 32
+    _prefab: {fileID: 7094439361023709064, guid: ececb53ba28b19e4c8dc7f80e830682e, type: 3}
     preferredId: 2
   _sweep: 1
   _addDebugNamesToPool: 0
@@ -211,7 +211,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b01ea7ae0c67e6f4eaf957127ad95747, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  poolId: 2
+  _poolId: 2
   targetSelection: 1
   target: {fileID: 0}
   locationProviderComponent: {fileID: 259969895}

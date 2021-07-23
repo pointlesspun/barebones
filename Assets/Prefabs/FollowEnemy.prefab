@@ -17,7 +17,7 @@ GameObject:
   - component: {fileID: -8560911918705326561}
   m_Layer: 7
   m_Name: FollowEnemy
-  m_TagString: Untagged
+  m_TagString: Enemy
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -100,7 +100,6 @@ MonoBehaviour:
   baselineHitpoints: 3
   currentHitpoints: 3
   isInvulnerable: 0
-  deferDestruction: 0
 --- !u!114 &6960639074086750956
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -114,7 +113,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   damage: 1
-  destroyOnImpact: 0
+  _onImpactAction: 0
   bounceReverseForce: 12500
   impactCooldown: 0.2
   bounceTags:
