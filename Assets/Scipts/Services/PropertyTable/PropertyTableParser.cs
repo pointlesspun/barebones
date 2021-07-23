@@ -1,42 +1,39 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using UnityEngine;
 
 namespace BareBones.Services.PropertyTable
 {
     public static class PropertyTableParser
     {
-        public static Dictionary<string, object> Read(TextAsset asset) => Read(asset.text);
+        private static (T, int) Error<T>() => (default(T), -1);        
 
-        public static Dictionary<string, object> Read(string text)
-        {
-                return ParseStructureValue(text, 0).value;
-        }
+        public static Dictionary<string, object> Read(TextAsset asset, string whiteSpace = " \t\r\n") => 
+            Read(asset.text, whiteSpace);
 
-        public static (string key, int charactersRead) ParseKey(
-            string text,
-            int start,
-            int line,
-            string whiteSpace = " \t"
+        public static Dictionary<string, object> Read(
+            string text, 
+            string whiteSpace = " \t\r\n",
+            string separators = " \t\n\r,[]{}"
         )
         {
-            var firstNonWhiteCharacter = text.IndexOfNone(whiteSpace, start);
+            var idx = text.Skip(whiteSpace, 0);
 
-            // case of an empty line
-            if (firstNonWhiteCharacter == -1 || "\n\r".IndexOf(text[firstNonWhiteCharacter]) >= 0)
+            if (idx >= 0)
             {
-                return ReadRemainderOfLine<string>(text, start);
+                var result = new Dictionary<string, object>();
+
+                return ParseStructureContent(result, text, idx, whiteSpace, separators) >= 0
+                    ? result
+                    : null;
             }
 
-            // empty key case
-            if (text[firstNonWhiteCharacter] == ':')
-            {
-                Debug.LogWarning("PropertyTableParser.ParseKey, empty key found at line " + line + ".");
-                return ReadRemainderOfLine<string>(text, start);
-            }
+            return null;
+        }
 
-            var endOfKey = text.IndexOf(':', firstNonWhiteCharacter);
+        public static (string key, int charactersRead) ParseKey(string text, int start, int line)
+        {
+            var endOfKey = text.IndexOf(':', start);
 
             // valid key found
             if (endOfKey >= 0)
@@ -47,60 +44,10 @@ namespace BareBones.Services.PropertyTable
             else
             {
                 Debug.LogWarning("PropertyTableParser.ParseKey, key not delimited with a column ':' at line " + line + ".");
-                return ReadRemainderOfLine<string>(text, start);
+                return Error<string>();
             }
         }
-
-        private static (T value, int charactersRead) ReadRemainderOfLine<T>(
-            string text,
-            int start)
-        {
-            var nextEndOfLineOrEndOfFile = text.IndexOfAny("\n\r", start);
-            var charactersRead = nextEndOfLineOrEndOfFile >= 0
-                        ? (nextEndOfLineOrEndOfFile - start) + 1
-                        : text.Length - start;
-            return (default(T), charactersRead);
-        }
-
-        public static (object value, int charactersRead) ParsePropertyValue(
-            string text,
-            int start,
-            string whiteSpace = " \t"
-        )
-        {
-            var firstNonWhiteCharacter = text.IndexOfNone(whiteSpace, start);
-
-            // end-of-line or end-of-file?
-            if (firstNonWhiteCharacter == -1 || "\n\r".IndexOf(text[firstNonWhiteCharacter]) >= 0)
-            {
-                return ReadRemainderOfLine<object>(text, start);
-            }
-
-            var whiteCharacterCount = firstNonWhiteCharacter - start;
-            var character = text[firstNonWhiteCharacter];
-
-            // try parse booleans
-            if ((character == 't' || character == 'f') 
-                && (ParseUtil.MatchLength(text, "true", firstNonWhiteCharacter) == 4
-                || ParseUtil.MatchLength(text, "false", firstNonWhiteCharacter) == 5))
-            {
-                var (booleanValue, charactersRead) = ParsePODPropertyValue(text, firstNonWhiteCharacter, (str) => bool.Parse(str), whiteSpace);
-                return (booleanValue, charactersRead + whiteCharacterCount);
-            }
-            // try to parse a number
-            else if (character == '-' || char.IsDigit(character))
-            {
-                var (numberValue, charactersRead) = ParsePODPropertyValue(text, firstNonWhiteCharacter, (str) => float.Parse(str), whiteSpace);
-                return (numberValue, charactersRead + whiteCharacterCount);
-            }
-            // assume it's a string
-            else
-            {
-                var (stringValue, charactersRead) = ParseStringPropertyValue(text, start, whiteSpace);
-                return (stringValue, charactersRead + whiteCharacterCount);
-            }
-        }
-
+                        
         public static (object value, int charactersRead) ParseValue(
             string text,
             int start,
@@ -108,54 +55,54 @@ namespace BareBones.Services.PropertyTable
             string separators = " \t\n\r,[]{}"
         )
         {
-            var firstNonWhiteCharacter = text.IndexOfNone(whiteSpace, start);
+            var valueStartIdx = text.Skip(whiteSpace, start);
 
             // end-of-line or end-of-file?
-            if (firstNonWhiteCharacter == -1 || "\n\r".IndexOf(text[firstNonWhiteCharacter]) >= 0)
+            if (valueStartIdx == -1 || "\n\r".IndexOf(text[valueStartIdx]) >= 0)
             {
-                return ReadRemainderOfLine<object>(text, start);
+                return Error<object>(); 
             }
 
-            var whiteCharacterCount = firstNonWhiteCharacter - start;
-            var character = text[firstNonWhiteCharacter];
+            var whiteCharacterCount = valueStartIdx - start;
+            var character = text[valueStartIdx];
 
             // try parse booleans
             if ((character == 't' || character == 'f') // quick check before doing the heavier match
-                && (ParseUtil.MatchLength(text, "true", firstNonWhiteCharacter) == 4
-                || ParseUtil.MatchLength(text, "false", firstNonWhiteCharacter) == 5))
+                && (ParseUtil.MatchLength(text, "true", valueStartIdx) == 4
+                || ParseUtil.MatchLength(text, "false", valueStartIdx) == 5))
             {
                 var (booleanValue, charactersRead) = 
-                    ParsePODValue(text, firstNonWhiteCharacter, (str) => bool.Parse(str), whiteSpace, separators);
+                    ParsePODValue(text, valueStartIdx, (str) => bool.Parse(str), separators);
                 return (booleanValue, charactersRead + whiteCharacterCount);
             }
             // try to parse a number
             else if (character == '-' || char.IsDigit(character))
             {
                 var (numberValue, charactersRead) = 
-                    ParsePODValue(text, firstNonWhiteCharacter, (str) => float.Parse(str), whiteSpace, separators);
+                    ParsePODValue(text, valueStartIdx, (str) => float.Parse(str), separators);
                 return (numberValue, charactersRead + whiteCharacterCount);
             }
             // try parse an array
             else if (character == '[')
             {
-                var (arrayValue, charactersRead) = ParseListValue(text, firstNonWhiteCharacter);
+                var (arrayValue, charactersRead) = ParseListValue(text, valueStartIdx);
                 return (arrayValue, charactersRead + whiteCharacterCount);
             }
             // try parse a structure
             else if (character == '{')
             {
-                var (structValue, charactersRead) = ParseStructureValue(text, firstNonWhiteCharacter);
+                var (structValue, charactersRead) = ParseStructureValue(text, valueStartIdx);
                 return (structValue, charactersRead + whiteCharacterCount);
             }
             // try to parse a string
             else  if (character == '"' || character == '\'')
             {
-                var (numberValue, charactersRead) = ParseScopedStringValue(text, firstNonWhiteCharacter);
+                var (numberValue, charactersRead) = ParseStringValue(text, valueStartIdx);
                 return (numberValue, charactersRead + whiteCharacterCount);
             }
 
-            Debug.LogWarning("PropertyTableParser.ParseValue, unknown token encountered " + character + ".");
-            return ReadRemainderOfLine<object>(text, start);
+            Debug.LogWarning("PropertyTableParser.ParseValue, unexpected value: " + character + ", expected string, bool, float, array or struct.");
+            return Error<object>(); 
         }
 
         public static (Dictionary<string, object> value, int charactersRead) ParseStructureValue(
@@ -164,94 +111,8 @@ namespace BareBones.Services.PropertyTable
             string whiteSpace = " \t\n\r",
             string separators = " \t\n\r,[]{}"
         )
-        {
-            var firstNonWhiteSpaceCharacter = text.IndexOfNone(whiteSpace, start);
-
-            // end-of-line or end-of-file?
-            if (firstNonWhiteSpaceCharacter == -1 || "\n\r".IndexOf(text[firstNonWhiteSpaceCharacter]) >= 0)
-            {
-                var charactersRead = firstNonWhiteSpaceCharacter >= 0
-                            ? (firstNonWhiteSpaceCharacter - start) + 1
-                            : text.Length - start;
-                return (null, charactersRead);
-            }
-
-            var result = new Dictionary<string, object>();
-
-            if (text[firstNonWhiteSpaceCharacter] == '{')
-            {
-                var idx = firstNonWhiteSpaceCharacter + 1;
-                while (idx < text.Length && text[idx] != '}')
-                {
-                    idx = text.IndexOfNone(whiteSpace, idx);
-
-                    if (text[idx] != '}')
-                    {
-                        var keyParseResult = ParseKey(text, idx, 0);
-
-                        if (keyParseResult.key != default(string)) 
-                        {
-                            idx += keyParseResult.charactersRead;
-                            var parseResult = ParseValue(text, idx, whiteSpace, separators);
-
-                            if (parseResult.value != null)
-                            {
-                                result[keyParseResult.key] = parseResult.value;
-                                idx += parseResult.charactersRead;
-                            }
-                            else
-                            {
-                                Debug.LogWarning("PropertyTableParser.ParseArrayValue, failed to parse value.");
-                                return ReadRemainderOfLine<Dictionary<string, object>>(text, start);
-                            }
-
-                            var nextNonWhiteSpace = text.IndexOfNone(whiteSpace, idx);
-
-                            if (nextNonWhiteSpace < 0)
-                            {
-                                Debug.LogWarning("PropertyTableParser.ParseStruct, malformed structure.");
-                                return ReadRemainderOfLine<Dictionary<string, object>>(text, start);
-                            }
-
-                            idx = nextNonWhiteSpace;
-
-                            if (idx < text.Length && text[idx] != '}')
-                            {
-                                if (text[idx] != ',')
-                                {
-                                    Debug.LogWarning("PropertyTableParser.ParseArrayValue, missing separator.");
-                                    return ReadRemainderOfLine<Dictionary<string, object>>(text, start);
-                                }
-
-                                idx++;
-                            }
-                        }
-                        else
-                        {
-                            Debug.LogWarning("PropertyTableParser.ParseStructureValue, key is not valid.");
-                            return ReadRemainderOfLine<Dictionary<string, object>>(text, start);
-                        }
-
-                    }
-                }
-
-                if (idx < text.Length && text[idx] == '}')
-                {
-                    return (result, (idx - start) + 1);
-                }
-                else
-                {
-                    Debug.LogWarning("PropertyTableParser.ParseArrayValue, failed find closing square bracket (']').");
-                    return ReadRemainderOfLine<Dictionary<string, object>>(text, start);
-                }
-            }
-            else
-            {
-                Debug.LogWarning("PropertyTableParser.ParseArrayValue, failed find opening square bracket ('[').");
-                return ReadRemainderOfLine<Dictionary<string, object>>(text, start);
-            }
-        }
-    
+            => ParseComposite<Dictionary<string, object>>(text, start, '{', '}', ParseStructureContent, whiteSpace, separators);
+        
 
         public static (List<object> arrayValue, int charactersRead) ParseListValue(
             string text,
@@ -259,234 +120,192 @@ namespace BareBones.Services.PropertyTable
             string whiteSpace = " \t\n\r",
             string separators = " \t\n\r,[]{}"
         )
+        => ParseComposite<List<object>>(text, start, '[', ']', ParseListContent, whiteSpace, separators);
+
+
+        private static (T value, int charactersRead) ParseComposite<T>(
+            string text,
+            int start,
+            char compositeStart,
+            char compositeEnd,
+            Func<T, string, int,string, string, int> parseContentFunction,
+            string whiteSpace = " \t\n\r",
+            string separators = " \t\n\r,[]{}"
+        ) where T : new()
         {
-            var firstNonWhiteSpaceCharacter = text.IndexOfNone(whiteSpace, start);
+            var result = new T();
 
-            // end-of-line or end-of-file?
-            if (firstNonWhiteSpaceCharacter == -1 || "\n\r".IndexOf(text[firstNonWhiteSpaceCharacter]) >= 0)
+            if (text[start] == compositeStart)
             {
-                var charactersRead = firstNonWhiteSpaceCharacter >= 0
-                            ? (firstNonWhiteSpaceCharacter - start) + 1
-                            : text.Length - start;
-                return (null, charactersRead);
-            }
-
-            var result = new List<object>();
-
-            if (text[firstNonWhiteSpaceCharacter] == '[')
-            {
-                var idx = firstNonWhiteSpaceCharacter + 1;
-                while (idx < text.Length && text[idx] != ']')
+                var idx = start + 1;
+                while (idx < text.Length && text[idx] != compositeEnd)
                 {
-                    idx = text.IndexOfNone(whiteSpace, idx);
+                    idx = text.Skip(whiteSpace, idx);
 
-                    if (text[idx] != ']')
+                    if (text[idx] != compositeEnd)
                     {
-                        var parseResult = ParseValue(text, idx, whiteSpace, separators);
+                        idx = parseContentFunction(result, text, idx, whiteSpace, separators);
 
-                        if (parseResult.value != null)
+                        if (idx < 0)
                         {
-                            result.Add(parseResult.value);
-                            idx += parseResult.charactersRead;
-                        }
-                        else
-                        {
-                            Debug.LogWarning("PropertyTableParser.ParseArrayValue, failed to parse value.");
-                            return ReadRemainderOfLine<List<object>>(text, start);
-                        }
-
-                        var nextNonWhiteSpace = text.IndexOfNone(whiteSpace, idx);
-
-                        if (nextNonWhiteSpace < 0)
-                        {
-                            Debug.LogWarning("PropertyTableParser.ParseStruct, malformed structure.");
-                            return ReadRemainderOfLine<List<object>>(text, start);
-                        }
-
-                        idx = nextNonWhiteSpace;
-
-                        if (idx < text.Length && text[idx] != ']')
-                        {
-                            if (text[idx] != ',')
-                            {
-                                Debug.LogWarning("PropertyTableParser.ParseArrayValue, missing separator.");
-                                return ReadRemainderOfLine<List<object>>(text, start);
-                            }
-
-                            idx++;
+                            return Error<T>(); 
                         }
                     }
-                } 
+                }
 
-                if (idx < text.Length && text[idx] == ']')
+                if (idx < text.Length && text[idx] == compositeEnd)
                 {
                     return (result, (idx - start) + 1);
                 }
                 else
                 {
                     Debug.LogWarning("PropertyTableParser.ParseArrayValue, failed find closing square bracket (']').");
-                    return ReadRemainderOfLine<List<object>>(text, start);
+                    return Error<T>(); 
                 }
             }
             else
             {
                 Debug.LogWarning("PropertyTableParser.ParseArrayValue, failed find opening square bracket ('[').");
-                return ReadRemainderOfLine<List<object>>(text, start);
-
+                return Error<T>();  
             }
         }
 
-        public static (object value, int charactersRead) ParsePODPropertyValue<T>(
-            string text,
-            int start,
-            Func<string, T> parseFunction,
-            string whiteSpace = " \t"
-        )
+        private static int ParseStructureContent(
+            Dictionary<string, object> result, 
+            string text, 
+            int idx,
+            string whiteSpace,
+            string separators)
         {
-            var result = ParsePODValue(text, start, parseFunction, whiteSpace);
+            var (key, charactersRead) = ParseKey(text, idx, 0);
 
-            // read remainder of line
-            var eol = text.IndexOfAny("\n\r", start + result.charactersRead);
-            var charactersRead = eol >= 0 ? (eol - start) + 1 : text.Length - start;
+            if (key != default)
+            {
+                idx += charactersRead;
+                var parseResult = ParseValue(text, idx, whiteSpace, separators);
 
-            return (result.value, charactersRead);
+                if (parseResult.value != null)
+                {
+                    result[key] = parseResult.value;
+                    idx += parseResult.charactersRead;
+                }
+                else
+                {
+                    Debug.LogWarning("PropertyTableParser.ParseArrayValue, failed to parse value.");
+                    return -1;
+                }
+
+                var nextNonWhiteSpace = text.Skip(whiteSpace, idx);
+
+                if (nextNonWhiteSpace < 0)
+                {
+                    Debug.LogWarning("PropertyTableParser.ParseStruct, malformed structure.");
+                    return -1;
+                }
+
+                idx = nextNonWhiteSpace;
+
+                if (idx < text.Length && text[idx] != '}')
+                {
+                    if (text[idx] != ',')
+                    {
+                        Debug.LogWarning("PropertyTableParser.ParseArrayValue, missing separator.");
+                        return -1;
+                    }
+
+                    idx++;
+                }
+            }
+            else
+            {
+                Debug.LogWarning("PropertyTableParser.ParseStructureValue, key is not valid.");
+                return -1;
+            }
+
+            return idx;
+
+        }       
+
+        private static int ParseListContent(
+            List<object> result, 
+            string text, 
+            int idx, 
+            string whiteSpace, 
+            string separators
+        ) 
+        {
+            var parseResult = ParseValue(text, idx, whiteSpace, separators);
+
+            if (parseResult.value != null)
+            {
+                result.Add(parseResult.value);
+                idx += parseResult.charactersRead;
+            }
+            else
+            {
+                Debug.LogWarning("PropertyTableParser.ParseArrayValue, failed to parse value.");
+                return -1;
+            }
+
+            // skip white space
+            idx = text.Skip(whiteSpace, idx); 
+
+            if (idx < text.Length && text[idx] != ']')
+            {
+                if (text[idx] != ',')
+                {
+                    Debug.LogWarning("PropertyTableParser.ParseArrayValue, missing separator.");
+                    return -1;
+                }
+
+                idx++;
+            }
+
+            return idx;
         }
 
-        public static (object value, int charactersRead) ParsePODValue<T>(
+        public static (T value, int charactersRead) ParsePODValue<T>(
             string text,
             int start,
             Func<string, T> parseFunction,
-            string whiteSpace = " \t", 
             string endOfTokenCharacters = " \t\r\n"
         )
         {
-            var firstNonWhiteCharacter = text.IndexOfNone(whiteSpace, start);
-
-            // end-of-line or end-of-file?
-            if (firstNonWhiteCharacter == -1 || "\n\r".IndexOf(text[firstNonWhiteCharacter]) >= 0)
-            {
-                return ReadRemainderOfLine<object>(text, start);
-            }
-
-            var endOfToken = text.IndexOfAny(endOfTokenCharacters, firstNonWhiteCharacter);
+            var endOfToken = text.IndexOfAny(endOfTokenCharacters, start);
 
             endOfToken = endOfToken >= 0 ? endOfToken : text.Length;
 
             try
             {
-                var value = parseFunction(text.Substring(firstNonWhiteCharacter, endOfToken - firstNonWhiteCharacter));
+                var value = parseFunction(text.Substring(start, endOfToken - start));
                 return (value, endOfToken - start);
             }
             catch (Exception e)
             {
                 Debug.LogWarning("PropertyTableParser.ParsePODValue, failed to parse value. Exception: " + e);
-                return ReadRemainderOfLine<object>(text, start);
+                return Error<T>();
             }
         }
 
-        public static (string stringValue, int charactersRead) ParseScopedStringValue(
-            string text,
-            int start,
-            string whiteSpace = " \t"
-        )
+        public static (string stringValue, int charactersRead) ParseStringValue(string text, int start)
         {
-            var firstNonWhiteCharacter = text.IndexOfNone(whiteSpace, start);
-
-            // end-of-line or end-of-file?
-            if (firstNonWhiteCharacter == -1 || "\n\r".IndexOf(text[firstNonWhiteCharacter]) >= 0)
-            {
-                var charactersRead = firstNonWhiteCharacter >= 0
-                            ? (firstNonWhiteCharacter - start) + 1
-                            : text.Length - start;
-                return (null, charactersRead);
-            }
-
-            var firstCharacter = text[firstNonWhiteCharacter];
+            var firstCharacter = text[start];
 
             if (firstCharacter == '"' || firstCharacter == '\'')
             {
-                var scopedStringLength = text.ReadScopedString(firstNonWhiteCharacter, firstCharacter);
+                var scopedStringLength = text.ReadScopedString(start, firstCharacter);
 
-                if (scopedStringLength < 0)
+                if (scopedStringLength > 0)
                 {
-                    Debug.LogWarning("PropertyTableParser.ParseScopedStringValue, failed to parse string.");
-                    return ReadRemainderOfLine<string>(text, start);
-                }
-                else
-                {
-                    return (text.Substring(firstNonWhiteCharacter + 1, scopedStringLength - 2),
-                            (firstNonWhiteCharacter + scopedStringLength) - start);
-                }
-            }
-
-            Debug.LogWarning("PropertyTableParser.ParseScopedStringValue, failed to parse string, missing quotes.");
-            return ReadRemainderOfLine<string>(text, start);
-        }
-
-        /**
-         * A string property value is the value defined from start until the end-of-line
-         * or end-of-file. 
-         * Cases handled:
-         * 
-         *  - 'key: \n' -> value = null
-         *  - 'key: foo\n' -> value = "foo"
-         *  - 'key: " foo "\n -> value = " foo " 
-         *  - 'key: "foo\nbar"\n -> value = "foo\nbar"
-         *  - 'key: "foo\"bar"\n -> value = "foo"bar"
-         *  - 'key: "foo
-         *           bar"\n -> value = "foo {line break followed by spaces} bar"
-         *  - 'key: foo
-         *           bar\n -> value = "foo" 
-         */
-        public static (string stringValue, int charactersRead) ParseStringPropertyValue(
-            string text, 
-            int start, 
-            string whiteSpace = " \t"
-        )
-        {
-            var firstNonWhiteCharacter = text.IndexOfNone(whiteSpace, start);
-
-            // end-of-line or end-of-file?
-            if (firstNonWhiteCharacter == -1 || "\n\r".IndexOf(text[firstNonWhiteCharacter]) >= 0)
-            {
-                var charactersRead = firstNonWhiteCharacter >= 0
-                            ? (firstNonWhiteCharacter - start) + 1
-                            : text.Length - start;
-                return (null, charactersRead);
-            }
-
-            var firstCharacter = text[firstNonWhiteCharacter];
-
-            if (firstCharacter == '"' || firstCharacter == '\'')
-            {
-                var scopedStringLength = text.ReadScopedString(firstNonWhiteCharacter, firstCharacter);
-                
-                if (scopedStringLength < 0)
-                {
-                    var nextEndOfLineOrEndOfFile = text.IndexOfAny("\n\r", firstNonWhiteCharacter);
-                    var charactersRead = nextEndOfLineOrEndOfFile >= 0
-                            ? (nextEndOfLineOrEndOfFile - start) + 1
-                            : text.Length - start;
-                    return (null, charactersRead);
-                }
-                else
-                {
-                    var nextEndOfLineOrEndOfFile = text.IndexOfAny("\n\r", firstNonWhiteCharacter + scopedStringLength);
-                    var charactersRead = nextEndOfLineOrEndOfFile >= 0
-                            ? (nextEndOfLineOrEndOfFile - start) + 1
-                            : text.Length - start;
-                    return (text.Substring(firstNonWhiteCharacter + 1, scopedStringLength - 2),
-                            charactersRead);
+                    return (text.Substring(start + 1, scopedStringLength - 2), scopedStringLength);
                 }
             }
             else
             {
-                var nextEndOfLineOrEndOfFile = text.IndexOfAny("\n\r", firstNonWhiteCharacter);
-                var charactersRead = nextEndOfLineOrEndOfFile >= 0
-                            ? (nextEndOfLineOrEndOfFile - start) + 1
-                            : text.Length - start;
-                return (text.Substring(start, charactersRead).Trim(), charactersRead);
+                Debug.LogWarning("PropertyTableParser.ParseScopedStringValue: failed to parse string, missing beginning quotation mark.");
             }
+
+            return Error<string>();
         }
     }
 }

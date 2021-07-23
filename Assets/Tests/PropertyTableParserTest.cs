@@ -1,203 +1,47 @@
 ﻿
-using NUnit.Framework;
-using BareBones.Services.PropertyTable;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using UnityEngine;
+
+using NUnit.Framework;
+using BareBones.Services.PropertyTable;
 
 public class PropertyTableParserTest
 {
     [Test]
-    [Description("Parse a string with no or whitespace only characters.")]
-    public void _ParseStringPropertyValueEmptyTest()
+    [Description("Parse a valid text asset.")]
+    public void ReadTextAsset()
     {
-        var testString = "";
-        var result = PropertyTableParser.ParseStringPropertyValue(testString, 0);
+        var text =
+            "foo: 'bar'," +
+            "list: [1, 2, 3]," +
+            "object: {" +
+            "   objKey: 'value'," +
+            "   objFlag: true," +
+            "}";
 
-        Assert.IsTrue(result.stringValue == null);
-        Assert.IsTrue(result.charactersRead == 0);
+        var value = PropertyTableParser.Read(new UnityEngine.TextAsset(text));
+        var expected = new Dictionary<string, object>()
+        {
+            { "foo", "bar" },
+            { "list", new List<object>() {1,2,3} },
+            {
+                "object",
+                new Dictionary<string, object>()
+                {
+                    {"objKey", "value"},
+                    {"objFlag", true }
+                }
+            }
+        };
 
-        testString = "   ";
-        result = PropertyTableParser.ParseStringPropertyValue(testString, 0);
+        // xxx left off here
+        // Assert.AreEqual(expected, value);
 
-        Assert.IsTrue(result.stringValue == null);
-        Assert.IsTrue(result.charactersRead == testString.Length);
-
-        testString = "   \n";
-        result = PropertyTableParser.ParseStringPropertyValue(testString, 0);
-
-        Assert.IsTrue(result.stringValue == null);
-        Assert.IsTrue(result.charactersRead == testString.Length);
-
-        testString = "\t   \r";
-        result = PropertyTableParser.ParseStringPropertyValue(testString, 0);
-
-        Assert.IsTrue(result.stringValue == null);
-        Assert.IsTrue(result.charactersRead == testString.Length);
-
-        var key = "key:";
-
-        testString = key + "   \n";
-        result = PropertyTableParser.ParseStringPropertyValue(testString, key.Length);
-
-        Assert.IsTrue(result.stringValue == null);
-        Assert.IsTrue(result.charactersRead == testString.Length - key.Length);
-    }
-
-    [Test]
-    [Description("Parse a end-of-line delimited string property.")]
-    public void _ParseEndOfLineDelimitedStringTest()
-    {
-        var testString = "abc";
-        var result = PropertyTableParser.ParseStringPropertyValue(testString, 0);
-
-        Assert.IsTrue(result.stringValue == testString);
-        Assert.IsTrue(result.charactersRead == testString.Length);
-
-        testString = " abc ";
-        result = PropertyTableParser.ParseStringPropertyValue(testString, 0);
-
-        Assert.IsTrue(result.stringValue == testString.Trim());
-        Assert.IsTrue(result.charactersRead == testString.Length);
-
-        var postFix = "def";
-        testString = "abc\n";
-        result = PropertyTableParser.ParseStringPropertyValue(testString + postFix, 0);
-
-        Assert.IsTrue(result.stringValue == testString.Trim());
-        Assert.IsTrue(result.charactersRead == testString.Length);
-
-        testString = "abc def \n";
-        result = PropertyTableParser.ParseStringPropertyValue(testString, 0);
-
-        Assert.IsTrue(result.stringValue == testString.Trim());
-        Assert.IsTrue(result.charactersRead == testString.Length);
-
-        var key = "key:";
-        testString = " abc def";
-        result = PropertyTableParser.ParseStringPropertyValue(key + testString, key.Length);
-
-        Assert.IsTrue(result.stringValue == testString.Trim());
-        Assert.IsTrue(result.charactersRead == testString.Length);
-    }
-
-    [Test]
-    [Description("Parse a valid quotation delimited string property.")]
-    public void _ParseQuotationDelimitedStringTest()
-    {
-        var testString = "'abc'";
-        var result = PropertyTableParser.ParseStringPropertyValue(testString, 0);
-
-        Assert.IsTrue(result.stringValue == "abc");
-        Assert.IsTrue(result.charactersRead == testString.Length);
-
-        testString = " ' abc ' ";
-        result = PropertyTableParser.ParseStringPropertyValue(testString, 0);
-
-        Assert.IsTrue(result.stringValue == " abc ");
-        Assert.IsTrue(result.charactersRead == testString.Length);
-
-        var postFix = "def";
-        testString = "'abc'\n";
-        result = PropertyTableParser.ParseStringPropertyValue(testString + postFix, 0);
-
-        Assert.IsTrue(result.stringValue == "abc");
-        Assert.IsTrue(result.charactersRead == testString.Length);
-
-        var key = "key:";
-        testString = "'abc' \n";
-        result = PropertyTableParser.ParseStringPropertyValue(key + testString, key.Length);
-
-        Assert.IsTrue(result.stringValue == "abc");
-        Assert.IsTrue(result.charactersRead == testString.Length);
-
-        testString = " 'abc\ndef' ";
-        result = PropertyTableParser.ParseStringPropertyValue(testString, 0);
-
-        Assert.IsTrue(result.stringValue == "abc\ndef");
-        Assert.IsTrue(result.charactersRead == testString.Length);
-
-        testString = " '' ";
-        result = PropertyTableParser.ParseStringPropertyValue(testString, 0);
-
-        Assert.IsTrue(result.stringValue == String.Empty);
-        Assert.IsTrue(result.charactersRead == testString.Length);
-    }
-
-    [Test]
-    [Description("Parse an invalid quotation delimited string property.")]
-    public void _ParseInvalidQuotationDelimitedStringTest()
-    {
-        var testString = "'abc";
-        var result = PropertyTableParser.ParseStringPropertyValue(testString, 0);
-
-        Assert.IsTrue(result.stringValue == null);
-        Assert.IsTrue(result.charactersRead == testString.Length);
-
-        testString = " '";
-        result = PropertyTableParser.ParseStringPropertyValue(testString, 0);
-
-        Assert.IsTrue(result.stringValue == null);
-        Assert.IsTrue(result.charactersRead == testString.Length);
-
-        testString = " 'abc\n";
-        result = PropertyTableParser.ParseStringPropertyValue(testString, 0);
-
-        Assert.IsTrue(result.stringValue == null);
-        Assert.IsTrue(result.charactersRead == testString.Length);
-
-        testString = " 'abc\"";
-        result = PropertyTableParser.ParseStringPropertyValue(testString, 0);
-
-        Assert.IsTrue(result.stringValue == null);
-        Assert.IsTrue(result.charactersRead == testString.Length);
-    }
-
-    [Test]
-    [Description("Parse an empty key.")]
-    public void _ParseEmptyKeyTest()
-    {
-        var testString = "";
-        var result = PropertyTableParser.ParseKey(testString, 0, 0);
-
-        Assert.IsTrue(result.key == default(string));
-        Assert.IsTrue(result.charactersRead == testString.Length);
-
-        testString = "   ";
-        result = PropertyTableParser.ParseKey(testString, 0, 0);
-
-        Assert.IsTrue(result.key == default(string));
-        Assert.IsTrue(result.charactersRead == testString.Length);
-
-        testString = "\n";
-        result = PropertyTableParser.ParseKey(testString, 0, 0);
-
-        Assert.IsTrue(result.key == default(string));
-        Assert.IsTrue(result.charactersRead == testString.Length);
-
-        testString = "\nkey: bla";
-        result = PropertyTableParser.ParseKey(testString, 0, 0);
-
-        Assert.IsTrue(result.key == default(string));
-        Assert.IsTrue(result.charactersRead == 1);
-
-        testString = " :\n";
-        result = PropertyTableParser.ParseKey(testString, 0, 0);
-
-        Assert.IsTrue(result.key == default(string));
-        Assert.IsTrue(result.charactersRead == testString.Length);
-
-        testString = ":";
-        result = PropertyTableParser.ParseKey(testString, 0, 0);
-
-        Assert.IsTrue(result.key == default(string));
-        Assert.IsTrue(result.charactersRead == testString.Length);
     }
 
     [Test]
     [Description("Parse a valid key.")]
-    public void _ParseValidKeyTest()
+    public void ParseValidKeyTest()
     {
         var testString = "key:";
         var result = PropertyTableParser.ParseKey(testString, 0, 0);
@@ -227,47 +71,27 @@ public class PropertyTableParserTest
 
     [Test]
     [Description("Parse key with a missing column.")]
-    public void _ParseMissingColumnTest()
+    public void ParseMissingColumnTest()
     {
         var testString = "key";
         var result = PropertyTableParser.ParseKey(testString, 0, 0);
 
         Assert.IsTrue(result.key == default(string));
-        Assert.IsTrue(result.charactersRead == testString.Length);
+        Assert.IsTrue(result.charactersRead == -1);
 
         testString = " key \n";
         result = PropertyTableParser.ParseKey(testString, 0, 0);
 
         Assert.IsTrue(result.key == default(string));
-        Assert.IsTrue(result.charactersRead == testString.Length);
+        Assert.IsTrue(result.charactersRead == -1);
     }
 
-    private void TestParseValues<T>(string[] input, object[] expectedValues, Func<string, T> parseFunction)
-    {
-        for (var i = 0; i < input.Length; i++)
-        {
-            var testString = input[i];
-            var (value, charactersRead) = PropertyTableParser.ParsePODPropertyValue(testString, 0, (str) => parseFunction(str));
-
-            if (expectedValues[i] == null)
-            {
-                Assert.IsTrue(value == expectedValues[i]);
-            }
-            else
-            {
-                var actual = value;
-                var expected = expectedValues[i];
-                Assert.IsTrue(expected.Equals(actual));
-            }
-            Assert.IsTrue(charactersRead == testString.Length);
-        }
-    }
 
     [Test]
     [Description("Parse int values.")]
-    public void _ParseIntValueTest()
+    public void ParseIntValueTest()
     {
-        var input = new string[] { "42", " -1", "", " \n", "444\n", "a38", " 0001", " 3282f"};
+        var input = new string[] { "42", "-1", "", " \n", "444", "a38", "0001", " 282f"};
         var expectedValue = new object[] { 42, -1, null, null, 444, null, 1, null };
 
         TestParseValues(input, expectedValue, (str) => int.Parse(str));
@@ -275,9 +99,9 @@ public class PropertyTableParserTest
 
     [Test]
     [Description("Parse boolean values.")]
-    public void _ParseBoolValueTest()
+    public void ParseBoolValueTest()
     {
-        var input = new string[] { "true", " false ", "", " \n", " true\n", "'true' ", " fals", " TRUE" };
+        var input = new string[] { "true", "false", "", " \n", "true", "'true' ", "fals", "TRUE" };
         var expectedValue = new object[] { true, false, null, null, true, null, null, true };
 
         TestParseValues(input, expectedValue, (str) => bool.Parse(str));
@@ -285,9 +109,9 @@ public class PropertyTableParserTest
 
     [Test]
     [Description("Parse float values.")]
-    public void _ParseFloatValueTest()
+    public void ParseFloatValueTest()
     {
-        var input = new string[] { "0", " 0.1 ", "", " \n", " 42.4\n", "'3' ", " -1.11", " 1e10" };
+        var input = new string[] { "0", "0.1", "", " \n", "42.4", "'3'", "-1.11", "1e10" };
         var expectedValue = new object[] { 0.0f, 0.1f, null, null, 42.4f, null, -1.11f, 1e10f};
 
         TestParseValues(input, expectedValue, (str) => float.Parse(str));
@@ -295,7 +119,7 @@ public class PropertyTableParserTest
 
     [Test]
     [Description("Parse any value.")]
-    public void _ParseAnyValueTest()
+    public void ParseAnyValueTest()
     {
         var input = new string[] { " 0", " 0.1", "'foo'", "", " true", " ' bar '", " -1.11" };
         var expectedValue = new object[] { 0.0f, 0.1f, "foo", null, true, " bar ", -1.11f};
@@ -308,26 +132,27 @@ public class PropertyTableParserTest
             if (expectedValue[i] == null)
             {
                 Assert.IsTrue(value == expectedValue[i]);
+                Assert.IsTrue(charactersRead == -1);
             }
             else
             {
                 var actual = value;
                 var expected = expectedValue[i];
+                Assert.IsTrue(charactersRead == testString.Length);
                 Assert.IsTrue(expected.Equals(actual));
-            }
-            Assert.IsTrue(charactersRead == testString.Length);
+            }  
         }
     }
 
     [Test]
     [Description("Parse a list value.")]
-    public void _ParseListTest()
+    public void ParseListTest()
     {
         var input = new string[] {
-            " [ true, \nfalse, 1, 2, -3, 'bar\nbar']",
+            "[ true, \nfalse, 1, 2, -3, 'bar\nbar']",
             "[]", 
             "[ 0.1 ]", 
-            " ['foo', 'bar']", 
+            "['foo', 'bar']", 
             "[ not_valid ",
             "[ no comma ]",
         };
@@ -349,30 +174,25 @@ public class PropertyTableParserTest
             if (expectedValues[i] == null)
             {
                 Assert.IsTrue(value == expectedValues[i]);
+                Assert.IsTrue(charactersRead == -1);
             }
             else
             {
-                Assert.AreEqual(value.Count, expectedValues[i].Count);
-                for (var j = 0; j < value.Count; j++)
-                {
-                    var actual = value[j];
-                    var expected = expectedValues[i][j];
-                    Assert.AreEqual(expected, actual);
-                }
+                Assert.AreEqual(value, expectedValues[i]);
+                Assert.IsTrue(charactersRead == testString.Length);
             }
-            Assert.IsTrue(charactersRead == testString.Length);
         }
     }
 
     [Test]
     [Description("Parse an nested list value.")]
-    public void _ParseNestedListTest()
+    public void ParseNestedListTest()
     {
         var input = new string[] {
 
-            "[ [ [-1] ], true,  [ 1,2,3 ]  ]",
-            " [ [] ]",
-            "[ [ 1 ]]",
+            "[   [ [-1] ], true,  [ 1,2, \n3]  ]",
+            "[ [] ]",
+            "[ [ 1]]",
             "[ [ 'foo' ], ['bar','baz'] ]",          
             "[ [not_valid ] ",
             "[ [no comma] ]",
@@ -399,21 +219,16 @@ public class PropertyTableParserTest
             else
             {
                 Assert.AreEqual(value.Count, expectedValues[i].Count);
-                for (var j = 0; j < value.Count; j++)
-                {
-                    var actual = value[j];
-                    var expected = expectedValues[i][j];
-
-                    Assert.AreEqual(expected, actual);
-                }
+                Assert.AreEqual(value, expectedValues[i]);
+                Assert.IsTrue(charactersRead == testString.Length);
             }
-            Assert.IsTrue(charactersRead == testString.Length);
+            
         }
     }
 
     [Test, Timeout(2000)]
     [Description("Parse an simple structure value.")]
-    public void _ParseSimpleStructureTest()
+    public void ParseSimpleStructureTest()
     {
         var input = new string[] {
             "{ key: 'no closing curlies'",
@@ -455,19 +270,22 @@ public class PropertyTableParserTest
             if (expectedValues[i] == null)
             {
                 Assert.IsTrue(value == expectedValues[i]);
+                Assert.IsTrue(charactersRead == -1);
             }
             else
             {
-                Assert.AreEqual(value.Count, expectedValues[i].Count);
-                Assert.AreEqual(expectedValues[i], value);
+                var result = (Dictionary<string, object>)value;
+                Assert.AreEqual(result.Count, expectedValues[i].Count);
+                Assert.AreEqual(expectedValues[i], result);
+                Assert.IsTrue(charactersRead == testString.Length);
             }
-            Assert.IsTrue(charactersRead == testString.Length);
+            
         }
     }
 
     [Test, Timeout(2000)]
     [Description("Parse an nested structure value.")]
-    public void _ParseNestedStructureTest()
+    public void ParseNestedStructureTest()
     {
         var input = new string[] {
             "{key:{key:'value'}}",
@@ -541,13 +359,38 @@ public class PropertyTableParserTest
             if (expectedValues[i] == null)
             {
                 Assert.IsTrue(value == expectedValues[i]);
+                Assert.IsTrue(charactersRead == -1);
             }
             else
             {
-                Assert.AreEqual(value.Count, expectedValues[i].Count);
-                Assert.AreEqual(expectedValues[i], value);
+                var result = (Dictionary<string, object>)value;
+                Assert.AreEqual(result.Count, expectedValues[i].Count);
+                Assert.AreEqual(expectedValues[i], result);
+                Assert.IsTrue(charactersRead == testString.Length);
             }
-            Assert.IsTrue(charactersRead == testString.Length);
+            
+        }
+    }
+
+    private void TestParseValues<T>(string[] input, object[] expectedValues, Func<string, T> parseFunction)
+    {
+        for (var i = 0; i < input.Length; i++)
+        {
+            var testString = input[i];
+            var (value, charactersRead) = PropertyTableParser.ParsePODValue(testString, 0, (str) => parseFunction(str));
+
+            if (expectedValues[i] == null)
+            {
+                Assert.IsTrue(value.Equals(default(T)));
+                Assert.IsTrue(charactersRead == -1);
+            }
+            else
+            {
+                var actual = value;
+                var expected = expectedValues[i];
+                Assert.IsTrue(expected.Equals(actual));
+                Assert.IsTrue(charactersRead == testString.Length);
+            }
         }
     }
 }

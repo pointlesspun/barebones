@@ -90,7 +90,7 @@ public static class ParseUtil
     /**
      * Returns the index of the first character NOT matching in str starting at the given index
      */
-    public static int IndexOfNone(this string str, string matches, int startIndex = 0)
+    public static int Skip(this string str, string matches, int startIndex = 0)
     {
         var idx = startIndex;
 
