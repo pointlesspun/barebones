@@ -94,8 +94,6 @@ public class PropertyTableParserTest
     [Description("Test if single line comment in after the key and before the separator is leading to weird keys.")]
     public void SingleLineCommentInBetweenKeyAndColumnTest()
     {
-        // cannot put a comment in between a key and the separator
-        // as we have the requirement that whitespaces can be in between a key
         var text =
             "key1 // comment \n" +
             ": 'value'";
@@ -103,7 +101,7 @@ public class PropertyTableParserTest
         var value = PolyPropsParser.Read(new UnityEngine.TextAsset(text).text);
         var expected = new Dictionary<string, object>()
         {
-            { "key1 // comment", "value" },
+            { "key1", "value" },
         };
 
         Assert.AreEqual(expected, value);
@@ -247,6 +245,18 @@ public class PropertyTableParserTest
         Assert.IsTrue(result.key == "key");
         Assert.IsTrue(result.charactersRead == testString.Length);
 
+        testString = " key\n\n\n:";
+        result = PolyPropsParser.ParseKey(testString, 0, PolyPropsConfig.Default);
+
+        Assert.IsTrue(result.key == "key");
+        Assert.IsTrue(result.charactersRead == testString.Length);
+
+        testString = "'key:':";
+        result = PolyPropsParser.ParseKey(testString, 0, PolyPropsConfig.Default);
+
+        Assert.IsTrue(result.key == "key:");
+        Assert.IsTrue(result.charactersRead == testString.Length);
+
         testString = " a b c :";
         result = PolyPropsParser.ParseKey(testString, 0, PolyPropsConfig.Default);
 
@@ -312,8 +322,8 @@ public class PropertyTableParserTest
     [Description("Parse any value.")]
     public void ParseAnyValueTest()
     {
-        var input = new string[] { "0", "0.1", "'foo'", "xxx", "true", "' bar '", "-1.11" };
-        var expectedValue = new object[] { 0.0f, 0.1f, "foo", null, true, " bar ", -1.11f};
+        var input = new string[] { "0", "0.1", "'foo'", "xxx", "true", "\" bar \"", "-1.11" };
+        var expectedValue = new object[] { 0.0f, 0.1f, "foo", "xxx", true, " bar ", -1.11f};
 
         for (var i = 0; i < input.Length; i++)
         {
@@ -343,9 +353,10 @@ public class PropertyTableParserTest
             "[ true, \nfalse, 1, 2, -3, 'bar\nbar']",
             "[]", 
             "[ 0.1 ]", 
-            "['foo', 'bar']", 
+            "['foo', \"bar\"]", 
+            "[ unlimited \n]",
             "[ not_valid ",
-            "[ no comma ]",
+            "[ 'no' 'comma' ]",
         };
 
         var expectedValues = new List<object>[] {
@@ -353,6 +364,7 @@ public class PropertyTableParserTest
             new List<object>(),
             new List<object>() { 0.1f },
             new List<object>() { "foo", "bar" },
+            new List<object>() { "unlimited" },
             null,
             null
         };
@@ -364,8 +376,8 @@ public class PropertyTableParserTest
 
             if (expectedValues[i] == null)
             {
-                Assert.IsTrue(value == expectedValues[i]);
-                Assert.IsTrue(charactersRead == -1);
+                Assert.AreEqual(expectedValues[i], value);
+                Assert.AreEqual(-1, charactersRead);
             }
             else
             {
@@ -386,7 +398,8 @@ public class PropertyTableParserTest
             "[ [ 1]]",
             "[ [ 'foo' ], ['bar','baz'] ]",          
             "[ [not_valid ] ",
-            "[ [no comma] ]",
+            "[ ['no' 'comma'] ]",
+            "[ [str, 'also, str', str too] ]",
         };
 
         var expectedValues = new List<object>[] {
@@ -395,7 +408,8 @@ public class PropertyTableParserTest
             new List<object>() { new List<object>() { 1 } },
             new List<object>() { new List<object>() { "foo" }, new List<object>() { "bar", "baz" } },
             null,
-            null
+            null,
+            new List<object>() { new List<object>() { "str", "also, str", "str too" } },
         };
 
         for (var i = 0; i < input.Length; i++)
@@ -417,7 +431,7 @@ public class PropertyTableParserTest
         }
     }
 
-    [Test, Timeout(2000)]
+    [Test]
     [Description("Parse an simple structure value.")]
     public void ParseSimpleStructureTest()
     {
@@ -426,6 +440,8 @@ public class PropertyTableParserTest
             "{\n key: 'value'\n}",
             "{\n key1: 'value1', \nkey2:\n'value2' \n}",
             "{\n key1: ['foo', 'bar'], \nkey2:\n[\n]\n, key 3: [ 1,2,3]}",
+            "{key: value}",
+            "{\n key: value // comment kicking in\n}",
             "{}",
             "{",
             "{ key: 'no' key2: 'comma' }",
@@ -447,6 +463,14 @@ public class PropertyTableParserTest
                 {"key1", new List<object>() { "foo", "bar" } },
                 {"key2", new List<object>()},
                 {"key 3", new List<object>() {1,2,3} }
+            },
+            new Dictionary<string, object>()
+            {
+                {"key", "value"}
+            },
+            new Dictionary<string, object>()
+            {
+                {"key", "value"}
             },
             new Dictionary<string, object>(),
             null,

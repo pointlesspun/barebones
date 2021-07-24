@@ -29,11 +29,12 @@
     - [done] config should include a logger
     - [done] track line & column
     - [done] allow for comments
-    - allow for non scoped strings
+    - [done] allow for non scoped strings
     - allow for ints or doubles
     - allow for case not being an issue when parsing booleans
-    - allow for key delimiters
-    - test against a json
+    - [done] allow for key delimiters (strings)
+    - in read check first non-comment char, if [ parselist, if { parsemap, else parse mapcontents
+    - test against a json, .properties, command line, .csv
 
 * Add Score
 * Add title screen 

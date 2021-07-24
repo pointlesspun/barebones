@@ -26,6 +26,8 @@ namespace BareBones.Services.PropertyTable
 
         public string SingleLineCommentToken { get; set; } = "//";
 
+        public string UnquotedStringsDelimiters { get; set; } = "\n\r,[]{}:";
+
         public Action<(int, int), string> Log { get; set; } = (position, msg) => Console.WriteLine(msg);
     }
 }

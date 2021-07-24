@@ -30,12 +30,16 @@ namespace BareBones.Services.PropertyTable
 
         public static (string key, int charactersRead) ParseKey(string text, int start, PolyPropsConfig config)
         {
-            var endOfKey = text.IndexOf(config.KeyValueSeparator, start);
+            var (key, charactersRead) = config.StringDelimiters.IndexOf(text[start]) >= 0
+                ? ParseString(text, start, config)
+                : ParseUndelimitedString(text, start, config);
+
+            var idx = SkipWhiteSpaceAndComments(text, start + charactersRead, config);
 
             // valid key found
-            if (endOfKey >= 0)
+            if (idx < text.Length && text[idx] == config.KeyValueSeparator)
             {
-                return (text.Substring(start, endOfKey - start).Trim(), (endOfKey - start) + 1);
+                return (key, (idx + 1) - start);
             }
             // case of no closing column
             else
@@ -75,6 +79,10 @@ namespace BareBones.Services.PropertyTable
             else if (config.StringDelimiters.IndexOf(character) >= 0)
             {
                 return ParseString(text, start, config);
+            }
+            else if (config.UnquotedStringsDelimiters != string.Empty)
+            {
+                return ParseUndelimitedString(text, start, config);
             }
 
             config.Log(text.GetLineAndColumn(start),
@@ -135,6 +143,21 @@ namespace BareBones.Services.PropertyTable
             }
 
             return Error<string>();
+        }
+
+        public static (string stringValue, int charactersRead) ParseUndelimitedString(string text, int start, PolyPropsConfig config)
+        {
+            var idx = start;
+            
+            while (
+                idx < text.Length
+                && config.UnquotedStringsDelimiters.IndexOf(text[idx]) == -1 
+                && !MatchesSingleLineComment(text, idx, config))
+            {
+                idx++;
+            }
+
+            return (text.Substring(start, idx-start).Trim(), idx-start);
         }
 
         private static (T value, int charactersRead) ParseComposite<T>(
