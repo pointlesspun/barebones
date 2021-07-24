@@ -1,4 +1,6 @@
-﻿public static class ParseUtil
+﻿using System.Text;
+
+public static class ParseUtil
 {
     /**
      * Returns the number of whitespace characters at the beginning of the string
@@ -13,6 +15,9 @@
 
         return i - startIndex;
     }
+
+    public static bool IsMatch(this string str, string token, int strPosition) =>
+        MatchLength(str, token, strPosition) == token.Length;
 
     /** Returns number of matching characters in str1 and str2 starting at the given positions */
     public static int MatchLength(string str1, string str2, int start1 = 0, int start2 = 0)
@@ -133,4 +138,6 @@
 
         return (line, column);
     }
+
+    
 }

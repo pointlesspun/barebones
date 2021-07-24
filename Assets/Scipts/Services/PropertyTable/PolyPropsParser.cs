@@ -14,13 +14,13 @@ namespace BareBones.Services.PropertyTable
         {
             config ??= PolyPropsConfig.Default;
 
-            var idx = text.Skip(config.WhiteSpace, 0);
+            var idx = SkipWhiteSpaceAndComments(text, 0, config);
 
             if (idx >= 0 && idx < text.Length)
             {
                 var result = new Dictionary<string, object>();
                 
-                return ParseCompositeElements(result, text, idx, config.MapDelimiters[1], ParseMapContent, config) >= 0
+                return ParseCompositeElements(result, text, idx, config.MapDelimiters[1], ParseKeyValuePair, config) >= 0
                     ? result
                     : null;
             }
@@ -46,47 +46,35 @@ namespace BareBones.Services.PropertyTable
             }
         }
                         
-        public static (object value, int charactersRead) ParseValue(
-            string text,
-            int start,
-            PolyPropsConfig config
-        )
+        public static (object value, int charactersRead) ParseValue(string text, int start, PolyPropsConfig config)
         {
             var character = text[start];
 
             // try parse booleans
             if ((character == 't' || character == 'f') // quick check before doing the heavier match
-                && (ParseUtil.MatchLength(text, "true", start) == 4
-                || ParseUtil.MatchLength(text, "false", start) == 5))
+                && (text.IsMatch("true", start) || text.IsMatch("false", start)))
             {
-                var (booleanValue, charactersRead) = 
-                    ParsePODValue(text, start, (str) => bool.Parse(str), config);
-                return (booleanValue, charactersRead);
+                return ParseValue(text, start, (str) => bool.Parse(str), config);
             }
             // try to parse a number
             else if (character == '-' || char.IsDigit(character))
             {
-                var (numberValue, charactersRead) = 
-                    ParsePODValue(text, start, (str) => float.Parse(str), config);
-                return (numberValue, charactersRead);
+                return ParseValue(text, start, (str) => float.Parse(str), config);
             }
             // try parse a list
             else if (character == config.ListDelimiters[0])
             {
-                var (arrayValue, charactersRead) = ParseListValue(text, start, config);
-                return (arrayValue, charactersRead);
+                return ParseList(text, start, config);
             }
             // try parse a structure
             else if (character == config.MapDelimiters[0])
             {
-                var (structValue, charactersRead) = ParseStructureValue(text, start, config);
-                return (structValue, charactersRead);
+                return ParseMap(text, start, config);
             }
             // try to parse a string
-            else  if (config.StringDelimiters.IndexOf(character) >= 0)
+            else if (config.StringDelimiters.IndexOf(character) >= 0)
             {
-                var (numberValue, charactersRead) = ParseStringValue(text, start, config);
-                return (numberValue, charactersRead);
+                return ParseString(text, start, config);
             }
 
             config.Log(text.GetLineAndColumn(start),
@@ -94,27 +82,19 @@ namespace BareBones.Services.PropertyTable
             return Error<object>(); 
         }
 
-        public static (Dictionary<string, object> value, int charactersRead) ParseStructureValue(
-            string text,
-            int start,
-            PolyPropsConfig config
-        )
-            => ParseComposite<Dictionary<string, object>>(text, start, config.MapDelimiters, ParseMapContent, config);
+        public static (Dictionary<string, object> value, int charactersRead) ParseMap(string text, int idx, PolyPropsConfig config)
+            => ParseComposite<Dictionary<string, object>>(text, idx, config.MapDelimiters, ParseKeyValuePair, config);
         
 
-        public static (List<object> arrayValue, int charactersRead) ParseListValue(
-            string text,
-            int start,
-            PolyPropsConfig config
-        )
-        => ParseComposite<List<object>>(text, start, config.ListDelimiters, ParseListContent, config);
+        public static (List<object> arrayValue, int charactersRead) ParseList(string text, int idx, PolyPropsConfig config)
+            => ParseComposite<List<object>>(text, idx, config.ListDelimiters, ParseListElement, config);
 
-        public static (T value, int charactersRead) ParsePODValue<T>(
+        public static (T value, int charactersRead) ParseValue<T>(
             string text,
             int start,
             Func<string, T> parseFunction,
             PolyPropsConfig config
-)
+        )
         {
             var endOfToken = text.IndexOfAny(config.Separators, start);
 
@@ -132,7 +112,7 @@ namespace BareBones.Services.PropertyTable
             }
         }
 
-        public static (string stringValue, int charactersRead) ParseStringValue(string text, int start, PolyPropsConfig config)
+        public static (string stringValue, int charactersRead) ParseString(string text, int start, PolyPropsConfig config)
         {
             var firstCharacter = text[start];
 
@@ -199,7 +179,7 @@ namespace BareBones.Services.PropertyTable
         {
             while (idx >= 0 && idx < text.Length && text[idx] != compositeEnd)
             {
-                idx = text.Skip(config.WhiteSpace, idx);
+                idx = SkipWhiteSpaceAndComments(text, idx, config);
 
                 if (text[idx] != compositeEnd)
                 {
@@ -210,7 +190,32 @@ namespace BareBones.Services.PropertyTable
             return idx;
         }
 
-        private static int ParseMapContent(
+        private static int SkipWhiteSpaceAndComments(string text, int idx, PolyPropsConfig config)
+        {
+            idx = text.Skip(config.WhiteSpace, idx);
+
+            while (idx < text.Length && MatchesSingleLineComment(text, idx, config))
+            {
+                idx = GetNextLine(text, idx);
+                idx = text.Skip(config.WhiteSpace, idx);
+            }
+
+            return idx;
+        }
+
+        private static int GetNextLine(string text, int index)
+        {
+            var eoln = text.IndexOfAny("\r\n", index);
+            return eoln >= 0 ? eoln + 1 : text.Length;
+        }
+
+        private static bool MatchesSingleLineComment(string text, int idx, PolyPropsConfig config)
+        =>
+            config.SingleLineCommentToken != String.Empty
+                    && text[idx] == config.SingleLineCommentToken[0]
+                    && text.IsMatch(config.SingleLineCommentToken, idx);
+
+        private static int ParseKeyValuePair(
             Dictionary<string, object> result, 
             string text, 
             int idx,
@@ -221,7 +226,7 @@ namespace BareBones.Services.PropertyTable
             if (key != default)
             {
                 idx += charactersRead;
-                idx = text.Skip(config.WhiteSpace, idx);
+                idx = SkipWhiteSpaceAndComments(text, idx, config);
 
                 if (idx < text.Length)
                 {
@@ -238,7 +243,7 @@ namespace BareBones.Services.PropertyTable
                         return -1;
                     }
 
-                    idx = text.Skip(config.WhiteSpace, idx);
+                    idx = SkipWhiteSpaceAndComments(text, idx, config);
 
                     if (idx < text.Length && text[idx] != config.MapDelimiters[1])
                     {
@@ -266,7 +271,7 @@ namespace BareBones.Services.PropertyTable
         }       
 
 
-        private static int ParseListContent(
+        private static int ParseListElement(
             List<object> result,
             string text,
             int idx,
@@ -286,8 +291,7 @@ namespace BareBones.Services.PropertyTable
                 return -1;
             }
 
-            // skip white space
-            idx = text.Skip(config.WhiteSpace, idx);
+            idx = SkipWhiteSpaceAndComments(text, idx, config);
 
             if (idx < text.Length && text[idx] != config.ListDelimiters[1])
             {

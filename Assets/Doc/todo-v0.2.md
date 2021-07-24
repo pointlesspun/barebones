@@ -28,9 +28,9 @@
     - [done] provide propertytableparser with a config instead of all the different whitespace, separator things
     - [done] config should include a logger
     - [done] track line & column
-    - allow for comments
+    - [done] allow for comments
     - allow for non scoped strings
-    - allow for ints
+    - allow for ints or doubles
     - allow for case not being an issue when parsing booleans
     - allow for key delimiters
     - test against a json

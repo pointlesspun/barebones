@@ -8,6 +8,200 @@ using BareBones.Services.PropertyTable;
 public class PropertyTableParserTest
 {
     [Test]
+    [Description("Test if single line comment in between key value pairs is ignored.")]
+    public void SingleLineCommentInBetweenInnerKeyValuePairsTest()
+    {
+        var text =
+            "key: {\n" +
+            "   // comment   \n" +
+            "   k1:// comment\n" +
+            "'value1' // comment\n" +
+            "// comment\n" +
+            ",  k2: 'value2', // comment\n" +
+            "   k3: \"value3\" // comment\n" +
+            "} // comment";
+
+        var value = PolyPropsParser.Read(new UnityEngine.TextAsset(text).text);
+        var expected = new Dictionary<string, object>()
+        {
+            { "key", new Dictionary<string, object>() 
+                {
+                    {"k1", "value1" },
+                    {"k2", "value2" },
+                    {"k3", "value3" },
+                }
+            },
+        };
+
+        Assert.AreEqual(expected, value);
+    }
+
+    [Test]
+    [Description("Test if single line comment in between list values is ignored.")]
+    public void SingleLineCommentInBetweenListValuesTest()
+    {        
+        var text =
+            "key1: [\n" +
+            "'value1' // comment\n" +
+            ", 'value2', // comment\n" +
+            "'value3' // comment\n" +
+            "] // comment";
+
+        var value = PolyPropsParser.Read(new UnityEngine.TextAsset(text).text);
+        var expected = new Dictionary<string, object>()
+        {
+            { "key1", new List<object>() { "value1", "value2", "value3" } },
+        };
+
+        Assert.AreEqual(expected, value);
+    }
+
+    [Test]
+    [Description("Test if single line comment in after list start is ignored.")]
+    public void SingleLineCommentAfterListStartTest()
+    {
+        var text =
+            "key1: [// comment \n" +
+            "'value']";
+
+        var value = PolyPropsParser.Read(new UnityEngine.TextAsset(text).text);
+        var expected = new Dictionary<string, object>()
+        {
+            { "key1", new List<object>() { "value" } },
+        };
+
+        Assert.AreEqual(expected, value);
+    }
+
+    [Test]
+    [Description("Test if single line comment in after the key is ignored.")]
+    public void SingleLineCommentInBetweenKeyAndValueTest()
+    {
+        var text =
+            "key1: // comment \n" +
+            "'value'";
+
+        var value = PolyPropsParser.Read(new UnityEngine.TextAsset(text).text);
+        var expected = new Dictionary<string, object>()
+        {
+            { "key1", "value" },
+        };
+
+        Assert.AreEqual(expected, value);
+    }
+
+    [Test]
+    [Description("Test if single line comment in after the key and before the separator is leading to weird keys.")]
+    public void SingleLineCommentInBetweenKeyAndColumnTest()
+    {
+        // cannot put a comment in between a key and the separator
+        // as we have the requirement that whitespaces can be in between a key
+        var text =
+            "key1 // comment \n" +
+            ": 'value'";
+
+        var value = PolyPropsParser.Read(new UnityEngine.TextAsset(text).text);
+        var expected = new Dictionary<string, object>()
+        {
+            { "key1 // comment", "value" },
+        };
+
+        Assert.AreEqual(expected, value);
+    }
+
+    [Test]
+    [Description("Test if single line comment in after the key/value pairs are indeed ignored.")]
+    public void SingleLineCommentOnSameLineAfterKeyValuePairsTest()
+    {
+        var text =
+            "key1: 'value', # comment \n" +
+            "key2: true #comment \n," +
+            "\n" +
+            "key3: 42\n ## more comments \n,";
+
+        // change the comment token for some variation
+        var config = new PolyPropsConfig()
+        {
+            SingleLineCommentToken = "#"
+        };
+
+        var value = PolyPropsParser.Read(new UnityEngine.TextAsset(text).text, config);
+        var expected = new Dictionary<string, object>()
+        {
+            { "key1", "value" },
+            { "key2", true },
+            { "key3", 42 },
+        };
+
+        Assert.AreEqual(expected, value);
+    }
+
+    [Test]
+    [Description("Test if single line comment in between key/value pairs are indeed ignored.")]
+    public void SingleLineCommentInBetweenKeyValuePairsTest()
+    {
+        var text =
+            "key1: 'value',\n" +
+            "// this are some single\n" +
+            "key2: true\n," +
+            "\n" +
+            "// comments\n" +
+            "key3: 42\n," +
+            "// ...\n" +
+            "\n" +
+            "key4: -42\n";
+
+        var value = PolyPropsParser.Read(new UnityEngine.TextAsset(text).text);
+        var expected = new Dictionary<string, object>()
+        {
+            { "key1", "value" },
+            { "key2", true },
+            { "key3", 42 },
+            { "key4", -42 },
+        };
+
+        Assert.AreEqual(expected, value);
+    }
+
+    [Test]
+    [Description("Test if single line comment at the end of a text are indeed ignored.")]
+    public void SingleLineCommentAtEndTest()
+    {
+        var text =
+            "   key: 'value'\n" +
+            " // this are some single\n" +
+            "// line\n" +
+            "  // comments\n";
+
+        var value = PolyPropsParser.Read(new UnityEngine.TextAsset(text).text);
+        var expected = new Dictionary<string, object>()
+        {
+            { "key", "value" },
+        };
+
+        Assert.AreEqual(expected, value);
+    }
+
+    [Test]
+    [Description("Test if single line comment at the beginning of a text are indeed ignored.")]
+    public void SingleLineCommentAtBeginningTest()
+    {
+        var text = 
+            " // this are some single\n" +
+            "// line\n" +
+            "  // comments\n" +
+            "   key: 'value'";
+
+        var value = PolyPropsParser.Read(new UnityEngine.TextAsset(text).text);
+        var expected = new Dictionary<string, object>()
+        {
+            { "key", "value" },
+        };
+
+        Assert.AreEqual(expected, value);
+    }
+
+    [Test]
     [Description("Parse a valid text asset.")]
     public void ReadTextAsset()
     {
@@ -166,7 +360,7 @@ public class PropertyTableParserTest
         for (var i = 0; i < input.Length; i++)
         {
             var testString = input[i];
-            var (value, charactersRead) = PolyPropsParser.ParseListValue(testString, 0, PolyPropsConfig.Default);
+            var (value, charactersRead) = PolyPropsParser.ParseList(testString, 0, PolyPropsConfig.Default);
 
             if (expectedValues[i] == null)
             {
@@ -207,7 +401,7 @@ public class PropertyTableParserTest
         for (var i = 0; i < input.Length; i++)
         {
             var testString = input[i];
-            var (value, charactersRead) = PolyPropsParser.ParseListValue(testString, 0, PolyPropsConfig.Default);
+            var (value, charactersRead) = PolyPropsParser.ParseList(testString, 0, PolyPropsConfig.Default);
 
             if (expectedValues[i] == null)
             {
@@ -262,7 +456,7 @@ public class PropertyTableParserTest
         for (var i = 0; i < input.Length; i++)
         {
             var testString = input[i];
-            var (value, charactersRead) = PolyPropsParser.ParseStructureValue(testString, 0, PolyPropsConfig.Default);
+            var (value, charactersRead) = PolyPropsParser.ParseMap(testString, 0, PolyPropsConfig.Default);
 
             if (expectedValues[i] == null)
             {
@@ -351,7 +545,7 @@ public class PropertyTableParserTest
         for (var i = 0; i < input.Length; i++)
         {       
             var testString = input[i];
-            var (value, charactersRead) = PolyPropsParser.ParseStructureValue(testString, 0, PolyPropsConfig.Default);
+            var (value, charactersRead) = PolyPropsParser.ParseMap(testString, 0, PolyPropsConfig.Default);
 
             if (expectedValues[i] == null)
             {
@@ -374,7 +568,7 @@ public class PropertyTableParserTest
         for (var i = 0; i < input.Length; i++)
         {
             var testString = input[i];
-            var (value, charactersRead) = PolyPropsParser.ParsePODValue(testString, 0, (str) => parseFunction(str), PolyPropsConfig.Default);
+            var (value, charactersRead) = PolyPropsParser.ParseValue(testString, 0, (str) => parseFunction(str), PolyPropsConfig.Default);
 
             if (expectedValues[i] == null)
             {
