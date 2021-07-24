@@ -4,13 +4,16 @@ using UnityEngine;
 
 namespace BareBones.Services.PropertyTable
 {
-    public static class PropertyTableParser
+    public class PolyPropsConfig
+    {
+        public string WhiteSpace { get; set; } = " \t\r\n";
+        public string Separators { get; set; } = " \t\n\r,[]{}";
+    }
+
+    public static class PolyPropsParser
     {
         private static (T, int) Error<T>() => (default(T), -1);        
-
-        public static Dictionary<string, object> Read(TextAsset asset, string whiteSpace = " \t\r\n") => 
-            Read(asset.text, whiteSpace);
-
+       
         public static Dictionary<string, object> Read(
             string text, 
             string whiteSpace = " \t\r\n",
@@ -19,11 +22,11 @@ namespace BareBones.Services.PropertyTable
         {
             var idx = text.Skip(whiteSpace, 0);
 
-            if (idx >= 0)
+            if (idx >= 0 && idx < text.Length)
             {
                 var result = new Dictionary<string, object>();
-
-                return ParseStructureContent(result, text, idx, whiteSpace, separators) >= 0
+                
+                return ParseCompositeElements(result, text, idx, (char) 0, ParseStructureContent, whiteSpace, separators) >= 0
                     ? result
                     : null;
             }
@@ -132,42 +135,50 @@ namespace BareBones.Services.PropertyTable
             string whiteSpace = " \t\n\r",
             string separators = " \t\n\r,[]{}"
         ) where T : new()
-        {
-            var result = new T();
-
+        {           
             if (text[start] == compositeStart)
             {
-                var idx = start + 1;
-                while (idx < text.Length && text[idx] != compositeEnd)
-                {
-                    idx = text.Skip(whiteSpace, idx);
+                var result = new T();
+                var idx = ParseCompositeElements(result, text, start + 1, compositeEnd, parseContentFunction, whiteSpace, separators);
 
-                    if (text[idx] != compositeEnd)
-                    {
-                        idx = parseContentFunction(result, text, idx, whiteSpace, separators);
-
-                        if (idx < 0)
-                        {
-                            return Error<T>(); 
-                        }
-                    }
-                }
-
-                if (idx < text.Length && text[idx] == compositeEnd)
+                if (idx >= 0 && idx < text.Length && text[idx] == compositeEnd)
                 {
                     return (result, (idx - start) + 1);
                 }
                 else
                 {
                     Debug.LogWarning("PropertyTableParser.ParseArrayValue, failed find closing square bracket (']').");
-                    return Error<T>(); 
                 }
+
+                return Error<T>();
             }
             else
             {
                 Debug.LogWarning("PropertyTableParser.ParseArrayValue, failed find opening square bracket ('[').");
                 return Error<T>();  
             }
+        }
+
+        private static int ParseCompositeElements<T>(
+            T result, 
+            string text, 
+            int idx, 
+            char compositeEnd,
+            Func<T, string, int, string, string, int> parseContentFunction,
+            string whiteSpace, 
+            string separators) where T : new()
+        {
+            while (idx >= 0 && idx < text.Length && text[idx] != compositeEnd)
+            {
+                idx = text.Skip(whiteSpace, idx);
+
+                if (text[idx] != compositeEnd)
+                {
+                    idx = parseContentFunction(result, text, idx, whiteSpace, separators);                   
+                }
+            }
+
+            return idx;
         }
 
         private static int ParseStructureContent(
@@ -193,17 +204,9 @@ namespace BareBones.Services.PropertyTable
                 {
                     Debug.LogWarning("PropertyTableParser.ParseArrayValue, failed to parse value.");
                     return -1;
-                }
+                }               
 
-                var nextNonWhiteSpace = text.Skip(whiteSpace, idx);
-
-                if (nextNonWhiteSpace < 0)
-                {
-                    Debug.LogWarning("PropertyTableParser.ParseStruct, malformed structure.");
-                    return -1;
-                }
-
-                idx = nextNonWhiteSpace;
+                idx = text.Skip(whiteSpace, idx);
 
                 if (idx < text.Length && text[idx] != '}')
                 {

@@ -19,7 +19,7 @@ public class PropertyTableParserTest
             "   objFlag: true," +
             "}";
 
-        var value = PropertyTableParser.Read(new UnityEngine.TextAsset(text));
+        var value = PolyPropsParser.Read(new UnityEngine.TextAsset(text).text);
         var expected = new Dictionary<string, object>()
         {
             { "foo", "bar" },
@@ -33,10 +33,8 @@ public class PropertyTableParserTest
                 }
             }
         };
-
-        // xxx left off here
-        // Assert.AreEqual(expected, value);
-
+        
+        Assert.AreEqual(expected, value);
     }
 
     [Test]
@@ -44,26 +42,26 @@ public class PropertyTableParserTest
     public void ParseValidKeyTest()
     {
         var testString = "key:";
-        var result = PropertyTableParser.ParseKey(testString, 0, 0);
+        var result = PolyPropsParser.ParseKey(testString, 0, 0);
 
         Assert.IsTrue(result.key == "key");
         Assert.IsTrue(result.charactersRead == testString.Length);
 
         testString = " key :";
-        result = PropertyTableParser.ParseKey(testString, 0, 0);
+        result = PolyPropsParser.ParseKey(testString, 0, 0);
 
         Assert.IsTrue(result.key == "key");
         Assert.IsTrue(result.charactersRead == testString.Length);
 
         testString = " a b c :";
-        result = PropertyTableParser.ParseKey(testString, 0, 0);
+        result = PolyPropsParser.ParseKey(testString, 0, 0);
 
         Assert.IsTrue(result.key == "a b c");
         Assert.IsTrue(result.charactersRead == testString.Length);
 
         var prefix = "keyA: bla\n";
         testString = " keyB :";
-        result = PropertyTableParser.ParseKey(prefix + testString, prefix.Length, 0);
+        result = PolyPropsParser.ParseKey(prefix + testString, prefix.Length, 0);
 
         Assert.IsTrue(result.key == "keyB");
         Assert.IsTrue(result.charactersRead == testString.Length);
@@ -74,13 +72,13 @@ public class PropertyTableParserTest
     public void ParseMissingColumnTest()
     {
         var testString = "key";
-        var result = PropertyTableParser.ParseKey(testString, 0, 0);
+        var result = PolyPropsParser.ParseKey(testString, 0, 0);
 
         Assert.IsTrue(result.key == default(string));
         Assert.IsTrue(result.charactersRead == -1);
 
         testString = " key \n";
-        result = PropertyTableParser.ParseKey(testString, 0, 0);
+        result = PolyPropsParser.ParseKey(testString, 0, 0);
 
         Assert.IsTrue(result.key == default(string));
         Assert.IsTrue(result.charactersRead == -1);
@@ -121,13 +119,13 @@ public class PropertyTableParserTest
     [Description("Parse any value.")]
     public void ParseAnyValueTest()
     {
-        var input = new string[] { " 0", " 0.1", "'foo'", "", " true", " ' bar '", " -1.11" };
+        var input = new string[] { " 0", " 0.1", "'foo'", "xxx", " true", " ' bar '", " -1.11" };
         var expectedValue = new object[] { 0.0f, 0.1f, "foo", null, true, " bar ", -1.11f};
 
         for (var i = 0; i < input.Length; i++)
         {
             var testString = input[i];
-            var (value, charactersRead) = PropertyTableParser.ParseValue(testString, 0);
+            var (value, charactersRead) = PolyPropsParser.ParseValue(testString, 0);
 
             if (expectedValue[i] == null)
             {
@@ -169,7 +167,7 @@ public class PropertyTableParserTest
         for (var i = 0; i < input.Length; i++)
         {
             var testString = input[i];
-            var (value, charactersRead) = PropertyTableParser.ParseListValue(testString, 0);
+            var (value, charactersRead) = PolyPropsParser.ParseListValue(testString, 0);
 
             if (expectedValues[i] == null)
             {
@@ -210,7 +208,7 @@ public class PropertyTableParserTest
         for (var i = 0; i < input.Length; i++)
         {
             var testString = input[i];
-            var (value, charactersRead) = PropertyTableParser.ParseListValue(testString, 0);
+            var (value, charactersRead) = PolyPropsParser.ParseListValue(testString, 0);
 
             if (expectedValues[i] == null)
             {
@@ -265,7 +263,7 @@ public class PropertyTableParserTest
         for (var i = 0; i < input.Length; i++)
         {
             var testString = input[i];
-            var (value, charactersRead) = PropertyTableParser.ParseStructureValue(testString, 0);
+            var (value, charactersRead) = PolyPropsParser.ParseStructureValue(testString, 0);
 
             if (expectedValues[i] == null)
             {
@@ -354,7 +352,7 @@ public class PropertyTableParserTest
         for (var i = 0; i < input.Length; i++)
         {       
             var testString = input[i];
-            var (value, charactersRead) = PropertyTableParser.ParseStructureValue(testString, 0);
+            var (value, charactersRead) = PolyPropsParser.ParseStructureValue(testString, 0);
 
             if (expectedValues[i] == null)
             {
@@ -377,7 +375,7 @@ public class PropertyTableParserTest
         for (var i = 0; i < input.Length; i++)
         {
             var testString = input[i];
-            var (value, charactersRead) = PropertyTableParser.ParsePODValue(testString, 0, (str) => parseFunction(str));
+            var (value, charactersRead) = PolyPropsParser.ParsePODValue(testString, 0, (str) => parseFunction(str));
 
             if (expectedValues[i] == null)
             {

@@ -23,11 +23,11 @@
 * [in-progress]
     - [done] Add more tests to nested structure
     - [done] general clean up of the property file      
-    - don't let the list and structure content fail on an end of file, let the composite deal with that
-    - test marked with xxx should after the previous point now succeed
+    - [done] don't let the list and structure content fail on an end of file, let the composite deal with that
+    - [done] test marked with xxx should after the previous point now succeed   
     - provide propertytableparser with a config instead of all the different whitespace, separator things
     - config should include a logger
-    - have whitespace tracker object which also tracks end of lines
+    - use a text cursor which keeps track of column and line - have whitespace tracker object which also tracks end of lines
     - allow for comments
     - allow for non scoped strings
     - allow for ints
