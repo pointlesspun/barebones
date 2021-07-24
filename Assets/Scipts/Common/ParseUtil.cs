@@ -1,11 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using UnityEngine;
-
-public static class ParseUtil
+﻿public static class ParseUtil
 {
     /**
      * Returns the number of whitespace characters at the beginning of the string
@@ -61,15 +54,8 @@ public static class ParseUtil
             {
                 return (idx + 1) - start;
             }
-            
-            Debug.LogWarning("ParseUtil.ReadScopedString string does not end with a delimiter (" + delimiter + ").");
-            return -1;
         }
-        else
-        {
-            Debug.LogWarning("ParseUtil.ReadScopedString string does not start with a delimiter (" + delimiter + ").");
-            return -1;
-        }
+        return -1;
     }
 
     /**
@@ -100,5 +86,51 @@ public static class ParseUtil
         }
         return idx;
     }
-}
 
+    /**
+     * Given a string, determines the line and column the current index is at
+     */
+    public static (int line, int column) GetLineAndColumn(this string text, int idx)
+    {
+
+        var column = 0;
+        var line = 0;
+
+        do
+        {
+            if (idx > 0)
+            {
+                if (idx < text.Length && (text[idx] == '\n' || text[idx] == '\r'))
+                {
+                    line++;
+                    idx--;
+                    break;
+                }
+
+                idx--;
+
+                if (idx < text.Length && (text[idx] == '\n' || text[idx] == '\r'))
+                {
+                    line++;
+                    idx--;
+                    break;
+                }
+
+                column++;
+            }
+        } while (idx > 0);
+
+
+        while (idx > 0)
+        {
+            if (text[idx] == '\n' || text[idx] == '\r')
+            {
+                line++;
+            }
+
+            idx--;
+        }
+
+        return (line, column);
+    }
+}

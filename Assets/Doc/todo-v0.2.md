@@ -27,7 +27,7 @@
     - [done] test marked with xxx should after the previous point now succeed   
     - [done] provide propertytableparser with a config instead of all the different whitespace, separator things
     - [done] config should include a logger
-    - use a text cursor which keeps track of column and line - have whitespace tracker object which also tracks end of lines
+    - [done] track line & column
     - allow for comments
     - allow for non scoped strings
     - allow for ints

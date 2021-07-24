@@ -24,6 +24,6 @@ namespace BareBones.Services.PropertyTable
 
         public string CompositeValueSeparator { get; set; } = ",";
 
-        public Action<int, int, string> Log { get; set; } = (line, column, msg) => Console.WriteLine(msg);
+        public Action<(int, int), string> Log { get; set; } = (position, msg) => Console.WriteLine(msg);
     }
 }

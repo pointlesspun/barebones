@@ -5,13 +5,6 @@ namespace BareBones.Services.PropertyTable
 {
     public static class PolyPropsParser
     {
-        private class Cursor
-        {
-            public int Line { get; set; } = 0;
-            public int Column { get; set; } = 0;
-            public string Text { get; set; }
-        }
-
         private static (T, int) Error<T>() => (default(T), -1);        
        
         public static Dictionary<string, object> Read(
@@ -27,7 +20,7 @@ namespace BareBones.Services.PropertyTable
             {
                 var result = new Dictionary<string, object>();
                 
-                return ParseCompositeElements(result, text, idx, config.MapDelimiters[1], ParseStructureContent, config) >= 0
+                return ParseCompositeElements(result, text, idx, config.MapDelimiters[1], ParseMapContent, config) >= 0
                     ? result
                     : null;
             }
@@ -47,7 +40,8 @@ namespace BareBones.Services.PropertyTable
             // case of no closing column
             else
             {
-                config.Log(0, 0, "PropertyTableParser.ParseKey, key not delimited with a separator ('" + config.KeyValueSeparator + "').");
+                config.Log(text.GetLineAndColumn(start), 
+                    "expected to find a key delimiter: '" + config.KeyValueSeparator + "', but none was found.");
                 return Error<string>();
             }
         }
@@ -95,7 +89,8 @@ namespace BareBones.Services.PropertyTable
                 return (numberValue, charactersRead);
             }
 
-            config.Log(0, 0, "PropertyTableParser.ParseValue, unexpected value: " + character + ", expected string, bool, float, array or struct.");
+            config.Log(text.GetLineAndColumn(start),
+                "trying to parse a value starting with: " + character + ", however this character does not match the start of a string, bool, number, map or list.");
             return Error<object>(); 
         }
 
@@ -104,7 +99,7 @@ namespace BareBones.Services.PropertyTable
             int start,
             PolyPropsConfig config
         )
-            => ParseComposite<Dictionary<string, object>>(text, start, config.MapDelimiters, ParseStructureContent, config);
+            => ParseComposite<Dictionary<string, object>>(text, start, config.MapDelimiters, ParseMapContent, config);
         
 
         public static (List<object> arrayValue, int charactersRead) ParseListValue(
@@ -114,6 +109,53 @@ namespace BareBones.Services.PropertyTable
         )
         => ParseComposite<List<object>>(text, start, config.ListDelimiters, ParseListContent, config);
 
+        public static (T value, int charactersRead) ParsePODValue<T>(
+            string text,
+            int start,
+            Func<string, T> parseFunction,
+            PolyPropsConfig config
+)
+        {
+            var endOfToken = text.IndexOfAny(config.Separators, start);
+
+            endOfToken = endOfToken >= 0 ? endOfToken : text.Length;
+
+            try
+            {
+                var value = parseFunction(text.Substring(start, endOfToken - start));
+                return (value, endOfToken - start);
+            }
+            catch (Exception e)
+            {
+                config.Log(text.GetLineAndColumn(start), "failed to parse value. Exception: " + e);
+                return Error<T>();
+            }
+        }
+
+        public static (string stringValue, int charactersRead) ParseStringValue(string text, int start, PolyPropsConfig config)
+        {
+            var firstCharacter = text[start];
+
+            if (config.StringDelimiters.IndexOf(firstCharacter) >= 0)
+            {
+                var scopedStringLength = text.ReadScopedString(start, firstCharacter);
+
+                if (scopedStringLength > 0)
+                {
+                    return (text.Substring(start + 1, scopedStringLength - 2), scopedStringLength);
+                }
+                else
+                {
+                    config.Log(text.GetLineAndColumn(start), "failed to parse string, syntax may be incorrect.");
+                }
+            }
+            else
+            {
+                config.Log(text.GetLineAndColumn(start), "failed to parse string, missing beginning quotation mark.");
+            }
+
+            return Error<string>();
+        }
 
         private static (T value, int charactersRead) ParseComposite<T>(
             string text,
@@ -135,14 +177,14 @@ namespace BareBones.Services.PropertyTable
                 }
                 else
                 {
-                    config.Log(0, 0, "PropertyTableParser.ParseComposite, failed find closing delimiter ('" + compositeDelimiters[1] + "').");
+                    config.Log(text.GetLineAndColumn(idx), "failed find closing delimiter ('" + compositeDelimiters[1] + "').");
                 }
 
                 return Error<T>();
             }
             else
             {
-                config.Log(0, 0, "PropertyTableParser.ParseArrayValue, failed find opening delimiter ('" + compositeDelimiters[0] + "').");
+                config.Log(text.GetLineAndColumn(start),  "failed find opening delimiter ('" + compositeDelimiters[0] + "').");
                 return Error<T>();  
             }
         }
@@ -168,7 +210,7 @@ namespace BareBones.Services.PropertyTable
             return idx;
         }
 
-        private static int ParseStructureContent(
+        private static int ParseMapContent(
             Dictionary<string, object> result, 
             string text, 
             int idx,
@@ -192,17 +234,17 @@ namespace BareBones.Services.PropertyTable
                     }
                     else
                     {
-                        config.Log(0, 0, "PropertyTableParser.ParseArrayValue, failed to parse value.");
+                        config.Log(text.GetLineAndColumn(idx), "failed to parse value.");
                         return -1;
                     }
 
                     idx = text.Skip(config.WhiteSpace, idx);
 
-                    if (idx < text.Length && text[idx] != '}')
+                    if (idx < text.Length && text[idx] != config.MapDelimiters[1])
                     {
                         if (config.CompositeValueSeparator.IndexOf(text[idx]) < 0)
                         {
-                            config.Log(0, 0, "PropertyTableParser.ParseArrayValue, missing separator.");
+                            config.Log(text.GetLineAndColumn(idx), "missing separator.");
                             return -1;
                         }
 
@@ -216,19 +258,20 @@ namespace BareBones.Services.PropertyTable
             }
             else
             {
-                config.Log(0, 0, "PropertyTableParser.ParseStructureValue, key is not valid.");
+                config.Log(text.GetLineAndColumn(idx), "cannot parse key.");
                 return -1;
             }
 
             return idx;
         }       
 
+
         private static int ParseListContent(
-            List<object> result, 
-            string text, 
+            List<object> result,
+            string text,
             int idx,
             PolyPropsConfig config
-        ) 
+        )
         {
             var (value, charactersRead) = ParseValue(text, idx, config);
 
@@ -239,7 +282,7 @@ namespace BareBones.Services.PropertyTable
             }
             else
             {
-                config.Log(0, 0, "PropertyTableParser.ParseArrayValue, failed to parse value.");
+                config.Log(text.GetLineAndColumn(idx), "failed to list value.");
                 return -1;
             }
 
@@ -250,7 +293,7 @@ namespace BareBones.Services.PropertyTable
             {
                 if (config.CompositeValueSeparator.IndexOf(text[idx]) < 0)
                 {
-                    config.Log(0, 0, "PropertyTableParser.ParseListContent, missing separator.");
+                    config.Log(text.GetLineAndColumn(idx),  "missing separator.");
                     return -1;
                 }
 
@@ -258,50 +301,6 @@ namespace BareBones.Services.PropertyTable
             }
 
             return idx;
-        }
-
-        public static (T value, int charactersRead) ParsePODValue<T>(
-            string text,
-            int start,
-            Func<string, T> parseFunction,
-            PolyPropsConfig config
-        )
-        {
-            var endOfToken = text.IndexOfAny(config.Separators, start);
-
-            endOfToken = endOfToken >= 0 ? endOfToken : text.Length;
-
-            try
-            {
-                var value = parseFunction(text.Substring(start, endOfToken - start));
-                return (value, endOfToken - start);
-            }
-            catch (Exception e)
-            {
-                config.Log(0, 0, "PropertyTableParser.ParsePODValue, failed to parse value. Exception: " + e);
-                return Error<T>();
-            }
-        }
-
-        public static (string stringValue, int charactersRead) ParseStringValue(string text, int start, PolyPropsConfig config)
-        {
-            var firstCharacter = text[start];
-
-            if (config.StringDelimiters.IndexOf(firstCharacter) >= 0)
-            {
-                var scopedStringLength = text.ReadScopedString(start, firstCharacter);
-
-                if (scopedStringLength > 0)
-                {
-                    return (text.Substring(start + 1, scopedStringLength - 2), scopedStringLength);
-                }
-            }
-            else
-            {
-                config.Log(0, 0, "PropertyTableParser.ParseStringValue: failed to parse string, missing beginning quotation mark.");
-            }
-
-            return Error<string>();
         }
     }
 }
