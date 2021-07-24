@@ -26,12 +26,14 @@
     - [done] don't let the list and structure content fail on an end of file, let the composite deal with that
     - [done] test marked with xxx should after the previous point now succeed   
     - [done] provide propertytableparser with a config instead of all the different whitespace, separator things
-    - config should include a logger
+    - [done] config should include a logger
     - use a text cursor which keeps track of column and line - have whitespace tracker object which also tracks end of lines
     - allow for comments
     - allow for non scoped strings
     - allow for ints
     - allow for case not being an issue when parsing booleans
+    - allow for key delimiters
+    - test against a json
 
 * Add Score
 * Add title screen 

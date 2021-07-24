@@ -118,7 +118,7 @@ public class PropertyTableParserTest
     [Description("Parse any value.")]
     public void ParseAnyValueTest()
     {
-        var input = new string[] { " 0", " 0.1", "'foo'", "xxx", " true", " ' bar '", " -1.11" };
+        var input = new string[] { "0", "0.1", "'foo'", "xxx", "true", "' bar '", "-1.11" };
         var expectedValue = new object[] { 0.0f, 0.1f, "foo", null, true, " bar ", -1.11f};
 
         for (var i = 0; i < input.Length; i++)
@@ -374,7 +374,7 @@ public class PropertyTableParserTest
         for (var i = 0; i < input.Length; i++)
         {
             var testString = input[i];
-            var (value, charactersRead) = PolyPropsParser.ParsePODValue(testString, 0, (str) => parseFunction(str));
+            var (value, charactersRead) = PolyPropsParser.ParsePODValue(testString, 0, (str) => parseFunction(str), PolyPropsConfig.Default);
 
             if (expectedValues[i] == null)
             {
