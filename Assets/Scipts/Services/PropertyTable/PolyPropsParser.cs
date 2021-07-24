@@ -6,8 +6,21 @@ namespace BareBones.Services.PropertyTable
 {
     public class PolyPropsConfig
     {
+        public static readonly PolyPropsConfig Default = new PolyPropsConfig();
+
         public string WhiteSpace { get; set; } = " \t\r\n";
+
         public string Separators { get; set; } = " \t\n\r,[]{}";
+
+        public string MapDelimiters { get; set; } = "{}";
+
+        public string ListDelimiters { get; set; } = "[]";
+
+        public string StringDelimiters { get; set; } = "\"'";    
+
+        public char KeyValueSeparator { get; set; } = ':';
+
+        public string CompositeValueSeparator { get; set; } = ",";
     }
 
     public static class PolyPropsParser
@@ -15,18 +28,19 @@ namespace BareBones.Services.PropertyTable
         private static (T, int) Error<T>() => (default(T), -1);        
        
         public static Dictionary<string, object> Read(
-            string text, 
-            string whiteSpace = " \t\r\n",
-            string separators = " \t\n\r,[]{}"
+            string text,
+            PolyPropsConfig config = null
         )
         {
-            var idx = text.Skip(whiteSpace, 0);
+            config ??= PolyPropsConfig.Default;
+
+            var idx = text.Skip(config.WhiteSpace, 0);
 
             if (idx >= 0 && idx < text.Length)
             {
                 var result = new Dictionary<string, object>();
                 
-                return ParseCompositeElements(result, text, idx, (char) 0, ParseStructureContent, whiteSpace, separators) >= 0
+                return ParseCompositeElements(result, text, idx, config.MapDelimiters[1], ParseStructureContent, config) >= 0
                     ? result
                     : null;
             }
@@ -34,9 +48,9 @@ namespace BareBones.Services.PropertyTable
             return null;
         }
 
-        public static (string key, int charactersRead) ParseKey(string text, int start, int line)
+        public static (string key, int charactersRead) ParseKey(string text, int start, PolyPropsConfig config)
         {
-            var endOfKey = text.IndexOf(':', start);
+            var endOfKey = text.IndexOf(config.KeyValueSeparator, start);
 
             // valid key found
             if (endOfKey >= 0)
@@ -46,7 +60,7 @@ namespace BareBones.Services.PropertyTable
             // case of no closing column
             else
             {
-                Debug.LogWarning("PropertyTableParser.ParseKey, key not delimited with a column ':' at line " + line + ".");
+                Debug.LogWarning("PropertyTableParser.ParseKey, key not delimited with a separator ('" + config.KeyValueSeparator + "').");
                 return Error<string>();
             }
         }
@@ -54,11 +68,10 @@ namespace BareBones.Services.PropertyTable
         public static (object value, int charactersRead) ParseValue(
             string text,
             int start,
-            string whiteSpace = " \t",
-            string separators = " \t\n\r,[]{}"
+            PolyPropsConfig config
         )
         {
-            var valueStartIdx = text.Skip(whiteSpace, start);
+            var valueStartIdx = text.Skip(config.WhiteSpace, start);
 
             // end-of-line or end-of-file?
             if (valueStartIdx == -1 || "\n\r".IndexOf(text[valueStartIdx]) >= 0)
@@ -75,32 +88,32 @@ namespace BareBones.Services.PropertyTable
                 || ParseUtil.MatchLength(text, "false", valueStartIdx) == 5))
             {
                 var (booleanValue, charactersRead) = 
-                    ParsePODValue(text, valueStartIdx, (str) => bool.Parse(str), separators);
+                    ParsePODValue(text, valueStartIdx, (str) => bool.Parse(str), config.Separators);
                 return (booleanValue, charactersRead + whiteCharacterCount);
             }
             // try to parse a number
             else if (character == '-' || char.IsDigit(character))
             {
                 var (numberValue, charactersRead) = 
-                    ParsePODValue(text, valueStartIdx, (str) => float.Parse(str), separators);
+                    ParsePODValue(text, valueStartIdx, (str) => float.Parse(str), config.Separators);
                 return (numberValue, charactersRead + whiteCharacterCount);
             }
-            // try parse an array
-            else if (character == '[')
+            // try parse a list
+            else if (character == config.ListDelimiters[0])
             {
-                var (arrayValue, charactersRead) = ParseListValue(text, valueStartIdx);
+                var (arrayValue, charactersRead) = ParseListValue(text, valueStartIdx, config);
                 return (arrayValue, charactersRead + whiteCharacterCount);
             }
             // try parse a structure
-            else if (character == '{')
+            else if (character == config.MapDelimiters[0])
             {
-                var (structValue, charactersRead) = ParseStructureValue(text, valueStartIdx);
+                var (structValue, charactersRead) = ParseStructureValue(text, valueStartIdx, config);
                 return (structValue, charactersRead + whiteCharacterCount);
             }
             // try to parse a string
-            else  if (character == '"' || character == '\'')
+            else  if (config.StringDelimiters.IndexOf(character) >= 0)
             {
-                var (numberValue, charactersRead) = ParseStringValue(text, valueStartIdx);
+                var (numberValue, charactersRead) = ParseStringValue(text, valueStartIdx, config);
                 return (numberValue, charactersRead + whiteCharacterCount);
             }
 
@@ -111,35 +124,32 @@ namespace BareBones.Services.PropertyTable
         public static (Dictionary<string, object> value, int charactersRead) ParseStructureValue(
             string text,
             int start,
-            string whiteSpace = " \t\n\r",
-            string separators = " \t\n\r,[]{}"
+            PolyPropsConfig config
         )
-            => ParseComposite<Dictionary<string, object>>(text, start, '{', '}', ParseStructureContent, whiteSpace, separators);
+            => ParseComposite<Dictionary<string, object>>(text, start, config.MapDelimiters, ParseStructureContent, config);
         
 
         public static (List<object> arrayValue, int charactersRead) ParseListValue(
             string text,
             int start,
-            string whiteSpace = " \t\n\r",
-            string separators = " \t\n\r,[]{}"
+            PolyPropsConfig config
         )
-        => ParseComposite<List<object>>(text, start, '[', ']', ParseListContent, whiteSpace, separators);
+        => ParseComposite<List<object>>(text, start, config.ListDelimiters, ParseListContent, config);
 
 
         private static (T value, int charactersRead) ParseComposite<T>(
             string text,
             int start,
-            char compositeStart,
-            char compositeEnd,
-            Func<T, string, int,string, string, int> parseContentFunction,
-            string whiteSpace = " \t\n\r",
-            string separators = " \t\n\r,[]{}"
+            string compositeDelimiters,
+            Func<T, string, int, PolyPropsConfig, int> parseContentFunction,
+            PolyPropsConfig config
         ) where T : new()
         {           
-            if (text[start] == compositeStart)
+            if (text[start] == compositeDelimiters[0])
             {
+                var compositeEnd = compositeDelimiters[1];
                 var result = new T();
-                var idx = ParseCompositeElements(result, text, start + 1, compositeEnd, parseContentFunction, whiteSpace, separators);
+                var idx = ParseCompositeElements(result, text, start + 1, compositeEnd, parseContentFunction, config);
 
                 if (idx >= 0 && idx < text.Length && text[idx] == compositeEnd)
                 {
@@ -147,14 +157,14 @@ namespace BareBones.Services.PropertyTable
                 }
                 else
                 {
-                    Debug.LogWarning("PropertyTableParser.ParseArrayValue, failed find closing square bracket (']').");
+                    Debug.LogWarning("PropertyTableParser.ParseComposite, failed find closing delimiter ('" + compositeDelimiters[1] + "').");
                 }
 
                 return Error<T>();
             }
             else
             {
-                Debug.LogWarning("PropertyTableParser.ParseArrayValue, failed find opening square bracket ('[').");
+                Debug.LogWarning("PropertyTableParser.ParseArrayValue, failed find opening delimiter ('" + compositeDelimiters[0] + "').");
                 return Error<T>();  
             }
         }
@@ -164,17 +174,16 @@ namespace BareBones.Services.PropertyTable
             string text, 
             int idx, 
             char compositeEnd,
-            Func<T, string, int, string, string, int> parseContentFunction,
-            string whiteSpace, 
-            string separators) where T : new()
+            Func<T, string, int, PolyPropsConfig, int> parseContentFunction,
+            PolyPropsConfig config) where T : new()
         {
             while (idx >= 0 && idx < text.Length && text[idx] != compositeEnd)
             {
-                idx = text.Skip(whiteSpace, idx);
+                idx = text.Skip(config.WhiteSpace, idx);
 
                 if (text[idx] != compositeEnd)
                 {
-                    idx = parseContentFunction(result, text, idx, whiteSpace, separators);                   
+                    idx = parseContentFunction(result, text, idx, config);                   
                 }
             }
 
@@ -185,15 +194,14 @@ namespace BareBones.Services.PropertyTable
             Dictionary<string, object> result, 
             string text, 
             int idx,
-            string whiteSpace,
-            string separators)
+            PolyPropsConfig config)
         {
-            var (key, charactersRead) = ParseKey(text, idx, 0);
+            var (key, charactersRead) = ParseKey(text, idx, config);
 
             if (key != default)
             {
                 idx += charactersRead;
-                var parseResult = ParseValue(text, idx, whiteSpace, separators);
+                var parseResult = ParseValue(text, idx, config);
 
                 if (parseResult.value != null)
                 {
@@ -206,11 +214,11 @@ namespace BareBones.Services.PropertyTable
                     return -1;
                 }               
 
-                idx = text.Skip(whiteSpace, idx);
+                idx = text.Skip(config.WhiteSpace, idx);
 
                 if (idx < text.Length && text[idx] != '}')
                 {
-                    if (text[idx] != ',')
+                    if (config.CompositeValueSeparator.IndexOf(text[idx]) < 0)
                     {
                         Debug.LogWarning("PropertyTableParser.ParseArrayValue, missing separator.");
                         return -1;
@@ -226,18 +234,16 @@ namespace BareBones.Services.PropertyTable
             }
 
             return idx;
-
         }       
 
         private static int ParseListContent(
             List<object> result, 
             string text, 
-            int idx, 
-            string whiteSpace, 
-            string separators
+            int idx,
+            PolyPropsConfig config
         ) 
         {
-            var parseResult = ParseValue(text, idx, whiteSpace, separators);
+            var parseResult = ParseValue(text, idx, config);
 
             if (parseResult.value != null)
             {
@@ -251,13 +257,13 @@ namespace BareBones.Services.PropertyTable
             }
 
             // skip white space
-            idx = text.Skip(whiteSpace, idx); 
+            idx = text.Skip(config.WhiteSpace, idx); 
 
-            if (idx < text.Length && text[idx] != ']')
+            if (idx < text.Length && text[idx] != config.ListDelimiters[1])
             {
-                if (text[idx] != ',')
+                if (config.CompositeValueSeparator.IndexOf(text[idx]) < 0)
                 {
-                    Debug.LogWarning("PropertyTableParser.ParseArrayValue, missing separator.");
+                    Debug.LogWarning("PropertyTableParser.ParseListContent, missing separator.");
                     return -1;
                 }
 
@@ -290,11 +296,11 @@ namespace BareBones.Services.PropertyTable
             }
         }
 
-        public static (string stringValue, int charactersRead) ParseStringValue(string text, int start)
+        public static (string stringValue, int charactersRead) ParseStringValue(string text, int start, PolyPropsConfig config)
         {
             var firstCharacter = text[start];
 
-            if (firstCharacter == '"' || firstCharacter == '\'')
+            if (config.StringDelimiters.IndexOf(firstCharacter) >= 0)
             {
                 var scopedStringLength = text.ReadScopedString(start, firstCharacter);
 
@@ -305,7 +311,7 @@ namespace BareBones.Services.PropertyTable
             }
             else
             {
-                Debug.LogWarning("PropertyTableParser.ParseScopedStringValue: failed to parse string, missing beginning quotation mark.");
+                Debug.LogWarning("PropertyTableParser.ParseStringValue: failed to parse string, missing beginning quotation mark.");
             }
 
             return Error<string>();

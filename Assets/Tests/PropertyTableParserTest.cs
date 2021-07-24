@@ -42,26 +42,26 @@ public class PropertyTableParserTest
     public void ParseValidKeyTest()
     {
         var testString = "key:";
-        var result = PolyPropsParser.ParseKey(testString, 0, 0);
+        var result = PolyPropsParser.ParseKey(testString, 0, PolyPropsConfig.Default);
 
         Assert.IsTrue(result.key == "key");
         Assert.IsTrue(result.charactersRead == testString.Length);
 
         testString = " key :";
-        result = PolyPropsParser.ParseKey(testString, 0, 0);
+        result = PolyPropsParser.ParseKey(testString, 0,  PolyPropsConfig.Default);
 
         Assert.IsTrue(result.key == "key");
         Assert.IsTrue(result.charactersRead == testString.Length);
 
         testString = " a b c :";
-        result = PolyPropsParser.ParseKey(testString, 0, 0);
+        result = PolyPropsParser.ParseKey(testString, 0, PolyPropsConfig.Default);
 
         Assert.IsTrue(result.key == "a b c");
         Assert.IsTrue(result.charactersRead == testString.Length);
 
         var prefix = "keyA: bla\n";
         testString = " keyB :";
-        result = PolyPropsParser.ParseKey(prefix + testString, prefix.Length, 0);
+        result = PolyPropsParser.ParseKey(prefix + testString, prefix.Length, PolyPropsConfig.Default);
 
         Assert.IsTrue(result.key == "keyB");
         Assert.IsTrue(result.charactersRead == testString.Length);
@@ -72,18 +72,17 @@ public class PropertyTableParserTest
     public void ParseMissingColumnTest()
     {
         var testString = "key";
-        var result = PolyPropsParser.ParseKey(testString, 0, 0);
+        var result = PolyPropsParser.ParseKey(testString, 0, PolyPropsConfig.Default);
 
         Assert.IsTrue(result.key == default(string));
         Assert.IsTrue(result.charactersRead == -1);
 
         testString = " key \n";
-        result = PolyPropsParser.ParseKey(testString, 0, 0);
+        result = PolyPropsParser.ParseKey(testString, 0, PolyPropsConfig.Default);
 
         Assert.IsTrue(result.key == default(string));
         Assert.IsTrue(result.charactersRead == -1);
     }
-
 
     [Test]
     [Description("Parse int values.")]
@@ -125,7 +124,7 @@ public class PropertyTableParserTest
         for (var i = 0; i < input.Length; i++)
         {
             var testString = input[i];
-            var (value, charactersRead) = PolyPropsParser.ParseValue(testString, 0);
+            var (value, charactersRead) = PolyPropsParser.ParseValue(testString, 0, PolyPropsConfig.Default);
 
             if (expectedValue[i] == null)
             {
@@ -167,7 +166,7 @@ public class PropertyTableParserTest
         for (var i = 0; i < input.Length; i++)
         {
             var testString = input[i];
-            var (value, charactersRead) = PolyPropsParser.ParseListValue(testString, 0);
+            var (value, charactersRead) = PolyPropsParser.ParseListValue(testString, 0, PolyPropsConfig.Default);
 
             if (expectedValues[i] == null)
             {
@@ -208,7 +207,7 @@ public class PropertyTableParserTest
         for (var i = 0; i < input.Length; i++)
         {
             var testString = input[i];
-            var (value, charactersRead) = PolyPropsParser.ParseListValue(testString, 0);
+            var (value, charactersRead) = PolyPropsParser.ParseListValue(testString, 0, PolyPropsConfig.Default);
 
             if (expectedValues[i] == null)
             {
@@ -263,7 +262,7 @@ public class PropertyTableParserTest
         for (var i = 0; i < input.Length; i++)
         {
             var testString = input[i];
-            var (value, charactersRead) = PolyPropsParser.ParseStructureValue(testString, 0);
+            var (value, charactersRead) = PolyPropsParser.ParseStructureValue(testString, 0, PolyPropsConfig.Default);
 
             if (expectedValues[i] == null)
             {
@@ -352,7 +351,7 @@ public class PropertyTableParserTest
         for (var i = 0; i < input.Length; i++)
         {       
             var testString = input[i];
-            var (value, charactersRead) = PolyPropsParser.ParseStructureValue(testString, 0);
+            var (value, charactersRead) = PolyPropsParser.ParseStructureValue(testString, 0, PolyPropsConfig.Default);
 
             if (expectedValues[i] == null)
             {

@@ -98,8 +98,6 @@ public static class ParseUtil
         {
             idx++;
         }
-
-        //return idx < str.Length ? idx : -1;
         return idx;
     }
 }
