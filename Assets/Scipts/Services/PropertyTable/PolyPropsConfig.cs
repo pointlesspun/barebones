@@ -28,6 +28,10 @@ namespace BareBones.Services.PropertyTable
 
         public string UnquotedStringsDelimiters { get; set; } = "\n\r,[]{}:";
 
+        public string BooleanTrue { get; set; } = "true";
+
+        public string BooleanFalse { get; set; } = "false";
+
         public Action<(int, int), string> Log { get; set; } = (position, msg) => Console.WriteLine(msg);
     }
 }

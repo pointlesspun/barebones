@@ -55,8 +55,7 @@ namespace BareBones.Services.PropertyTable
             var character = text[start];
 
             // try parse booleans
-            if ((character == 't' || character == 'f') // quick check before doing the heavier match
-                && (text.IsMatch("true", start) || text.IsMatch("false", start)))
+            if (text.IsMatch(config.BooleanTrue, start, true) || text.IsMatch(config.BooleanFalse, start, true))
             {
                 return ParseValue(text, start, (str) => bool.Parse(str), config);
             }

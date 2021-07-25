@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using NUnit.Framework;
 using BareBones.Services.PropertyTable;
 
-public class PropertyTableParserTest
+public class PolyPropsParserTest
 {
     [Test]
     [Description("Test if single line comment in between key value pairs is ignored.")]
@@ -113,7 +113,7 @@ public class PropertyTableParserTest
     {
         var text =
             "key1: 'value', # comment \n" +
-            "key2: true #comment \n," +
+            "key2: TRUE #comment \n," +
             "\n" +
             "key3: 42\n ## more comments \n,";
 
@@ -141,7 +141,7 @@ public class PropertyTableParserTest
         var text =
             "key1: 'value',\n" +
             "// this are some single\n" +
-            "key2: true\n," +
+            "key2: tRuE\n," +
             "\n" +
             "// comments\n" +
             "key3: 42\n," +
@@ -302,7 +302,7 @@ public class PropertyTableParserTest
     [Description("Parse boolean values.")]
     public void ParseBoolValueTest()
     {
-        var input = new string[] { "true", "false", "", " \n", "true", "'true' ", "fals", "TRUE" };
+        var input = new string[] { "true", "False", "", " \n", "true", "'true' ", "fals", "TRUE" };
         var expectedValue = new object[] { true, false, null, null, true, null, null, true };
 
         TestParseValues(input, expectedValue, (str) => bool.Parse(str));

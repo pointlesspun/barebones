@@ -18,8 +18,10 @@ public static class ParseUtil
         return i - startIndex;
     }
 
-    public static bool IsMatch(this string str, string token, int strPosition) =>
-        MatchLength(str, token, strPosition) == token.Length;
+    public static bool IsMatch(this string str, string token, int strPosition, bool ignoreCase = false) =>
+        ignoreCase
+            ? MatchLength(str.ToLowerInvariant(), token.ToLowerInvariant(), strPosition, 0) == token.Length
+            : MatchLength(str, token, strPosition, 0) == token.Length;
 
     /** Returns number of matching characters in str1 and str2 starting at the given positions */
     public static int MatchLength(string str1, string str2, int start1 = 0, int start2 = 0)
@@ -27,7 +29,7 @@ public static class ParseUtil
         var idx1 = start1;
         var idx2 = start2;
 
-        while (idx1 < str1.Length && idx2 < str2.Length && str1[idx1] == str2[idx2] )
+        while (idx1 < str1.Length && idx2 < str2.Length && str1[idx1] == str2[idx2])
         {
             idx1++;
             idx2++;
@@ -35,6 +37,8 @@ public static class ParseUtil
 
         return idx2 - start2;
     }
+
+    public static bool CompareIgnoreCase(this char c1, char c2) => char.ToLower(c1) == char.ToLower(c2);
 
     /**
      * Get the length from a string starting with the given delimiter until and including the end of the delimiter
