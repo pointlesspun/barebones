@@ -5,7 +5,7 @@ namespace BareBones.Services.PropertyTable
 {
     public static class PolyPropsParser
     {
-        private static (T, int) Error<T>() => (default(T), -1);        
+        public static (T, int) Error<T>() => (default(T), -1);        
        
         public static object Read(
             string text,
@@ -65,6 +65,11 @@ namespace BareBones.Services.PropertyTable
         {
             var character = text[start];
 
+            // can an extension handle this ?
+            if (config.CanParse != null && config.CanParse(text, start, config))
+            {
+                return config.Parse(text, start, config);
+            }
             // try parse booleans
             if (text.IsMatch(config.BooleanTrue, start, true) || text.IsMatch(config.BooleanFalse, start, true))
             {

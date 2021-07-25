@@ -4,9 +4,93 @@ using System.Collections.Generic;
 
 using NUnit.Framework;
 using BareBones.Services.PropertyTable;
+using UnityEngine;
 
 public class PolyPropsParserTest
 {
+    [Test]
+    [Description("Test if the extension collection handles all cases.")]
+    public void ExtensionCollectionTest()
+    {
+        var text =
+            "   // reading some colors and vectors\n" +
+            "   c1: #0010FF,\n" +
+            "   v1: v[1,2,3],\n" +
+            "   foo: 'bar'\n" +
+            "}";
+
+        var config = PolyPropsExtensionCollection.CreateConfig(
+            typeof(ParseVectorExtension),
+            typeof(ParseColorExtension)
+        );
+
+        var value = PolyPropsParser.Read(text, config);
+        var expected = new Dictionary<string, object>()
+        {
+            { "c1", new Color(0, 16.0f / 255.0f, 1.0f, 1.0f) },
+            { "v1", new Vector3(1,2,3)},
+            { "foo", "bar" },
+        };
+        Assert.AreEqual(expected, value);
+    }
+
+
+    [Test]
+    [Description("Test if the color extension is capable of parsing all the colors.")]
+    public void ColorExtensionTest()
+    {
+        var text =
+            "   // reading some colors\n" +
+            "   c1: #0010FF,\n" +
+            "   c2: #0010FF01,\n" +
+            "   foo: 'bar'\n" +
+            "}";
+
+        var colorParser = new ParseColorExtension();
+        var config = new PolyPropsConfig()
+        {
+            CanParse = colorParser.CanParse,
+            Parse = colorParser.Parse
+        };
+        var value = PolyPropsParser.Read(text, config);
+        var expected = new Dictionary<string, object>()
+        {
+            { "c1", new Color(0, 16.0f / 255.0f, 1.0f, 1.0f) },
+            { "c2", new Color(0, 16.0f / 255.0f, 1.0f, 1.0f / 255.0f) },
+            { "foo", "bar" },
+        };
+        Assert.AreEqual(expected, value);
+    }
+
+    [Test]
+    [Description("Test if the vector extension is capable of parsing all the vector types.")]
+    public void VectorExtensionTest()
+    {
+        var text = 
+            "   // reading some vectors\n" +
+            "   v2: v[1.0, 2],\n" +
+            "   v3: v[1.0f, 2.0f, 3.0f],\n" +
+            "   v4: v[1.0m, 2s, 3b, 4ul],\n" +
+            "   foo: 'bar'\n" +
+            "}";
+
+        var vectorParser = new ParseVectorExtension();
+        var config = new PolyPropsConfig()
+        {
+            CanParse = vectorParser.CanParse,
+            Parse = vectorParser.Parse
+        };
+        var value = PolyPropsParser.Read(text, config);
+        var expected = new Dictionary<string, object>()
+        {
+            { "v2", new Vector2(1.0f, 2.0f) },
+            { "v3", new Vector3(1.0f, 2.0f, 3.0f) },
+            { "v4", new Vector4(1.0f, 2.0f, 3.0f, 4.0f) },
+            { "foo", "bar" },
+        };
+        Assert.AreEqual(expected, value);
+    }
+
     [Test]
     [Description("Test if a top level map is parsed correctly.")]
     public void ReadMapTest()

@@ -34,10 +34,11 @@
     - [done] allow for case not being an issue when parsing booleans
     - [done] allow for key delimiters (strings)
     - [done] in read check first non-comment char, if [ parselist, if { parsemap, else parse mapcontents
-    - allow for config to have value overrides, eg: <x,y,z> -> Vector3 or <x,y,z,w> -> Quat, or #20292 -> color or |a,b,c| -> Set, file: -> load other file
+    - [done] allow for config to have value overrides, eg: <x,y,z> -> Vector3 or <x,y,z,w> -> Quat, or #20292 -> color or |a,b,c| -> Set, file: -> load other file
     - add datamapper dict->obj     
     - multiline comments ?
     - test against a json, .properties, command line, .csv
+    - clean up document
 
 * Add Score
 * Add title screen 

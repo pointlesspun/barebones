@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace BareBones.Services.PropertyTable
 {
@@ -35,5 +31,9 @@ namespace BareBones.Services.PropertyTable
         public string NullValue { get; set; } = "null";
 
         public Action<(int, int), string> Log { get; set; } = (position, msg) => Console.WriteLine(msg);
+
+        public Func<string, int, PolyPropsConfig, bool> CanParse { get; set; }
+
+        public Func<string, int, PolyPropsConfig, (object, int)> Parse { get; set; }
     }
 }
