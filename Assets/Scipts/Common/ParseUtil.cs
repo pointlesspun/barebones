@@ -1,4 +1,6 @@
-﻿using System.Text;
+﻿using System;
+using System.Globalization;
+using System.Text;
 
 public static class ParseUtil
 {
@@ -139,5 +141,91 @@ public static class ParseUtil
         return (line, column);
     }
 
-    
+    public static bool IsUnsignedLongOrShort(this string numberString) =>
+        (numberString.Length > 2 && char.ToLower(numberString[numberString.Length - 2]) == 'u');
+
+    public static object ParseNumber(this string numberString)
+    {
+        if (String.Empty == numberString)
+        {
+            throw new ArgumentException("Attempting to parse an empty string.");
+        }
+
+        if (numberString.Length > 2 && char.ToLower(numberString[1]) == 'x')
+        {
+            return Convert.ToInt32(numberString, 16);
+        }
+
+        var lastCharacter = numberString[numberString.Length - 1];
+
+        if (char.IsDigit(lastCharacter))
+        {
+            bool hasExponent = numberString.IndexOf('e') >= 0 || numberString.IndexOf('E') >= 0;
+            if (numberString.IndexOf('.') >= 0 || hasExponent)
+            {
+                if (hasExponent)
+                {
+                    return double.Parse(numberString, NumberStyles.AllowExponent | NumberStyles.AllowDecimalPoint | NumberStyles.AllowLeadingSign);
+                }
+
+                return double.Parse(numberString);
+            }
+
+            return int.Parse(numberString);
+        }
+
+        lastCharacter = char.ToLower(lastCharacter);
+
+        if ("fulmsbd".IndexOf(lastCharacter) < 0)
+        {
+            throw new ArgumentException( "found unknown character ending: '" + lastCharacter + "'.");
+        }
+        
+        if (lastCharacter == 'm')
+        {
+            return Decimal.Parse(numberString.Substring(0, numberString.Length - 1));
+        }
+        else if (lastCharacter == 'f')
+        {
+            return float.Parse(numberString.Substring(0, numberString.Length - 1));
+        }
+        else if (lastCharacter == 'd')
+        {
+            bool hasExponent = numberString.IndexOf('e') >= 0 || numberString.IndexOf('E') >= 0;
+            if (hasExponent)
+            {
+                return double.Parse(numberString.Substring(0, numberString.Length - 1), NumberStyles.AllowExponent | NumberStyles.AllowDecimalPoint | NumberStyles.AllowLeadingSign);
+            }
+
+            return double.Parse(numberString.Substring(0, numberString.Length - 1));
+        }
+        else if (lastCharacter == 'u')
+        {
+            return uint.Parse(numberString.Substring(0, numberString.Length - 1));
+        }
+        else if (lastCharacter == 's')
+        {
+            if (ParseUtil.IsUnsignedLongOrShort(numberString))
+            {
+                return ushort.Parse(numberString.Substring(0, numberString.Length - 2));
+            }
+
+            return short.Parse(numberString.Substring(0, numberString.Length - 1));
+        }
+        else if (lastCharacter == 'b')
+        {
+            return byte.Parse(numberString.Substring(0, numberString.Length - 1));
+        }
+        else if (lastCharacter == 'l')
+        {
+            if (ParseUtil.IsUnsignedLongOrShort(numberString))
+            {
+                return ulong.Parse(numberString.Substring(0, numberString.Length - 2));
+            }
+
+            return long.Parse(numberString.Substring(0, numberString.Length - 1));
+        }
+
+        throw new NotImplementedException("... yeah so something went wrong on the implementation side. Sorry.");
+    }
 }

@@ -63,7 +63,7 @@ namespace BareBones.Services.PropertyTable
             // try to parse a number
             else if (character == '-' || char.IsDigit(character))
             {
-                return ParseValue(text, start, (str) => float.Parse(str), config);
+                return ParseNumber(text, start, config);
             }
             // try parse a list
             else if (character == config.ListDelimiters[0])
@@ -96,6 +96,33 @@ namespace BareBones.Services.PropertyTable
 
         public static (List<object> arrayValue, int charactersRead) ParseList(string text, int idx, PolyPropsConfig config)
             => ParseComposite<List<object>>(text, idx, config.ListDelimiters, ParseListElement, config);
+
+        public static (object value, int charactersRead) ParseNumber(string text,
+            int start,
+            PolyPropsConfig config
+        )
+        {
+            var idx = SkipUntilEndCommentOrDelimiter(text, start, config.Separators, config);
+
+            if (idx > start)
+            {
+                var numberString = text.Substring(start, idx - start);
+
+                try
+                {
+                    return (numberString.ParseNumber(), idx - start);
+                }
+                catch (Exception e)
+                {
+                    config.Log(text.GetLineAndColumn(start), "failed to parse number. Exception: " + e);
+                    return Error<int>();
+                }
+            }
+
+            config.Log(text.GetLineAndColumn(start), "trying to parse a number but no more characters found.");
+
+            return Error<Decimal>();
+        }
 
         public static (T value, int charactersRead) ParseValue<T>(
             string text,
@@ -147,16 +174,7 @@ namespace BareBones.Services.PropertyTable
 
         public static (string stringValue, int charactersRead) ParseUndelimitedString(string text, int start, PolyPropsConfig config)
         {
-            var idx = start;
-            
-            while (
-                idx < text.Length
-                && config.UnquotedStringsDelimiters.IndexOf(text[idx]) == -1 
-                && !MatchesSingleLineComment(text, idx, config))
-            {
-                idx++;
-            }
-
+            var idx = SkipUntilEndCommentOrDelimiter(text, start, config.UnquotedStringsDelimiters, config);
             return (text.Substring(start, idx-start).Trim(), idx-start);
         }
 
@@ -221,6 +239,18 @@ namespace BareBones.Services.PropertyTable
             {
                 idx = GetNextLine(text, idx);
                 idx = text.Skip(config.WhiteSpace, idx);
+            }
+
+            return idx;
+        }
+
+        private static int SkipUntilEndCommentOrDelimiter(string text, int idx, string delimiters, PolyPropsConfig config)
+        {
+            while ( idx < text.Length
+                && delimiters.IndexOf(text[idx]) == -1
+                && !MatchesSingleLineComment(text, idx, config))
+            {
+                idx++;
             }
 
             return idx;
@@ -292,7 +322,6 @@ namespace BareBones.Services.PropertyTable
 
             return idx;
         }       
-
 
         private static int ParseListElement(
             List<object> result,

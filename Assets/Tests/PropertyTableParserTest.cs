@@ -322,8 +322,8 @@ public class PropertyTableParserTest
     [Description("Parse any value.")]
     public void ParseAnyValueTest()
     {
-        var input = new string[] { "0", "0.1", "'foo'", "xxx", "true", "\" bar \"", "-1.11" };
-        var expectedValue = new object[] { 0.0f, 0.1f, "foo", "xxx", true, " bar ", -1.11f};
+        var input = new string[] { "0", "0.1", "'foo'", "xxx", "true", "\" bar \"", "-1.11f" };
+        var expectedValue = new object[] { 0, 0.1, "foo", "xxx", true, " bar ", -1.11f};
 
         for (var i = 0; i < input.Length; i++)
         {
@@ -339,8 +339,8 @@ public class PropertyTableParserTest
             {
                 var actual = value;
                 var expected = expectedValue[i];
-                Assert.IsTrue(charactersRead == testString.Length);
-                Assert.IsTrue(expected.Equals(actual));
+                Assert.AreEqual(testString.Length, charactersRead);
+                Assert.AreEqual(expected, actual);
             }  
         }
     }
@@ -352,7 +352,8 @@ public class PropertyTableParserTest
         var input = new string[] {
             "[ true, \nfalse, 1, 2, -3, 'bar\nbar']",
             "[]", 
-            "[ 0.1 ]", 
+            "[ 0.1 ]",
+            "[ 0.1, 0xff, -42.0f]",
             "['foo', \"bar\"]", 
             "[ unlimited \n]",
             "[ not_valid ",
@@ -362,7 +363,8 @@ public class PropertyTableParserTest
         var expectedValues = new List<object>[] {
             new List<object>() { true, false, 1, 2, -3, "bar\nbar" },
             new List<object>(),
-            new List<object>() { 0.1f },
+            new List<object>() { 0.1 },
+            new List<object>() { 0.1, 255, -42f },
             new List<object>() { "foo", "bar" },
             new List<object>() { "unlimited" },
             null,
@@ -381,7 +383,7 @@ public class PropertyTableParserTest
             }
             else
             {
-                Assert.AreEqual(value, expectedValues[i]);
+                Assert.AreEqual(expectedValues[i], value);
                 Assert.IsTrue(charactersRead == testString.Length);
             }
         }
