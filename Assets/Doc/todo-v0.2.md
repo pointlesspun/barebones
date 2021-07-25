@@ -33,7 +33,7 @@
     - [done] allow for ints or doubles. If '.' -> double unless ends in f else int or ends with U, unsigned.    
     - [done] allow for case not being an issue when parsing booleans
     - [done] allow for key delimiters (strings)
-    - in read check first non-comment char, if [ parselist, if { parsemap, else parse mapcontents
+    - [done] in read check first non-comment char, if [ parselist, if { parsemap, else parse mapcontents
     - allow for config to have value overrides, eg: <x,y,z> -> Vector3 or <x,y,z,w> -> Quat, or #20292 -> color or |a,b,c| -> Set, file: -> load other file
     - add datamapper dict->obj     
     - multiline comments ?

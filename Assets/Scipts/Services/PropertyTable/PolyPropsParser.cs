@@ -7,7 +7,7 @@ namespace BareBones.Services.PropertyTable
     {
         private static (T, int) Error<T>() => (default(T), -1);        
        
-        public static Dictionary<string, object> Read(
+        public static object Read(
             string text,
             PolyPropsConfig config = null
         )
@@ -18,11 +18,22 @@ namespace BareBones.Services.PropertyTable
 
             if (idx >= 0 && idx < text.Length)
             {
-                var result = new Dictionary<string, object>();
-                
-                return ParseCompositeElements(result, text, idx, config.MapDelimiters[1], ParseKeyValuePair, config) >= 0
-                    ? result
-                    : null;
+                if (text[idx] == config.ListDelimiters[0])
+                {
+                    return ParseList(text, idx, config).value;
+                }
+                else if (text[idx] == config.MapDelimiters[0])
+                {
+                    return ParseMap(text, idx, config).value;
+                }
+                else
+                {
+                    var result = new Dictionary<string, object>();
+
+                    return ParseCompositeElements(result, text, idx, config.MapDelimiters[1], ParseKeyValuePair, config) >= 0
+                        ? result
+                        : null;
+                }
             }
 
             return null;
@@ -79,6 +90,10 @@ namespace BareBones.Services.PropertyTable
             {
                 return ParseString(text, start, config);
             }
+            else if (text.IsMatch(config.NullValue, start, true))
+            {
+                return (null, config.NullValue.Length);
+            }
             else if (config.UnquotedStringsDelimiters != string.Empty)
             {
                 return ParseUndelimitedString(text, start, config);
@@ -93,7 +108,7 @@ namespace BareBones.Services.PropertyTable
             => ParseComposite<Dictionary<string, object>>(text, idx, config.MapDelimiters, ParseKeyValuePair, config);
         
 
-        public static (List<object> arrayValue, int charactersRead) ParseList(string text, int idx, PolyPropsConfig config)
+        public static (List<object> value, int charactersRead) ParseList(string text, int idx, PolyPropsConfig config)
             => ParseComposite<List<object>>(text, idx, config.ListDelimiters, ParseListElement, config);
 
         public static (object value, int charactersRead) ParseNumber(string text,
@@ -284,7 +299,7 @@ namespace BareBones.Services.PropertyTable
                 {
                     var parseResult = ParseValue(text, idx, config);
 
-                    if (parseResult.value != null)
+                    if (parseResult.charactersRead >= 0)
                     {
                         result[key] = parseResult.value;
                         idx += parseResult.charactersRead;
@@ -331,7 +346,7 @@ namespace BareBones.Services.PropertyTable
         {
             var (value, charactersRead) = ParseValue(text, idx, config);
 
-            if (value != null)
+            if (charactersRead >= 0)
             {
                 result.Add(value);
                 idx += charactersRead;

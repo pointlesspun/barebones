@@ -8,6 +8,63 @@ using BareBones.Services.PropertyTable;
 public class PolyPropsParserTest
 {
     [Test]
+    [Description("Test if a top level map is parsed correctly.")]
+    public void ReadMapTest()
+    {
+        var text =
+            "// Reading a map\n" +
+            "{\n" +
+            "   // comment\n" +
+            "   str: 'string',\n" +
+            "   key-value: { key: value },\n" +
+            "   float: 128.0f,\n" +
+            "   null: null\n" +
+            "}";
+
+        var value = PolyPropsParser.Read(text);
+        var expected = new Dictionary<string, object>()
+        {
+            {"str", "string"},
+            {"key-value", new Dictionary<string, object>()
+                {
+                    {"key", "value" },
+                }
+            },
+            {"float", 128.0f },
+            {"null", null}
+        };
+
+        Assert.AreEqual(expected, value);
+    }
+
+    [Test]
+    [Description("Test if a top level list is parsed correctly.")]
+    public void ReadListTest()
+    {
+        var text =
+            "// Reading a list\n" +
+            "[\n" +
+            "   // comment\n" +
+            "   'string',\n" +
+            "   { key: value },\n" + 
+            "   128.0f\n" +  
+            "]";
+
+        var value = PolyPropsParser.Read(text);
+        var expected = new List<object>()
+        {
+            "string",
+            new Dictionary<string, object>()
+            {
+                {"key", "value" },
+            },
+            128.0f
+        };
+
+        Assert.AreEqual(expected, value);
+    }
+
+    [Test]
     [Description("Test if single line comment in between key value pairs is ignored.")]
     public void SingleLineCommentInBetweenInnerKeyValuePairsTest()
     {

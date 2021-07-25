@@ -32,6 +32,8 @@ namespace BareBones.Services.PropertyTable
 
         public string BooleanFalse { get; set; } = "false";
 
+        public string NullValue { get; set; } = "null";
+
         public Action<(int, int), string> Log { get; set; } = (position, msg) => Console.WriteLine(msg);
     }
 }
