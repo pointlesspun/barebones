@@ -35,7 +35,9 @@
     - [done] allow for key delimiters (strings)
     - [done] in read check first non-comment char, if [ parselist, if { parsemap, else parse mapcontents
     - [done] allow for config to have value overrides, eg: <x,y,z> -> Vector3 or <x,y,z,w> -> Quat, or #20292 -> color or |a,b,c| -> Set, file: -> load other file
-    - add datamapper dict->obj     
+    - [in-progress] add datamapper dict->obj     
+        test properties
+        test lists / arrays
     - multiline comments ?
     - test against a json, .properties, command line, .csv
     - clean up document
