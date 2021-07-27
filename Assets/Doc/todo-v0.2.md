@@ -40,8 +40,13 @@
         [done] test lists / arrays
     - [skip] multiline comments ? will revisit later
     - [in-progress] test errors
-        - replace return values with struct { result : object, charactersRead: int, isError : bool }
+        - [done] replace return values with struct { result : object, charactersRead: int, isError : bool }
+        - [done] refactored most functionality of the parser into parsefunctions
+        - add null parser, vector parser and color parser.
+        - add extension parameter to createbasicparser
+        - allow for key-values on the top level
         - after error read until the end of the line, continue ?
+        - clean up old parser
     - test against a json, .properties, command line, .csv
     - clean up & document
 

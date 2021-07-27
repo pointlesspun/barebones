@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using NUnit.Framework;
 using BareBones.Services.PropertyTable;
 using UnityEngine;
+using System.Linq;
 
 public class PolyPropsParserTest
 {
@@ -455,6 +456,64 @@ public class PolyPropsParserTest
     }
 
     [Test]
+    [Description("Use the parse function to parse int values.")]
+    public void ParseIntFunctionTest()
+    {
+        var input = new string[] { "42", "-1", "", " \n", "444", "a38", "0001", " 282f" };
+        var expectedValues = new object[] { 42, -1, null, null, 444, null, 1, null };
+
+        for (var i = 0; i < input.Length; i++)
+        {
+            var result = NumberParseFunction.Parse(input[i], 0);
+
+            if (expectedValues[i] == null)
+            {
+                Assert.IsTrue(!result.isSuccess);
+            }
+            else
+            {
+                Assert.AreEqual(expectedValues[i], result.value);
+            }
+        }
+    }
+
+
+    [Test]
+    [Description("Use the key-value parse function to parse string-int values.")]
+    public void ParseKeyValueFunctionTest()
+    {
+        var input = new string[] { "'a': 1", "'foo' :\n 42", "'bar':", " 'fail' 3", "'fail'", };
+        var expectedValues = new object[] { 
+            new KeyValuePair<string, int>("a", 1),
+            new KeyValuePair<string, int>("foo", 42),
+            new KeyValuePair<string, int>("bar", default(int)),
+            null,
+            null
+        }; 
+
+        var keyValueParseFunction = new KeyValueParseFunction<string, int>()
+        {
+            KeyParseFunction = new StringParseFunction(),
+            ValueParseFunction = new NumberParseFunction(),
+            SkipWhiteSpaceFunction = (text, idx) => ParseUtil.Skip(text, " \n", idx),
+        };
+
+        for (var i = 0; i < input.Length; i++)
+        {
+            var result = keyValueParseFunction.Parse(input[i], 0);
+
+            if (expectedValues[i] == null)
+            {
+                Assert.IsTrue(!result.isSuccess);
+            }
+            else
+            {
+                Assert.AreEqual(expectedValues[i], result.value);
+            }
+        }
+    }
+
+    [Test]
     [Description("Parse boolean values.")]
     public void ParseBoolValueTest()
     {
@@ -462,6 +521,28 @@ public class PolyPropsParserTest
         var expectedValue = new object[] { true, false, null, null, true, null, null, true };
 
         TestParseValues(input, expectedValue, (str) => bool.Parse(str));
+    }
+
+    [Test]
+    [Description("Use the parse function to parse bool values.")]
+    public void ParseBoolFunctionTest()
+    {
+        var input = new string[] { "true", "False", "", " \n", "true", "'true' ", "fals", "TRUE" };
+        var expectedValues = new object[] { true, false, null, null, true, null, null, true };
+
+        for (var i = 0; i < input.Length; i++)
+        {
+            var result = BooleanParseFunction.Parse(input[i], 0);
+
+            if (expectedValues[i] == null)
+            {
+                Assert.IsTrue(!result.isSuccess);
+            }
+            else
+            {
+                Assert.AreEqual(expectedValues[i], result.value);
+            }
+        }
     }
 
     [Test]
@@ -490,6 +571,35 @@ public class PolyPropsParserTest
             var expected = expectedValue[i];
             Assert.AreEqual(testString.Length, result.charactersRead);
             Assert.AreEqual(expected, actual);
+        }
+    }
+
+    [Test]
+    [Description("Parse any value via a group parse.")]
+    public void GroupParseFunctionTest()
+    {
+        var input = new string[] { "0", "0.1", "'foo'", "xxx", "true", "\" bar \"", "-1.11f" };
+        var expectedValues = new object[] { 0, 0.1, "foo", null, true, " bar ", -1.11f };
+
+        var groupFunctions = new GroupParseFunction().Add(
+            new NumberParseFunction(),
+            new BooleanParseFunction(),
+            new StringParseFunction()
+        );
+
+        for (var i = 0; i < input.Length; i++)
+        {
+            var result = groupFunctions.Parse(input[i]);
+
+            if (expectedValues[i] == null)
+            {                
+                Assert.IsTrue(!result.isSuccess);
+            }
+            else
+            {
+                Assert.IsTrue(groupFunctions.CanParse(input[i]));
+                Assert.AreEqual(expectedValues[i], result.value);
+            }
         }
     }
 
@@ -534,6 +644,37 @@ public class PolyPropsParserTest
                 Assert.AreEqual(expectedValues[i], result.value);
                 Assert.IsTrue(result.charactersRead == testString.Length);
             }
+        }
+    }
+
+    [Test]
+    [Description("Parse a list value via the composite parse function.")]
+    public void CompositeNumberListFunctionTest()
+    {
+        var input = new string[] {
+            "[]",
+            "[ 0.1 ]",
+            "[ 0.1,0xff, -42.0f  ]",
+        };
+
+        var expectedValues = new List<object>[] {
+            new List<object>(),
+            new List<object>() { 0.1 },
+            new List<object>() { 0.1, 255, -42f },
+        };
+      
+        var parseFunction = new CompositeParseFunction<List<object>, object>()
+        {
+            ElementParseFunction = new NumberParseFunction(),
+            StartToken = "[",
+            EndToken = "]",
+            SkipWhiteSpaceFunction = new Func<string, int, int>((str, idx) => ParseUtil.Skip(str, " \n\t\r", idx))
+        };
+        
+        for (var i = 0; i < input.Length; i++)
+        {
+            var result = parseFunction.Parse(input[i]);
+            Assert.AreEqual(expectedValues[i], result.value);
         }
     }
 

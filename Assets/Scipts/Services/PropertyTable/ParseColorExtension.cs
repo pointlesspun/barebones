@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace BareBones.Services.PropertyTable
 {
-    public class ParseColorExtension : IPolyPropsExtension
+    public class ParseColorExtension : IPolyPropsParseFunction
     {
         public static readonly Regex ColorRegex = new Regex(@"#([[a-fA-F0-9]{8}|[a-fA-F0-9]{6})");
 

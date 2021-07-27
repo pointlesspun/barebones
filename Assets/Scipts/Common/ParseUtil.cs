@@ -75,7 +75,7 @@ public static class ParseUtil
 
             if (idx < str.Length && str[idx] == delimiter)
             {
-                return (idx + 1) - start;
+                return Math.Min(str.Length, (idx + 1)) - start;
             }
         }
         return -1;
@@ -159,6 +159,19 @@ public static class ParseUtil
 
     public static bool IsUnsignedLongOrShort(this string numberString) =>
         (numberString.Length > 2 && char.ToLower(numberString[numberString.Length - 2]) == 'u');
+
+
+    public static int SkipUntil(string text, int start, Func<char,bool> condition)
+    {
+        var idx = start;
+
+        while (idx < text.Length && !condition(text[idx])) 
+        {
+            idx++;
+        }
+
+        return idx;
+    }
 
     public static object ParseNumber(this string numberString)
     {

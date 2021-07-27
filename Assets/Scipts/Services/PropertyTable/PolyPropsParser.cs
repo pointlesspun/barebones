@@ -5,10 +5,7 @@ namespace BareBones.Services.PropertyTable
 {
     public static class PolyPropsParser
     {
-        public static List<IPolyPropsExtension> ParseFunctions = new List<IPolyPropsExtension>()
-        {
-
-        };
+        public static List<IPolyPropsParseFunction> ParseFunctions = new List<IPolyPropsParseFunction>();
 
         /**
          * Read the text and return a parsed structure

@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace BareBones.Services.PropertyTable
 {
-    public class ParseVectorExtension : IPolyPropsExtension
+    public class ParseVectorExtension : IPolyPropsParseFunction
     {
         public static readonly string VectorPrefix = "v[";
 

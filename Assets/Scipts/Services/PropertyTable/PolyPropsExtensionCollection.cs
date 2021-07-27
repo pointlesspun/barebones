@@ -5,27 +5,27 @@ using BareBones.Common;
 
 namespace BareBones.Services.PropertyTable
 {
-    public class PolyPropsExtensionCollection : IPolyPropsExtension
+    public class PolyPropsExtensionCollection : IPolyPropsParseFunction
     {
-        private List<IPolyPropsExtension> _extensions = new List<IPolyPropsExtension>();
+        private List<IPolyPropsParseFunction> _extensions = new List<IPolyPropsParseFunction>();
 
         public PolyPropsExtensionCollection Add(params Type[] extensions)
         {
             foreach (var type in extensions)
             {
-                _extensions.Add((IPolyPropsExtension) Activator.CreateInstance(type));
+                _extensions.Add((IPolyPropsParseFunction) Activator.CreateInstance(type));
             }
 
             return this;
         }
 
-        public PolyPropsExtensionCollection Add(params IPolyPropsExtension[] extensions)
+        public PolyPropsExtensionCollection Add(params IPolyPropsParseFunction[] extensions)
         {
             _extensions.AddRange(extensions);
             return this;
         }
 
-        public PolyPropsExtensionCollection Add<T>() where T : IPolyPropsExtension
+        public PolyPropsExtensionCollection Add<T>() where T : IPolyPropsParseFunction
         {
             _extensions.Add(Activator.CreateInstance<T>());
             return this;
@@ -46,7 +46,7 @@ namespace BareBones.Services.PropertyTable
             => CreateConfig(new PolyPropsConfig(), extensions);
 
 
-        public static PolyPropsConfig CreateConfig(PolyPropsConfig config, params IPolyPropsExtension[] extensions)
+        public static PolyPropsConfig CreateConfig(PolyPropsConfig config, params IPolyPropsParseFunction[] extensions)
         {
             config.ParseExtensions = new PolyPropsExtensionCollection().Add(extensions);
             return config;
