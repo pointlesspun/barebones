@@ -1,5 +1,6 @@
 ﻿
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace BareBones.Services.PropertyTable
@@ -24,29 +25,33 @@ namespace BareBones.Services.PropertyTable
             Config = config;
         }
 
-        public (object value, int charactersRead) Parse(string text, int start)
+        public ParseResult Parse(string text, int start)
         {
             // skip one character then parse a list
-            var (list, charactersRead) = PolyPropsParser.ParseList(text, start + 1, Config);
+            var listResult = PolyPropsParser.ParseList(text, start + 1, Config);
 
-            if (charactersRead > 1)
+            if (listResult.isSuccess)
             {
+                var list = listResult.value as List<object>;
+
                 if (list.Count == 2)
                 {
-                    return (new Vector2(Convert.ToSingle(list[0]), Convert.ToSingle(list[1])), charactersRead + 1);
+                    return new ParseResult(new Vector2(Convert.ToSingle(list[0]), Convert.ToSingle(list[1])), listResult.charactersRead + 1, true);
                 }
                 else if (list.Count == 3)
                 {
-                    return (new Vector3(Convert.ToSingle(list[0]), Convert.ToSingle(list[1]), Convert.ToSingle(list[2])), charactersRead + 1);
+                    return new ParseResult(new Vector3(Convert.ToSingle(list[0]), Convert.ToSingle(list[1]), Convert.ToSingle(list[2])), 
+                            listResult.charactersRead + 1, true);
                 }
                 else if (list.Count == 4)
                 {
-                    return (new Vector4(Convert.ToSingle(list[0]), Convert.ToSingle(list[1]), Convert.ToSingle(list[2]), Convert.ToSingle(list[3])), charactersRead + 1);
+                    return new ParseResult(new Vector4(Convert.ToSingle(list[0]), Convert.ToSingle(list[1]), Convert.ToSingle(list[2]), Convert.ToSingle(list[3])),
+                                listResult.charactersRead + 1, true);
                 }
             }
 
             Config.Log(ParseUtil.GetLineAndColumn(text, start), "failed to parse Vector");
-            return PolyPropsParser.Error<object>();
+            return listResult;
         }
     }
 }

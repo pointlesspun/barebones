@@ -36,7 +36,7 @@ namespace BareBones.Services.PropertyTable
             return _extensions.Any(extension => extension.CanParse(text, start));
         }
 
-        public (object value, int charactersRead) Parse(string text, int start)
+        public ParseResult Parse(string text, int start)
         {
             return _extensions.Find(extension => extension.CanParse(text, start))
                         .Parse(text, start);

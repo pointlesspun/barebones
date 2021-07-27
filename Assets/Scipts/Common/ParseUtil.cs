@@ -1,7 +1,19 @@
 ﻿using System;
 using System.Globalization;
-using System.Text;
 
+public struct ParseResult
+{
+    public object value;
+    public int charactersRead;
+    public bool isSuccess;
+
+    public ParseResult(object value, int charactersRead, bool isSuccess)
+    {
+        this.value = value;
+        this.charactersRead = charactersRead;
+        this.isSuccess = isSuccess;
+    }
+};
 public static class ParseUtil
 {
     /**

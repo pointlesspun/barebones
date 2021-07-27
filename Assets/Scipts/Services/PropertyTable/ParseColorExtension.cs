@@ -14,7 +14,7 @@ namespace BareBones.Services.PropertyTable
             return ColorRegex.IsMatch(text, start);
         }
 
-        public (object value, int charactersRead) Parse(string text, int start)
+        public ParseResult Parse(string text, int start)
         {
             var length = ColorRegex.Match(text, start).Length;
 
@@ -23,7 +23,7 @@ namespace BareBones.Services.PropertyTable
             var b = Convert.ToInt32(text.Substring(start + 5, 2), 16) / 255.0f;
             var a = length == 7 ? 1.0f : Convert.ToInt32(text.Substring(start + 7, 2), 16) / 255.0f;
 
-            return (new Color(r, g, b, a), length);
+            return new ParseResult(new Color(r, g, b, a), length, true);
         }
     }
 }

@@ -5,6 +5,6 @@ namespace BareBones.Services.PropertyTable
     {
         bool CanParse(string text, int start);
 
-        (object value, int charactersRead) Parse(string text, int start);
+        ParseResult Parse(string text, int start);
     }
 }

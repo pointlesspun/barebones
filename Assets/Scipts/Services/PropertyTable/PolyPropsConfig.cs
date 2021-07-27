@@ -33,9 +33,5 @@ namespace BareBones.Services.PropertyTable
         public Action<(int, int), string> Log { get; set; } = (position, msg) => Console.WriteLine(msg);
 
         public IPolyPropsExtension ParseExtensions { get; set; }
-
-        /*public Func<string, int, PolyPropsConfig, bool> CanParse { get; set; }
-
-        public Func<string, int, PolyPropsConfig, (object, int)> Parse { get; set; }*/
     }
 }

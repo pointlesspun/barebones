@@ -392,38 +392,38 @@ public class PolyPropsParserTest
         var testString = "key:";
         var result = PolyPropsParser.ParseKey(testString, 0, PolyPropsConfig.Default);
 
-        Assert.IsTrue(result.key == "key");
+        Assert.AreEqual(result.value, "key");
         Assert.IsTrue(result.charactersRead == testString.Length);
 
         testString = " key :";
         result = PolyPropsParser.ParseKey(testString, 0,  PolyPropsConfig.Default);
 
-        Assert.IsTrue(result.key == "key");
+        Assert.AreEqual(result.value, "key");
         Assert.IsTrue(result.charactersRead == testString.Length);
 
         testString = " key\n\n\n:";
         result = PolyPropsParser.ParseKey(testString, 0, PolyPropsConfig.Default);
 
-        Assert.IsTrue(result.key == "key");
+        Assert.AreEqual(result.value, "key");
         Assert.IsTrue(result.charactersRead == testString.Length);
 
         testString = "'key:':";
         result = PolyPropsParser.ParseKey(testString, 0, PolyPropsConfig.Default);
 
-        Assert.IsTrue(result.key == "key:");
+        Assert.AreEqual(result.value, "key:");
         Assert.IsTrue(result.charactersRead == testString.Length);
 
         testString = " a b c :";
         result = PolyPropsParser.ParseKey(testString, 0, PolyPropsConfig.Default);
 
-        Assert.IsTrue(result.key == "a b c");
+        Assert.AreEqual(result.value, "a b c");
         Assert.IsTrue(result.charactersRead == testString.Length);
 
         var prefix = "keyA: bla\n";
         testString = " keyB :";
         result = PolyPropsParser.ParseKey(prefix + testString, prefix.Length, PolyPropsConfig.Default);
 
-        Assert.IsTrue(result.key == "keyB");
+        Assert.AreEqual(result.value, "keyB");
         Assert.IsTrue(result.charactersRead == testString.Length);
     }
 
@@ -434,14 +434,14 @@ public class PolyPropsParserTest
         var testString = "key";
         var result = PolyPropsParser.ParseKey(testString, 0, PolyPropsConfig.Default);
 
-        Assert.IsTrue(result.key == default(string));
-        Assert.IsTrue(result.charactersRead == -1);
+        Assert.IsTrue(!result.isSuccess);
+        Assert.IsTrue(result.charactersRead == testString.Length);
 
         testString = " key \n";
         result = PolyPropsParser.ParseKey(testString, 0, PolyPropsConfig.Default);
 
-        Assert.IsTrue(result.key == default(string));
-        Assert.IsTrue(result.charactersRead == -1);
+        Assert.IsTrue(!result.isSuccess);
+        Assert.IsTrue(result.charactersRead == testString.Length);
     }
 
     [Test]
@@ -484,20 +484,12 @@ public class PolyPropsParserTest
         for (var i = 0; i < input.Length; i++)
         {
             var testString = input[i];
-            var (value, charactersRead) = PolyPropsParser.ParseValue(testString, 0, PolyPropsConfig.Default);
+            var result = PolyPropsParser.ParseValue(testString, 0, PolyPropsConfig.Default);
 
-            if (expectedValue[i] == null)
-            {
-                Assert.IsTrue(value == expectedValue[i]);
-                Assert.IsTrue(charactersRead == -1);
-            }
-            else
-            {
-                var actual = value;
-                var expected = expectedValue[i];
-                Assert.AreEqual(testString.Length, charactersRead);
-                Assert.AreEqual(expected, actual);
-            }  
+            var actual = result.value;
+            var expected = expectedValue[i];
+            Assert.AreEqual(testString.Length, result.charactersRead);
+            Assert.AreEqual(expected, actual);
         }
     }
 
@@ -530,17 +522,17 @@ public class PolyPropsParserTest
         for (var i = 0; i < input.Length; i++)
         {
             var testString = input[i];
-            var (value, charactersRead) = PolyPropsParser.ParseList(testString, 0, PolyPropsConfig.Default);
+            var result = PolyPropsParser.ParseList(testString, 0, PolyPropsConfig.Default);
 
             if (expectedValues[i] == null)
             {
-                Assert.AreEqual(expectedValues[i], value);
-                Assert.AreEqual(-1, charactersRead);
+                Assert.AreEqual(expectedValues[i], result.value);
+                //Assert.AreEqual(-1, result.charactersRead);
             }
             else
             {
-                Assert.AreEqual(expectedValues[i], value);
-                Assert.IsTrue(charactersRead == testString.Length);
+                Assert.AreEqual(expectedValues[i], result.value);
+                Assert.IsTrue(result.charactersRead == testString.Length);
             }
         }
     }
@@ -573,17 +565,17 @@ public class PolyPropsParserTest
         for (var i = 0; i < input.Length; i++)
         {
             var testString = input[i];
-            var (value, charactersRead) = PolyPropsParser.ParseList(testString, 0, PolyPropsConfig.Default);
+            var result = PolyPropsParser.ParseList(testString, 0, PolyPropsConfig.Default);
 
             if (expectedValues[i] == null)
             {
-                Assert.IsTrue(value == expectedValues[i]);
+                Assert.IsTrue(result.isSuccess == false);
             }
             else
             {
-                Assert.AreEqual(value.Count, expectedValues[i].Count);
-                Assert.AreEqual(value, expectedValues[i]);
-                Assert.IsTrue(charactersRead == testString.Length);
+                Assert.AreEqual(((List<object>)result.value).Count, expectedValues[i].Count);
+                Assert.AreEqual(result.value, expectedValues[i]);
+                Assert.IsTrue(result.charactersRead == testString.Length);
             }
             
         }
@@ -635,22 +627,23 @@ public class PolyPropsParserTest
             null
         };
 
+        PolyPropsConfig.Default.Log = (location, message) => Debug.Log(location + ": " + message);
+
         for (var i = 0; i < input.Length; i++)
         {
             var testString = input[i];
-            var (value, charactersRead) = PolyPropsParser.ParseMap(testString, 0, PolyPropsConfig.Default);
+            var result = PolyPropsParser.ParseMap(testString, 0, PolyPropsConfig.Default);
 
             if (expectedValues[i] == null)
             {
-                Assert.IsTrue(value == expectedValues[i]);
-                Assert.IsTrue(charactersRead == -1);
+                Assert.IsTrue(!result.isSuccess);
             }
             else
             {
-                var result = (Dictionary<string, object>)value;
-                Assert.AreEqual(result.Count, expectedValues[i].Count);
-                Assert.AreEqual(expectedValues[i], result);
-                Assert.IsTrue(charactersRead == testString.Length);
+                var dictionary = (Dictionary<string, object>)result.value;
+                Assert.AreEqual(dictionary.Count, expectedValues[i].Count);
+                Assert.AreEqual(expectedValues[i], dictionary);
+                Assert.IsTrue(result.charactersRead == testString.Length);
             }
             
         }
@@ -727,21 +720,19 @@ public class PolyPropsParserTest
         for (var i = 0; i < input.Length; i++)
         {       
             var testString = input[i];
-            var (value, charactersRead) = PolyPropsParser.ParseMap(testString, 0, PolyPropsConfig.Default);
+            var result = PolyPropsParser.ParseMap(testString, 0, PolyPropsConfig.Default);
 
             if (expectedValues[i] == null)
             {
-                Assert.IsTrue(value == expectedValues[i]);
-                Assert.IsTrue(charactersRead == -1);
+                Assert.IsTrue(!result.isSuccess);
             }
             else
             {
-                var result = (Dictionary<string, object>)value;
-                Assert.AreEqual(result.Count, expectedValues[i].Count);
-                Assert.AreEqual(expectedValues[i], result);
-                Assert.IsTrue(charactersRead == testString.Length);
+                var dictionary = (Dictionary<string, object>)result.value ;
+                Assert.AreEqual(dictionary.Count, expectedValues[i].Count);
+                Assert.AreEqual(expectedValues[i], dictionary);
+                Assert.IsTrue(result.charactersRead == testString.Length);
             }
-            
         }
     }
 
@@ -750,19 +741,18 @@ public class PolyPropsParserTest
         for (var i = 0; i < input.Length; i++)
         {
             var testString = input[i];
-            var (value, charactersRead) = PolyPropsParser.ParseValue(testString, 0, (str) => parseFunction(str), PolyPropsConfig.Default);
+            var result = PolyPropsParser.ParseValue(testString, 0, (str) => parseFunction(str), PolyPropsConfig.Default);
 
             if (expectedValues[i] == null)
             {
-                Assert.IsTrue(value.Equals(default(T)));
-                Assert.IsTrue(charactersRead == -1);
+                Assert.IsTrue(!result.isSuccess);
             }
             else
             {
-                var actual = value;
+                var actual = result.value;
                 var expected = expectedValues[i];
                 Assert.IsTrue(expected.Equals(actual));
-                Assert.IsTrue(charactersRead == testString.Length);
+                Assert.IsTrue(result.charactersRead == testString.Length);
             }
         }
     }
