@@ -9,12 +9,12 @@ namespace BareBones.Services.PropertyTable
     {
         public static readonly Regex ColorRegex = new Regex(@"#([[a-fA-F0-9]{8}|[a-fA-F0-9]{6})");
 
-        public bool CanParse(string text, int start, PolyPropsConfig config)
+        public bool CanParse(string text, int start)
         {
             return ColorRegex.IsMatch(text, start);
         }
 
-        public (object value, int charactersRead) Parse(string text, int start, PolyPropsConfig config)
+        public (object value, int charactersRead) Parse(string text, int start)
         {
             var length = ColorRegex.Match(text, start).Length;
 

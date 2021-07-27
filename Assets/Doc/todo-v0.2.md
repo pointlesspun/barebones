@@ -36,11 +36,14 @@
     - [done] in read check first non-comment char, if [ parselist, if { parsemap, else parse mapcontents
     - [done] allow for config to have value overrides, eg: <x,y,z> -> Vector3 or <x,y,z,w> -> Quat, or #20292 -> color or |a,b,c| -> Set, file: -> load other file
     - [in-progress] add datamapper dict->obj     
-        test properties
-        test lists / arrays
-    - multiline comments ?
+        [done] test properties
+        [done] test lists / arrays
+    - [skip] multiline comments ? will revisit later
+    - [in-progress] test errors
+        - replace return values with struct { result : object, charactersRead: int, isError : bool }
+        - after error read until the end of the line, continue ?
     - test against a json, .properties, command line, .csv
-    - clean up document
+    - clean up & document
 
 * Add Score
 * Add title screen 

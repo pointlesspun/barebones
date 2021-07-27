@@ -8,15 +8,26 @@ namespace BareBones.Services.PropertyTable
     {
         public static readonly string VectorPrefix = "v[";
 
-        public bool CanParse(string text, int start, PolyPropsConfig config)
+        public PolyPropsConfig Config { get; set; }
+
+        public bool CanParse(string text, int start)
         {
             return text.IsMatch(VectorPrefix, start, true);
         }
 
-        public (object value, int charactersRead) Parse(string text, int start, PolyPropsConfig config)
+        public ParseVectorExtension()
+        {
+        }
+
+        public ParseVectorExtension(PolyPropsConfig config)
+        {
+            Config = config;
+        }
+
+        public (object value, int charactersRead) Parse(string text, int start)
         {
             // skip one character then parse a list
-            var (list, charactersRead) = PolyPropsParser.ParseList(text, start + 1, config);
+            var (list, charactersRead) = PolyPropsParser.ParseList(text, start + 1, Config);
 
             if (charactersRead > 1)
             {
@@ -34,7 +45,7 @@ namespace BareBones.Services.PropertyTable
                 }
             }
 
-            config.Log(ParseUtil.GetLineAndColumn(text, start), "failed to parse Vector");
+            Config.Log(ParseUtil.GetLineAndColumn(text, start), "failed to parse Vector");
             return PolyPropsParser.Error<object>();
         }
     }

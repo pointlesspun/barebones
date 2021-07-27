@@ -5,40 +5,53 @@ namespace BareBones.Services.PropertyTable
 {
     public static class PolyPropsParser
     {
-        public static (T, int) Error<T>() => (default(T), -1);        
-       
-        public static object Read(
-            string text,
-            PolyPropsConfig config = null
-        )
+        /** Code returned when the parser encounters an error in some cases*/
+        public static (T, int) Error<T>() => (default(T), -1);
+
+        /**
+         * Read the text and return a parsed structure
+         * @param text input to parse
+         * @param config=null configuration used to parse or PolyPropsConfig.Default if config is null  
+         * @returns null in case of errors or be a Dictionary(string, object) or a List(object)
+         */
+        public static object Read(string text, int start = 0, PolyPropsConfig config = null)
         {
-            config ??= PolyPropsConfig.Default;
-
-            var idx = SkipWhiteSpaceAndComments(text, 0, config);
-
-            if (idx >= 0 && idx < text.Length)
+            if (!string.IsNullOrEmpty(text))
             {
-                if (text[idx] == config.ListDelimiters[0])
-                {
-                    return ParseList(text, idx, config).value;
-                }
-                else if (text[idx] == config.MapDelimiters[0])
-                {
-                    return ParseMap(text, idx, config).value;
-                }
-                else
-                {
-                    var result = new Dictionary<string, object>();
+                config ??= PolyPropsConfig.Default;
 
-                    return ParseCompositeElements(result, text, idx, config.MapDelimiters[1], ParseKeyValuePair, config) >= 0
-                        ? result
-                        : null;
+                var idx = SkipWhiteSpaceAndComments(text, start, config);
+
+                if (idx >= 0 && idx < text.Length)
+                {
+                    if (text[idx] == config.ListDelimiters[0])
+                    {
+                        return ParseList(text, idx, config).value;
+                    }
+                    else if (text[idx] == config.MapDelimiters[0])
+                    {
+                        return ParseMap(text, idx, config).value;
+                    }
+                    else
+                    {
+                        var result = new Dictionary<string, object>();
+
+                        return ParseCompositeElements(result, text, idx, config.MapDelimiters[1], ParseKeyValuePair, config) >= 0
+                            ? result
+                            : null;
+                    }
                 }
             }
 
             return null;
         }
 
+        /** 
+         * Parse a 'key' of a key-value pair at the given position in the text. The key either starts 
+         * with a string delimiter (usually ' or ") and the key is read as a string or otherwise
+         * the key is read as an undelimited string until a PolyPropsConfig.UnquotedStringsDelimiters 
+         * is encountered.
+         */
         public static (string key, int charactersRead) ParseKey(string text, int start, PolyPropsConfig config)
         {
             var (key, charactersRead) = config.StringDelimiters.IndexOf(text[start]) >= 0
@@ -48,27 +61,32 @@ namespace BareBones.Services.PropertyTable
             var idx = SkipWhiteSpaceAndComments(text, start + charactersRead, config);
 
             // valid key found
-            if (idx < text.Length && text[idx] == config.KeyValueSeparator)
+            if (idx < text.Length && config.KeyValueSeparator.IndexOf(text[idx]) >= 0)
             {
                 return (key, (idx + 1) - start);
             }
-            // case of no closing column
+            // case of no key-value separator found
             else
             {
-                config.Log(text.GetLineAndColumn(start), 
+                config.Log(text.GetLineAndColumn(idx), 
                     "expected to find a key delimiter: '" + config.KeyValueSeparator + "', but none was found.");
                 return Error<string>();
             }
         }
-                        
+
+        /**
+         * Parse a 'value' in the text at the given start position. A value can either be a standard value
+         * (boolean, number, list (array), map (object), string, null or a string without delimiters OR
+         * one of the extension types specified in the configuration.
+         */
         public static (object value, int charactersRead) ParseValue(string text, int start, PolyPropsConfig config)
         {
             var character = text[start];
 
             // can an extension handle this ?
-            if (config.CanParse != null && config.CanParse(text, start, config))
+            if (config.ParseExtensions != null && config.ParseExtensions.CanParse(text, start))
             {
-                return config.Parse(text, start, config);
+                return config.ParseExtensions.Parse(text, start);
             }
             // try parse booleans
             if (text.IsMatch(config.BooleanTrue, start, true) || text.IsMatch(config.BooleanFalse, start, true))
@@ -95,10 +113,12 @@ namespace BareBones.Services.PropertyTable
             {
                 return ParseString(text, start, config);
             }
+            // check if null was specified
             else if (text.IsMatch(config.NullValue, start, true))
             {
                 return (null, config.NullValue.Length);
             }
+            // does the config allow for unquoted strings ?
             else if (config.UnquotedStringsDelimiters != string.Empty)
             {
                 return ParseUndelimitedString(text, start, config);
@@ -109,12 +129,12 @@ namespace BareBones.Services.PropertyTable
             return Error<object>(); 
         }
 
-        public static (Dictionary<string, object> value, int charactersRead) ParseMap(string text, int idx, PolyPropsConfig config)
-            => ParseComposite<Dictionary<string, object>>(text, idx, config.MapDelimiters, ParseKeyValuePair, config);
+        public static (Dictionary<string, object> value, int charactersRead) ParseMap(string text, int start, PolyPropsConfig config)
+            => ParseComposite<Dictionary<string, object>>(text, start, config.MapDelimiters, ParseKeyValuePair, config);
         
 
-        public static (List<object> value, int charactersRead) ParseList(string text, int idx, PolyPropsConfig config)
-            => ParseComposite<List<object>>(text, idx, config.ListDelimiters, ParseListElement, config);
+        public static (List<object> value, int charactersRead) ParseList(string text, int start, PolyPropsConfig config)
+            => ParseComposite<List<object>>(text, start, config.ListDelimiters, ParseListElement, config);
 
         public static (object value, int charactersRead) ParseNumber(string text,
             int start,
@@ -232,52 +252,52 @@ namespace BareBones.Services.PropertyTable
         private static int ParseCompositeElements<T>(
             T result, 
             string text, 
-            int idx, 
+            int start, 
             char compositeEnd,
             Func<T, string, int, PolyPropsConfig, int> parseContentFunction,
             PolyPropsConfig config) where T : new()
         {
-            while (idx >= 0 && idx < text.Length && text[idx] != compositeEnd)
+            while (start >= 0 && start < text.Length && text[start] != compositeEnd)
             {
-                idx = SkipWhiteSpaceAndComments(text, idx, config);
+                start = SkipWhiteSpaceAndComments(text, start, config);
 
-                if (text[idx] != compositeEnd)
+                if (text[start] != compositeEnd)
                 {
-                    idx = parseContentFunction(result, text, idx, config);                   
+                    start = parseContentFunction(result, text, start, config);                   
                 }
             }
 
-            return idx;
+            return start;
         }
 
-        private static int SkipWhiteSpaceAndComments(string text, int idx, PolyPropsConfig config)
+        private static int SkipWhiteSpaceAndComments(string text, int start, PolyPropsConfig config)
         {
-            idx = text.Skip(config.WhiteSpace, idx);
+            start = text.Skip(config.WhiteSpace, start);
 
-            while (idx < text.Length && MatchesSingleLineComment(text, idx, config))
+            while (start < text.Length && MatchesSingleLineComment(text, start, config))
             {
-                idx = GetNextLine(text, idx);
-                idx = text.Skip(config.WhiteSpace, idx);
+                start = GetNextLine(text, start);
+                start = text.Skip(config.WhiteSpace, start);
             }
 
-            return idx;
+            return start;
         }
 
-        private static int SkipUntilEndCommentOrDelimiter(string text, int idx, string delimiters, PolyPropsConfig config)
+        private static int SkipUntilEndCommentOrDelimiter(string text, int start, string delimiters, PolyPropsConfig config)
         {
-            while ( idx < text.Length
-                && delimiters.IndexOf(text[idx]) == -1
-                && !MatchesSingleLineComment(text, idx, config))
+            while ( start < text.Length
+                && delimiters.IndexOf(text[start]) == -1
+                && !MatchesSingleLineComment(text, start, config))
             {
-                idx++;
+                start++;
             }
 
-            return idx;
+            return start;
         }
 
-        private static int GetNextLine(string text, int index)
+        private static int GetNextLine(string text, int start)
         {
-            var eoln = text.IndexOfAny("\r\n", index);
+            var eoln = text.IndexOfAny("\r\n", start);
             return eoln >= 0 ? eoln + 1 : text.Length;
         }
 
@@ -290,42 +310,42 @@ namespace BareBones.Services.PropertyTable
         private static int ParseKeyValuePair(
             Dictionary<string, object> result, 
             string text, 
-            int idx,
+            int start,
             PolyPropsConfig config)
         {
-            var (key, charactersRead) = ParseKey(text, idx, config);
+            var (key, charactersRead) = ParseKey(text, start, config);
 
-            if (key != default)
+            if (charactersRead > 0)
             {
-                idx += charactersRead;
-                idx = SkipWhiteSpaceAndComments(text, idx, config);
+                start += charactersRead;
+                start = SkipWhiteSpaceAndComments(text, start, config);
 
-                if (idx < text.Length)
+                if (start < text.Length)
                 {
-                    var parseResult = ParseValue(text, idx, config);
+                    var parseResult = ParseValue(text, start, config);
 
                     if (parseResult.charactersRead >= 0)
                     {
                         result[key] = parseResult.value;
-                        idx += parseResult.charactersRead;
+                        start += parseResult.charactersRead;
                     }
                     else
                     {
-                        config.Log(text.GetLineAndColumn(idx), "failed to parse value.");
+                        config.Log(text.GetLineAndColumn(start), "failed to parse value.");
                         return -1;
                     }
 
-                    idx = SkipWhiteSpaceAndComments(text, idx, config);
+                    start = SkipWhiteSpaceAndComments(text, start, config);
 
-                    if (idx < text.Length && text[idx] != config.MapDelimiters[1])
+                    if (start < text.Length && text[start] != config.MapDelimiters[1])
                     {
-                        if (config.CompositeValueSeparator.IndexOf(text[idx]) < 0)
+                        if (config.CompositeValueSeparator.IndexOf(text[start]) < 0)
                         {
-                            config.Log(text.GetLineAndColumn(idx), "missing separator.");
+                            config.Log(text.GetLineAndColumn(start), "missing separator.");
                             return -1;
                         }
 
-                        idx++;
+                        start++;
                     }
                 }
                 else
@@ -335,47 +355,47 @@ namespace BareBones.Services.PropertyTable
             }
             else
             {
-                config.Log(text.GetLineAndColumn(idx), "cannot parse key.");
+                config.Log(text.GetLineAndColumn(start), "cannot parse key.");
                 return -1;
             }
 
-            return idx;
+            return start;
         }       
 
         private static int ParseListElement(
             List<object> result,
             string text,
-            int idx,
+            int start,
             PolyPropsConfig config
         )
         {
-            var (value, charactersRead) = ParseValue(text, idx, config);
+            var (value, charactersRead) = ParseValue(text, start, config);
 
             if (charactersRead >= 0)
             {
                 result.Add(value);
-                idx += charactersRead;
+                start += charactersRead;
             }
             else
             {
-                config.Log(text.GetLineAndColumn(idx), "failed to list value.");
+                config.Log(text.GetLineAndColumn(start), "failed to list value.");
                 return -1;
             }
 
-            idx = SkipWhiteSpaceAndComments(text, idx, config);
+            start = SkipWhiteSpaceAndComments(text, start, config);
 
-            if (idx < text.Length && text[idx] != config.ListDelimiters[1])
+            if (start < text.Length && text[start] != config.ListDelimiters[1])
             {
-                if (config.CompositeValueSeparator.IndexOf(text[idx]) < 0)
+                if (config.CompositeValueSeparator.IndexOf(text[start]) < 0)
                 {
-                    config.Log(text.GetLineAndColumn(idx),  "missing separator.");
+                    config.Log(text.GetLineAndColumn(start),  "missing separator.");
                     return -1;
                 }
 
-                idx++;
+                start++;
             }
 
-            return idx;
+            return start;
         }
     }
 }

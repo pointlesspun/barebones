@@ -16,7 +16,7 @@ namespace BareBones.Services.PropertyTable
 
         public string StringDelimiters { get; set; } = "\"'";
 
-        public char KeyValueSeparator { get; set; } = ':';
+        public string KeyValueSeparator { get; set; } = ":";
 
         public string CompositeValueSeparator { get; set; } = ",";
 
@@ -32,8 +32,10 @@ namespace BareBones.Services.PropertyTable
 
         public Action<(int, int), string> Log { get; set; } = (position, msg) => Console.WriteLine(msg);
 
-        public Func<string, int, PolyPropsConfig, bool> CanParse { get; set; }
+        public IPolyPropsExtension ParseExtensions { get; set; }
 
-        public Func<string, int, PolyPropsConfig, (object, int)> Parse { get; set; }
+        /*public Func<string, int, PolyPropsConfig, bool> CanParse { get; set; }
+
+        public Func<string, int, PolyPropsConfig, (object, int)> Parse { get; set; }*/
     }
 }

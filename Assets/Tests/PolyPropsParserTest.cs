@@ -9,6 +9,27 @@ using UnityEngine;
 public class PolyPropsParserTest
 {
     [Test]
+    [Description("Test if read function reports the first error correctly.")]
+    public void ReportErrorTest()
+    {
+        var text =
+            "{\n" +
+            "  // no column between key and value\n" +
+            "  'c1' #0010FF,\n" +
+            "}";
+
+        var errors = new List<((int line, int column) position, string message)>();
+        var config = new PolyPropsConfig();
+
+        config.Log = (position, message) => errors.Add((position, message));
+
+        var value = PolyPropsParser.Read(text, 0, config);
+        Assert.Greater(errors.Count, 0);
+        Assert.AreEqual(errors[0].position.line, 2);
+        Assert.AreEqual(errors[0].position.column, 7);
+    }
+
+    [Test]
     [Description("Test if the extension collection handles all cases.")]
     public void ExtensionCollectionTest()
     {
@@ -19,12 +40,11 @@ public class PolyPropsParserTest
             "   foo: 'bar'\n" +
             "}";
 
-        var config = PolyPropsExtensionCollection.CreateConfig(
-            typeof(ParseVectorExtension),
-            typeof(ParseColorExtension)
-        );
+        var config = new PolyPropsConfig();
 
-        var value = PolyPropsParser.Read(text, config);
+        config.ParseExtensions = new PolyPropsExtensionCollection().Add(new ParseVectorExtension(config), new ParseColorExtension());
+
+        var value = PolyPropsParser.Read(text, 0, config);
         var expected = new Dictionary<string, object>()
         {
             { "c1", new Color(0, 16.0f / 255.0f, 1.0f, 1.0f) },
@@ -46,13 +66,12 @@ public class PolyPropsParserTest
             "   foo: 'bar'\n" +
             "}";
 
-        var colorParser = new ParseColorExtension();
         var config = new PolyPropsConfig()
         {
-            CanParse = colorParser.CanParse,
-            Parse = colorParser.Parse
+            ParseExtensions = new ParseColorExtension()
         };
-        var value = PolyPropsParser.Read(text, config);
+        
+        var value = PolyPropsParser.Read(text, 0, config);
         var expected = new Dictionary<string, object>()
         {
             { "c1", new Color(0, 16.0f / 255.0f, 1.0f, 1.0f) },
@@ -74,13 +93,9 @@ public class PolyPropsParserTest
             "   foo: 'bar'\n" +
             "}";
 
-        var vectorParser = new ParseVectorExtension();
-        var config = new PolyPropsConfig()
-        {
-            CanParse = vectorParser.CanParse,
-            Parse = vectorParser.Parse
-        };
-        var value = PolyPropsParser.Read(text, config);
+        var config = new PolyPropsConfig();
+        config.ParseExtensions = new ParseVectorExtension(config);
+        var value = PolyPropsParser.Read(text, 0, config);
         var expected = new Dictionary<string, object>()
         {
             { "v2", new Vector2(1.0f, 2.0f) },
@@ -264,7 +279,7 @@ public class PolyPropsParserTest
             SingleLineCommentToken = "#"
         };
 
-        var value = PolyPropsParser.Read(new UnityEngine.TextAsset(text).text, config);
+        var value = PolyPropsParser.Read(new UnityEngine.TextAsset(text).text, 0, config);
         var expected = new Dictionary<string, object>()
         {
             { "key1", "value" },

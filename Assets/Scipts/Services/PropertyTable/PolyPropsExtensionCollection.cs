@@ -19,34 +19,42 @@ namespace BareBones.Services.PropertyTable
             return this;
         }
 
+        public PolyPropsExtensionCollection Add(params IPolyPropsExtension[] extensions)
+        {
+            _extensions.AddRange(extensions);
+            return this;
+        }
+
         public PolyPropsExtensionCollection Add<T>() where T : IPolyPropsExtension
         {
             _extensions.Add(Activator.CreateInstance<T>());
             return this;
         }
 
-        public bool CanParse(string text, int start, PolyPropsConfig config)
+        public bool CanParse(string text, int start)
         {
-            return _extensions.Any(extension => extension.CanParse(text, start, config));
+            return _extensions.Any(extension => extension.CanParse(text, start));
         }
 
-        public (object value, int charactersRead) Parse(string text, int start, PolyPropsConfig config)
+        public (object value, int charactersRead) Parse(string text, int start)
         {
-            return _extensions.Find(extension => extension.CanParse(text, start, config))
-                        .Parse(text, start, config);
+            return _extensions.Find(extension => extension.CanParse(text, start))
+                        .Parse(text, start);
         }
 
         public static PolyPropsConfig CreateConfig(params Type[] extensions) 
             => CreateConfig(new PolyPropsConfig(), extensions);
-        
 
+
+        public static PolyPropsConfig CreateConfig(PolyPropsConfig config, params IPolyPropsExtension[] extensions)
+        {
+            config.ParseExtensions = new PolyPropsExtensionCollection().Add(extensions);
+            return config;
+        }
+            
         public static PolyPropsConfig CreateConfig(PolyPropsConfig config, params Type[] extensions)
         {
-            var collection = new PolyPropsExtensionCollection().Add(extensions);
-
-            config.CanParse = collection.CanParse;
-            config.Parse = collection.Parse;
-
+            config.ParseExtensions = new PolyPropsExtensionCollection().Add(extensions);
             return config;
         }
     }

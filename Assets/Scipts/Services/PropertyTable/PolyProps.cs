@@ -38,7 +38,7 @@ namespace BareBones.Services.PropertyTable
 
         public static object CreateInstance(string text, PolyPropsConfig config = null) 
         {
-            var dictionary = PolyPropsParser.Read(text, config) as Dictionary<string, object>;
+            var dictionary = PolyPropsParser.Read(text, 0, config) as Dictionary<string, object>;
 
             if (dictionary != null && dictionary.Count == 1)
             {
@@ -64,7 +64,7 @@ namespace BareBones.Services.PropertyTable
 
         public static T CreateInstance<T>(string text, PolyPropsConfig config = null)
         {
-            var dictionary = PolyPropsParser.Read(text, config) as Dictionary<string, object>;
+            var dictionary = PolyPropsParser.Read(text, 0, config) as Dictionary<string, object>;
 
             if (dictionary != null && dictionary.Count == 1)
             {
