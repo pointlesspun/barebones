@@ -54,6 +54,8 @@ public class PolyPropsParserTest
             { "foo", "bar" },
         };
         Assert.AreEqual(expected, value);
+
+        Assert.IsFalse(new ColorParseFunction().CanParse("   value #121212", 3));
     }
 
     [Test]

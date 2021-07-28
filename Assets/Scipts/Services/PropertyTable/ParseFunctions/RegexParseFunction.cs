@@ -12,10 +12,8 @@ namespace BareBones.Services.PropertyTable
 
         public abstract object Map(string text, int idx, int matchLength);
 
-        public bool CanParse(string text, int start)
-        {
-            return Matcher.IsMatch(text, start);
-        }
+        public bool CanParse(string text, int start) 
+            =>  Matcher.IsMatch(text, start);
 
         public ParseResult Parse(string text, int start) => RegexParseFunction.Parse(text, start, Map, Matcher);
 

@@ -12,7 +12,7 @@ public class ParseFactoryTest
     public void DefaultParserTrivialCasesTest()
     {
         var log = new Action<(int, int), string>((position, msg) => Debug.Log(position + ": " + msg));
-        var parser = ParserFactory.PolyProps(log);
+        var parser = new BasicParseFunctions(log).CreatePolyPropsFunction();
 
         var result = parser.Parse("", 0);
 
@@ -67,5 +67,59 @@ public class ParseFactoryTest
             1, "two", true
         }, result.value);
     }
-  
+
+    [Test]
+    public void ParserExtensionTest()
+    {
+        var log = new Action<(int, int), string>((position, msg) => Debug.Log(position + ": " + msg));
+        var basicFunctions = new BasicParseFunctions(log);
+        
+        basicFunctions.ValueFunction.Add(
+            new VectorParseFunction()
+            {
+                ListFunction = basicFunctions.ListFunction,
+                Log = basicFunctions.Log,
+            },
+            new ColorParseFunction()
+            {
+                Log = basicFunctions.Log
+            }
+        );
+
+        var text =
+            @"  // example of extensions
+                key: value,
+                vector: v[1,2,3],
+                color: #AABBCC,
+                map: {
+                    // inner map values
+                    key: 'value of text',
+                    list: [1,2,3]
+                },
+                boolean: true, // always has been ?
+
+                // closing with nothing
+                void: null
+            ";
+
+        var result = basicFunctions.CreatePolyPropsFunction().Parse(text);
+        var value = result.value as Dictionary<string, object>;
+
+        foreach (var kvp in new Dictionary<string, object>()
+        {
+            {"key", "value"},
+            { "vector", new Vector3(1,2,3) },
+            { "color", new Color( 0xAA / 255.0f, 0xBB / 255.0f, 0xCC / 255.0f ) },
+            { "map", new Dictionary<string, object>()
+                    {
+                        { "key", "value of text" },
+                        { "list", new List<object>() { 1, 2, 3 } },
+                    }
+            },
+            { "boolean", true },
+            { "void", null }
+        }) {
+            Assert.AreEqual(kvp.Value, value[kvp.Key]);
+        }
+    }
 }

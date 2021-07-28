@@ -7,7 +7,7 @@ namespace BareBones.Services.PropertyTable
 {
     public class ColorParseFunction : RegexParseFunction
     {
-        public static readonly Regex DefaultColorRegex = new Regex(@"#([[a-fA-F0-9]{8}|[a-fA-F0-9]{6})");
+        public static readonly Regex DefaultColorRegex = new Regex(@"\G#([[a-fA-F0-9]{8}|[a-fA-F0-9]{6})");
 
         public ColorParseFunction()
         {
