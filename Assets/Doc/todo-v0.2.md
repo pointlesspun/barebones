@@ -47,6 +47,7 @@
         - allow for key-values on the top level
         - after error read until the end of the line, continue ?
         - clean up old parser
+    - limit numbers to certain type
     - test against a json, .properties, command line, .csv
     - clean up & document
 

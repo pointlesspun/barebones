@@ -19,11 +19,20 @@ public class ParseFactoryTest
         Assert.IsTrue(result.isSuccess);
         Assert.AreEqual(result.value, null);
 
-        // cannot parse standalone values, must be map or list
+        // cannot parse standalone values, must be map or list or keyvalue pair
         result = parser.Parse("true", 0);
         Assert.IsTrue(!result.isSuccess);
 
-        result = parser.Parse("{'key':value, 'foo': bar, 'answer': 42.01 }", 0);
+        // should be able to parse standalone key value pairs
+        result = parser.Parse("'key': true,\n'value': 123", 0);
+        Assert.IsTrue(result.isSuccess);
+        Assert.AreEqual(new Dictionary<string, object>()
+        {
+            { "key", true },
+            { "value", 123 }
+        }, result.value);
+
+        result = parser.Parse("{'key':value, 'foo': bar, 'answer': 42.01, 'null': null, 'true' : true, 'false': false }", 0);
 
         Assert.IsTrue(result.isSuccess);
         Assert.AreEqual(new Dictionary<string, object>()
@@ -31,6 +40,9 @@ public class ParseFactoryTest
             { "key", "value" },
             { "foo", "bar" },
             { "answer", 42.01 },
+            { "null", null },
+            { "true", true },
+            { "false", false },
         }, result.value);
 
         // key should be able to be parsed without quotes
@@ -46,6 +58,7 @@ public class ParseFactoryTest
         Assert.IsTrue(result.isSuccess);
         Assert.AreEqual(null, result.value);
 
+        // test comments and a list
         result = parser.Parse("// just a list\n[1, 'two', true]", 0);
 
         Assert.IsTrue(result.isSuccess);
@@ -54,5 +67,5 @@ public class ParseFactoryTest
             1, "two", true
         }, result.value);
     }
-   
+  
 }

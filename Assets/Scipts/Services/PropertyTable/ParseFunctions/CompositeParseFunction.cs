@@ -37,20 +37,24 @@ namespace BareBones.Services.PropertyTable
             string separators = DefaultSeparators,
             Action<(int, int), string> log = null)
         {
-            if (text.IsMatch(startToken, start, true))
+            if (string.IsNullOrEmpty(startToken) || text.IsMatch(startToken, start, true))
             {
-                var idx = start + 1;
+                var idx = start + (string.IsNullOrEmpty(startToken) ? 0 : 1);
                 var compositeResult = ParseElements(text, idx, parseFunction, skipWhiteSpaceFunction, endToken, separators);
 
                 idx += compositeResult.charactersRead;
 
-                if (compositeResult.isSuccess && idx < text.Length && text.IsMatch(endToken, idx, true))
+                if (compositeResult.isSuccess)
                 {
-                    return new ParseResult(compositeResult.value, (idx - start) + 1, true);
+                    if (string.IsNullOrEmpty(endToken) || (idx < text.Length && (text.IsMatch(endToken, idx, true))))
+                    { 
+                        var charactersRead = (idx - start) + (string.IsNullOrEmpty(endToken) ? 0 : 1);
+                        return new ParseResult(compositeResult.value, charactersRead, true);
+                    }
+                    log?.Invoke(text.GetLineAndColumn(idx), "failed find composite closing delimiter ('" + endToken + "').");
+                    return new ParseResult(default, start + 1, false);
                 }
-
-                log?.Invoke(text.GetLineAndColumn(idx), "failed find composite closing delimiter ('" + endToken + "').");
-                return new ParseResult(default, start + 1, false);
+                return compositeResult;
             }
 
             log?.Invoke(text.GetLineAndColumn(start), "failed find composite opening delimiter ('" + startToken + "').");
@@ -70,11 +74,11 @@ namespace BareBones.Services.PropertyTable
             var resultCollection = new TCollection();
             var idx = start;
 
-            while (idx >= 0 && idx < text.Length && !text.IsMatch(endToken, idx, true))
+            while (idx >= 0 && idx < text.Length && (string.IsNullOrEmpty(endToken) || !text.IsMatch(endToken, idx, true)))
             {
                 idx = skipWhiteSpaceFunction(text, idx);
 
-                if (idx < text.Length && !text.IsMatch(endToken, idx, true))
+                if (idx < text.Length && (string.IsNullOrEmpty(endToken) || !text.IsMatch(endToken, idx, true)))
                 {
                     var contentResult = parseFunction.Parse(text, idx);
 
@@ -83,7 +87,7 @@ namespace BareBones.Services.PropertyTable
                         idx += contentResult.charactersRead;
                         idx = skipWhiteSpaceFunction(text, idx);
 
-                        if (idx < text.Length && !text.IsMatch(endToken, idx, true))
+                        if (idx < text.Length && (string.IsNullOrEmpty(endToken) || !text.IsMatch(endToken, idx, true)))
                         {
                             if (separators.IndexOf(text[idx]) < 0)
                             {

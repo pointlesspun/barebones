@@ -49,15 +49,17 @@ namespace BareBones.Services.PropertyTable
                 SkipWhiteSpaceFunction = skipFunction
             }.Add(stringFunction, anyFunction);
 
+            var keyValuePairParseFunction = new KeyValueParseFunction<string, object>()
+            {
+                Log = log,
+                SkipWhiteSpaceFunction = skipFunction,
+                KeyParseFunction = keyFunction,
+                ValueParseFunction = valueParserFunction
+            };
+
             var mapFunction = new CompositeParseFunction<Dictionary<string, object>, KeyValuePair<string, object>>()
             {
-                ElementParseFunction = new KeyValueParseFunction<string, object>()
-                {
-                    Log = log,
-                    SkipWhiteSpaceFunction = skipFunction,
-                    KeyParseFunction = keyFunction,
-                    ValueParseFunction = valueParserFunction
-                },
+                ElementParseFunction = keyValuePairParseFunction,
                 Log = log,
                 SkipWhiteSpaceFunction = skipFunction
             };
@@ -72,12 +74,23 @@ namespace BareBones.Services.PropertyTable
             };
 
             valueParserFunction.Add(
-                new BooleanParseFunction() { Log = log }, 
+                new KeywordParseFunction() {  Log = log, Keyword = "true", ValueFunction = () => true},
+                new KeywordParseFunction() { Log = log, Keyword = "false", ValueFunction = () => false },
+                new KeywordParseFunction() { Log = log, Keyword = "null", ValueFunction = () => null},
                 new NumberParseFunction() { Log = log },
                 mapFunction,
                 listFunction,
                 stringFunction
             );
+
+            var topLevelKeyValueFunction = new CompositeParseFunction<Dictionary<string, object>, KeyValuePair<string, object>>()
+            {
+                ElementParseFunction = keyValuePairParseFunction,
+                StartToken = String.Empty,
+                EndToken = String.Empty,
+                Log = log,
+                SkipWhiteSpaceFunction = skipFunction
+            };
 
             // define a meta group, this only allows maps or lists on the top level
             return new GroupParseFunction()
@@ -86,7 +99,8 @@ namespace BareBones.Services.PropertyTable
                 SkipWhiteSpaceFunction = skipFunction
             }.Add(
                 mapFunction,
-                listFunction
+                listFunction,
+                topLevelKeyValueFunction
             );
         }
     }

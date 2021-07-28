@@ -3,6 +3,9 @@ using System;
 
 namespace BareBones.Services.PropertyTable
 {
+    /**
+     * @deprecated
+     */
     public class BooleanParseFunction : IPolyPropsParseFunction
     {
         public const string DefaultTrueToken = "true";

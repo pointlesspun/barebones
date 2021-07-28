@@ -678,6 +678,103 @@ public class PolyPropsParserTest
         }
     }
 
+
+    [Test]
+    [Description("Parse a list value via the composite parse function, omitting a start token.")]
+    public void CompositeNumberListNoStartTokenFunctionTest()
+    {
+        var inputNoStartingDelimiter = new string[] {
+            ";",
+            "0.1;",
+            "0.1 0xff -42.0f;",
+        };
+
+        var expectedValues = new List<object>[] {
+            new List<object>(),
+            new List<object>() { 0.1 },
+            new List<object>() { 0.1, 255, -42f },
+        };
+
+        var parseFunction = new CompositeParseFunction<List<object>, object>()
+        {
+            ElementParseFunction = new NumberParseFunction() { Delimiters = NumberParseFunction.DefaultDelimiters + ";" },
+            StartToken = String.Empty,
+            EndToken = ";",
+            ElementSeparators = " ",
+            SkipWhiteSpaceFunction = new Func<string, int, int>((str, idx) => ParseUtil.Skip(str, "\n\r", idx))
+        };
+
+        for (var i = 0; i < inputNoStartingDelimiter.Length; i++)
+        {
+            var result = parseFunction.Parse(inputNoStartingDelimiter[i]);
+            Assert.AreEqual(expectedValues[i], result.value);
+        }
+    }
+
+    [Test]
+    [Description("Parse a list value via the composite parse function, omitting an end token.")]
+    public void CompositeNumberListNoEndTokenFunctionTest()
+    {
+        var inputNoStartingDelimiter = new string[] {
+            "#",
+            "#0.1",
+            "#0.1 |0xff| -42.0f",
+        };
+
+        var expectedValues = new List<object>[] {
+            new List<object>(),
+            new List<object>() { 0.1 },
+            new List<object>() { 0.1, 255, -42f },
+        };
+
+        var parseFunction = new CompositeParseFunction<List<object>, object>()
+        {
+            ElementParseFunction = new NumberParseFunction() { Delimiters = NumberParseFunction.DefaultDelimiters + "|" },
+            StartToken = "#",
+            EndToken = String.Empty,
+            ElementSeparators = "|",
+            SkipWhiteSpaceFunction = new Func<string, int, int>((str, idx) => ParseUtil.Skip(str, " \t\n\r", idx))
+        };
+
+        for (var i = 0; i < inputNoStartingDelimiter.Length; i++)
+        {
+            var result = parseFunction.Parse(inputNoStartingDelimiter[i]);
+            Assert.AreEqual(expectedValues[i], result.value);
+        }
+    }
+
+    [Test]
+    [Description("Parse a list value via the composite parse function, omitting both start and end tokens.")]
+    public void CompositeNumberListNoStartAndEndTokenFunctionTest()
+    {
+        var inputNoStartingDelimiter = new string[] {
+            "",
+            "0.1",
+            "0.1:\n 0xff :\n -42.0f",
+        };
+
+        var expectedValues = new List<object>[] {
+            new List<object>(),
+            new List<object>() { 0.1 },
+            new List<object>() { 0.1, 255, -42f },
+        };
+
+        var parseFunction = new CompositeParseFunction<List<object>, object>()
+        {
+            ElementParseFunction = new NumberParseFunction() { Delimiters = NumberParseFunction.DefaultDelimiters + ":" },
+            StartToken = String.Empty,
+            EndToken = String.Empty,
+            ElementSeparators = ":",
+            SkipWhiteSpaceFunction = new Func<string, int, int>((str, idx) => ParseUtil.Skip(str, " \t\n\r", idx))
+        };
+
+        for (var i = 0; i < inputNoStartingDelimiter.Length; i++)
+        {
+            var result = parseFunction.Parse(inputNoStartingDelimiter[i]);
+            Assert.AreEqual(expectedValues[i], result.value);
+        }
+    }
+
     [Test]
     [Description("Parse an nested list value.")]
     public void ParseNestedListTest()
