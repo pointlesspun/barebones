@@ -173,6 +173,18 @@ public static class ParseUtil
         return idx;
     }
 
+    public static int SkipUntil(string text, int start, Func<string, int, bool> condition)
+    {
+        var idx = start;
+
+        while (idx < text.Length && !condition(text, idx))
+        {
+            idx++;
+        }
+
+        return idx;
+    }
+
     public static object ParseNumber(this string numberString)
     {
         if (String.Empty == numberString)

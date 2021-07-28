@@ -47,6 +47,11 @@ namespace BareBones.Services.PropertyTable
                     return new ParseResult(new Vector4(Convert.ToSingle(list[0]), Convert.ToSingle(list[1]), Convert.ToSingle(list[2]), Convert.ToSingle(list[3])),
                                 listResult.charactersRead + listOffset, true);
                 }
+                else
+                {
+                    log?.Invoke(ParseUtil.GetLineAndColumn(text, start), "Vector can only handle 2 to 4 numbers, found " + list.Count + ".");
+                    return new ParseResult(null, listResult.charactersRead, false);
+                }
             }
 
             log?.Invoke(ParseUtil.GetLineAndColumn(text, start), "failed to parse Vector");

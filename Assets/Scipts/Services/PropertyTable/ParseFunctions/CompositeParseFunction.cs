@@ -19,6 +19,8 @@ namespace BareBones.Services.PropertyTable
 
         public Action<(int, int), string> Log { get; set; }
 
+        public bool ContinueAfterError { get; set; } = true;
+
         public IPolyPropsParseFunction ElementParseFunction { get; set; }
 
         public Func<string, int, int> SkipWhiteSpaceFunction { get; set; }
@@ -26,7 +28,8 @@ namespace BareBones.Services.PropertyTable
         public bool CanParse(string text, int start) => text.IsMatch(StartToken, start, true);
 
         public ParseResult Parse(string text, int start = 0) => 
-            CompositeParseFunction<TCollection, TElement>.Parse(text, ElementParseFunction, SkipWhiteSpaceFunction, start, StartToken, EndToken, ElementSeparators, Log);
+            CompositeParseFunction<TCollection, TElement>.Parse(
+                text, ElementParseFunction, SkipWhiteSpaceFunction, start, StartToken, EndToken, ElementSeparators, ContinueAfterError, Log);
 
         public static ParseResult Parse(
             string text, 
@@ -36,6 +39,7 @@ namespace BareBones.Services.PropertyTable
             string startToken = DefaultStartToken, 
             string endToken = DefaultEndToken, 
             string separators = DefaultSeparators,
+            bool continueAfterError = true,
             Action<(int, int), string> log = null)
         {
             Debug.Assert(parseFunction != null, "CompositeParseFunction: no element parse function defined.");
@@ -44,7 +48,7 @@ namespace BareBones.Services.PropertyTable
             if (string.IsNullOrEmpty(startToken) || text.IsMatch(startToken, start, true))
             {
                 var idx = start + (string.IsNullOrEmpty(startToken) ? 0 : 1);
-                var compositeResult = ParseElements(text, idx, parseFunction, skipWhiteSpaceFunction, endToken, separators);
+                var compositeResult = ParseElements(text, idx, parseFunction, skipWhiteSpaceFunction, endToken, separators, continueAfterError, log);
 
                 idx += compositeResult.charactersRead;
 
@@ -58,6 +62,7 @@ namespace BareBones.Services.PropertyTable
                     log?.Invoke(text.GetLineAndColumn(idx), "failed find composite closing delimiter ('" + endToken + "').");
                     return new ParseResult(default, start + 1, false);
                 }
+
                 return compositeResult;
             }
 
@@ -65,6 +70,7 @@ namespace BareBones.Services.PropertyTable
             return new ParseResult(default, start, false);
         }
 
+        // xxx the complexity is way too high
         public static ParseResult ParseElements(
             string text,
             int start,
@@ -72,11 +78,13 @@ namespace BareBones.Services.PropertyTable
             Func<string, int, int> skipWhiteSpaceFunction,
             string endToken = "}",
             string separators = ",",
+            bool continueAfterError = true,
             Action<(int, int), string> log = null
         ) 
         {
             var resultCollection = new TCollection();
             var idx = start;
+            var noErrorsEncountered = true;
 
             while (idx >= 0 && idx < text.Length && (string.IsNullOrEmpty(endToken) || !text.IsMatch(endToken, idx, true)))
             {
@@ -97,13 +105,50 @@ namespace BareBones.Services.PropertyTable
                             {
                                 log?.Invoke(text.GetLineAndColumn(start), "missing separator ('" + separators
                                     + "') after list element ('" + contentResult.value + "').");
-                                return new ParseResult(null, idx - start, false);
+
+                                // attempt to recover ? 
+                                if (continueAfterError)
+                                {
+                                    noErrorsEncountered = false;
+
+                                    idx = ParseUtil.SkipUntil(text, idx + contentResult.charactersRead,
+                                        (txt, i) => separators.IndexOf(txt[i]) >= 0 || ParseUtil.IsMatch(txt, endToken, i));
+
+                                    if (idx >= text.Length)
+                                    {
+                                        return contentResult;
+                                    }
+                                    // else try parse the next element
+                                    idx++;
+                                }
+                                else
+                                {
+                                    return new ParseResult(null, idx - start, false);
+                                }
                             }
-                            // skip separator 
-                            idx++;
+                            else
+                            {
+                                // skip separator 
+                                idx++;
+                            }
                         }
 
                         resultCollection.Add((TElement)contentResult.value);
+                    }
+                    // attempt to recover ?
+                    else if (continueAfterError)
+                    {
+                        noErrorsEncountered = false;
+
+                        idx = ParseUtil.SkipUntil(text, idx + contentResult.charactersRead,
+                            (txt, i) => separators.IndexOf(txt[i]) >= 0 || ParseUtil.IsMatch(txt, endToken, i));
+
+                        if (idx >= text.Length)
+                        {
+                            return contentResult;
+                        }
+                        // else try parse the next element
+                        idx++;
                     }
                     else
                     {
@@ -112,7 +157,7 @@ namespace BareBones.Services.PropertyTable
                 }
             }
 
-            return new ParseResult(resultCollection, idx - start, true);
+            return new ParseResult(resultCollection, idx - start, noErrorsEncountered);
         }
     }
 }

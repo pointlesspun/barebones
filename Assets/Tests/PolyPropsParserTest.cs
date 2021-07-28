@@ -98,7 +98,69 @@ public class PolyPropsParserTest
         {
             Assert.AreEqual(expected[i], function.Parse(text[i], 0).value);
         }
+    }
 
+    [Test]
+    [Description("Test if errors are reported but the parser will still go on.")]
+    public void ContinueAfterErrorTest()
+    {
+        var text = new string[] {
+            // should report 1 error for the 'a' and another one for failing to parse the vector
+            "v<1.0, a, 2>",
+
+            // should report 1 error for missing the ',' and another one for failing to parse the vector
+            "v<1.0, 2  3>",
+
+            // bunch of errors
+            "v<a, 2  3, 4, #, 5>",
+        };
+
+        var logBuffer = new List<object>();
+        var log = new Action<(int, int), string>((pos, msg) =>
+        {
+            logBuffer.Add((pos, msg));
+            Debug.Log(pos + msg);
+        });
+
+        var function = new VectorParseFunction()
+        {
+            ListFunction = new CompositeParseFunction<List<object>, object>()
+            {
+                StartToken = "<",
+                EndToken = ">",
+                ElementParseFunction = new NumberParseFunction()
+                {
+                    Delimiters = NumberParseFunction.DefaultDelimiters + ">",
+                    Log = log
+                },
+                SkipWhiteSpaceFunction = (text, idx) => ParseUtil.Skip(text, " \n", idx),
+                Log = log
+            },
+            VectorPrefix = "v<",
+            Log = log
+        };
+
+        var expected = new object[] {
+            new List<object>() { 1.0, 2 },
+            new List<object>() { 1.0, 2 },
+            new List<object>() { 2, 4, 5 }
+        };
+
+        var expectedLogCount = new int[] {
+            2,
+            2,
+            4
+        };
+
+        for (var i = 0; i < text.Length; i++)
+        {
+            logBuffer.Clear();
+
+            var parseResult = function.Parse(text[i], 0);
+            Assert.AreEqual(false, parseResult.isSuccess);
+            Assert.AreEqual(expected[i], parseResult.value);
+            Assert.AreEqual(expectedLogCount[i], logBuffer.Count);
+        }
     }
 
     [Test]
