@@ -1,6 +1,7 @@
 ﻿
 using System;
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace BareBones.Services.PropertyTable
 {
@@ -37,6 +38,9 @@ namespace BareBones.Services.PropertyTable
             string separators = DefaultSeparators,
             Action<(int, int), string> log = null)
         {
+            Debug.Assert(parseFunction != null, "CompositeParseFunction: no element parse function defined.");
+            Debug.Assert(skipWhiteSpaceFunction != null, "CompositeParseFunction: no skip white space function defined.");
+
             if (string.IsNullOrEmpty(startToken) || text.IsMatch(startToken, start, true))
             {
                 var idx = start + (string.IsNullOrEmpty(startToken) ? 0 : 1);

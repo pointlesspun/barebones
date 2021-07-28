@@ -27,7 +27,7 @@ namespace BareBones.Services.PropertyTable
             return start;
         }
 
-        public static IPolyPropsParseFunction CreateBasicParser(Action<(int, int), string> log = null)
+        public static IPolyPropsParseFunction PolyProps(Action<(int, int), string> log = null)
         {
             var skipFunction = new Func<string, int, int>((text, idx) => SkipWhiteSpaceAndComments(text, idx));
 
@@ -39,8 +39,6 @@ namespace BareBones.Services.PropertyTable
 
             var anyFunction = new AnyCharParseFunction() { Log = log };
             var stringFunction = new StringParseFunction() { Log = log };
-
-            valueParserFunction.DefaultFunction = anyFunction;
 
             // key can be either with quotes or without
             var keyFunction = new GroupParseFunction()
@@ -82,6 +80,8 @@ namespace BareBones.Services.PropertyTable
                 listFunction,
                 stringFunction
             );
+
+            valueParserFunction.DefaultFunction = anyFunction;
 
             var topLevelKeyValueFunction = new CompositeParseFunction<Dictionary<string, object>, KeyValuePair<string, object>>()
             {

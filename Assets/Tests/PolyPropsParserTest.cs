@@ -30,33 +30,7 @@ public class PolyPropsParserTest
         Assert.AreEqual(errors[0].position.column, 7);
     }
 
-    [Test]
-    [Description("Test if the extension collection handles all cases.")]
-    public void ExtensionCollectionTest()
-    {
-        var text =
-            "   // reading some colors and vectors\n" +
-            "   c1: #0010FF,\n" +
-            "   v1: v[1,2,3],\n" +
-            "   foo: 'bar'\n" +
-            "}";
-
-        var config = new PolyPropsConfig();
-
-        config.ParseExtensions = new PolyPropsExtensionCollection().Add(new ParseVectorExtension(config), new ParseColorExtension());
-
-        var value = PolyPropsParser.Read(text, 0, config);
-        var expected = new Dictionary<string, object>()
-        {
-            { "c1", new Color(0, 16.0f / 255.0f, 1.0f, 1.0f) },
-            { "v1", new Vector3(1,2,3)},
-            { "foo", "bar" },
-        };
-        Assert.AreEqual(expected, value);
-    }
-
-
-    [Test]
+     [Test]
     [Description("Test if the color extension is capable of parsing all the colors.")]
     public void ColorExtensionTest()
     {
@@ -69,7 +43,7 @@ public class PolyPropsParserTest
 
         var config = new PolyPropsConfig()
         {
-            ParseExtensions = new ParseColorExtension()
+            ParseExtensions = new ColorParseFunction()
         };
         
         var value = PolyPropsParser.Read(text, 0, config);
@@ -84,27 +58,45 @@ public class PolyPropsParserTest
 
     [Test]
     [Description("Test if the vector extension is capable of parsing all the vector types.")]
-    public void VectorExtensionTest()
+    public void VectorFunctionTest()
     {
-        var text = 
-            "   // reading some vectors\n" +
-            "   v2: v[1.0, 2],\n" +
-            "   v3: v[1.0f, 2.0f, 3.0f],\n" +
-            "   v4: v[1.0m, 2s, 3b, 4ul],\n" +
-            "   foo: 'bar'\n" +
-            "}";
-
-        var config = new PolyPropsConfig();
-        config.ParseExtensions = new ParseVectorExtension(config);
-        var value = PolyPropsParser.Read(text, 0, config);
-        var expected = new Dictionary<string, object>()
-        {
-            { "v2", new Vector2(1.0f, 2.0f) },
-            { "v3", new Vector3(1.0f, 2.0f, 3.0f) },
-            { "v4", new Vector4(1.0f, 2.0f, 3.0f, 4.0f) },
-            { "foo", "bar" },
+        var text = new string[] {
+            "v<1.0, 2>",
+            "v<1.0f, 2.0f, 3.0f>",
+            "v<1.0m, 2s, 3b, 4ul>",          
         };
-        Assert.AreEqual(expected, value);
+
+        var log = new Action<(int, int), string>((pos, msg) => Debug.Log(pos + ": " + msg));
+
+        var function = new VectorParseFunction()
+        {
+            ListFunction = new CompositeParseFunction<List<object>, object>()
+            {
+                StartToken = "<",
+                EndToken = ">",
+                ElementParseFunction = new NumberParseFunction()
+                {
+                    Delimiters = NumberParseFunction.DefaultDelimiters + ">",
+                    Log = log
+                },
+                SkipWhiteSpaceFunction = (text, idx) => ParseUtil.Skip(text, " \n", idx),
+                Log = log
+            },
+            VectorPrefix = "v<",
+            Log = log
+        };
+
+        var expected = new object[] {
+            new Vector2(1.0f, 2.0f),
+            new Vector3(1.0f, 2.0f, 3.0f),
+            new Vector4(1.0f, 2.0f, 3.0f, 4.0f)
+        };
+
+        for (var  i = 0; i < text.Length; i++)
+        {
+            Assert.AreEqual(expected[i], function.Parse(text[i], 0).value);
+        }
+
     }
 
     [Test]

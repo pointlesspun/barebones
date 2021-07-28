@@ -42,9 +42,9 @@
     - [in-progress] test errors
         - [done] replace return values with struct { result : object, charactersRead: int, isError : bool }
         - [done] refactored most functionality of the parser into parsefunctions
-        - add null parser, vector parser and color parser.
-        - add extension parameter to createbasicparser
-        - allow for key-values on the top level
+        - [done] add null parser, vector function, regex function and color parser.
+        - add extension parameter to createbasicparser - configuration is a complex beast,figure out how this should be done 
+        - [done] allow for key-values on the top level
         - after error read until the end of the line, continue ?
         - clean up old parser
     - limit numbers to certain type

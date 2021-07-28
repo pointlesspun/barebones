@@ -5,6 +5,9 @@ using BareBones.Common;
 
 namespace BareBones.Services.PropertyTable
 {
+    /**
+     * @Deprecated
+     */
     public class PolyPropsExtensionCollection : IPolyPropsParseFunction
     {
         private List<IPolyPropsParseFunction> _extensions = new List<IPolyPropsParseFunction>();

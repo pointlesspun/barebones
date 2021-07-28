@@ -12,7 +12,7 @@ public class ParseFactoryTest
     public void DefaultParserTrivialCasesTest()
     {
         var log = new Action<(int, int), string>((position, msg) => Debug.Log(position + ": " + msg));
-        var parser = ParserFactory.CreateBasicParser(log);
+        var parser = ParserFactory.PolyProps(log);
 
         var result = parser.Parse("", 0);
 
