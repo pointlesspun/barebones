@@ -2,7 +2,7 @@
 
 namespace BareBones.Services.PropertyTable
 {
-    public class NumberParseFunction : IPolyPropsParseFunction
+    public class NumberParseFunction : IParseFunction
     {
         public const string DefaultDelimiters = " \t\n\r,[]{}/";
 

@@ -1,7 +1,7 @@
 ﻿
 namespace BareBones.Services.PropertyTable
 {
-    public interface IPolyPropsParseFunction
+    public interface IParseFunction
     {
         bool CanParse(string text, int start = 0);
 

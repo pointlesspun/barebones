@@ -4,7 +4,7 @@ using System.Text.RegularExpressions;
 
 namespace BareBones.Services.PropertyTable
 {
-    public abstract class RegexParseFunction : IPolyPropsParseFunction
+    public abstract class RegexParseFunction : IParseFunction
     {
         public Action<(int, int), string> Log { get; set; }
 
@@ -15,7 +15,7 @@ namespace BareBones.Services.PropertyTable
         public bool CanParse(string text, int start) 
             =>  Matcher.IsMatch(text, start);
 
-        public ParseResult Parse(string text, int start) => RegexParseFunction.Parse(text, start, Map, Matcher);
+        public ParseResult Parse(string text, int start = 0) => RegexParseFunction.Parse(text, start, Map, Matcher);
 
         public static ParseResult Parse(string text, int start, Func<string, int, int, object> mapFunction, Regex matcher)
         {

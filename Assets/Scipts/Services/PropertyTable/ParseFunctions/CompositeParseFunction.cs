@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace BareBones.Services.PropertyTable
 {
-    public class CompositeParseFunction<TCollection, TElement> : IPolyPropsParseFunction where TCollection : ICollection<TElement>, new()
+    public class CompositeParseFunction<TCollection, TElement> : IParseFunction where TCollection : ICollection<TElement>, new()
     {
         public const string DefaultStartToken = "{";
         public const string DefaultEndToken = "}";
@@ -21,7 +21,7 @@ namespace BareBones.Services.PropertyTable
 
         public bool ContinueAfterError { get; set; } = true;
 
-        public IPolyPropsParseFunction ElementParseFunction { get; set; }
+        public IParseFunction ElementParseFunction { get; set; }
 
         public Func<string, int, int> SkipWhiteSpaceFunction { get; set; }
 
@@ -33,7 +33,7 @@ namespace BareBones.Services.PropertyTable
 
         public static ParseResult Parse(
             string text, 
-            IPolyPropsParseFunction parseFunction,
+            IParseFunction parseFunction,
             Func<string, int, int> skipWhiteSpaceFunction,
             int start = 0,
             string startToken = DefaultStartToken, 
@@ -74,7 +74,7 @@ namespace BareBones.Services.PropertyTable
         public static ParseResult ParseElements(
             string text,
             int start,
-            IPolyPropsParseFunction parseFunction,
+            IParseFunction parseFunction,
             Func<string, int, int> skipWhiteSpaceFunction,
             string endToken = "}",
             string separators = ",",

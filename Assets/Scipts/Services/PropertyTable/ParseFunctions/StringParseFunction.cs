@@ -2,7 +2,7 @@
 
 namespace BareBones.Services.PropertyTable
 {
-    public class StringParseFunction : IPolyPropsParseFunction
+    public class StringParseFunction : IParseFunction
     {
         public const string DefaultDelimiters = "\"'`";
 

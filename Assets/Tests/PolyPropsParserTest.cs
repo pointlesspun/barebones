@@ -20,42 +20,37 @@ public class PolyPropsParserTest
             "}";
 
         var errors = new List<((int line, int column) position, string message)>();
-        var config = new PolyPropsConfig();
+        var log = new Action<(int, int), string>((position, message) => errors.Add((position, message)));
+        var func = new BasicParseFunctions(log).CreatePolyPropsFunction();
 
-        config.Log = (position, message) => errors.Add((position, message));
-
-        var value = PolyPropsParser.Read(text, 0, config);
+        var value = func.Parse(text, 0);
         Assert.Greater(errors.Count, 0);
         Assert.AreEqual(errors[0].position.line, 2);
-        Assert.AreEqual(errors[0].position.column, 7);
+        Assert.AreEqual(errors[0].position.column, 2);
     }
 
      [Test]
     [Description("Test if the color extension is capable of parsing all the colors.")]
     public void ColorExtensionTest()
     {
-        var text =
-            "   // reading some colors\n" +
-            "   c1: #0010FF,\n" +
-            "   c2: #0010FF01,\n" +
-            "   foo: 'bar'\n" +
-            "}";
-
-        var config = new PolyPropsConfig()
-        {
-            ParseExtensions = new ColorParseFunction()
+        var text = new string[] {
+            "#0010FF",
+            "#0010FF01"
         };
-        
-        var value = PolyPropsParser.Read(text, 0, config);
-        var expected = new Dictionary<string, object>()
-        {
-            { "c1", new Color(0, 16.0f / 255.0f, 1.0f, 1.0f) },
-            { "c2", new Color(0, 16.0f / 255.0f, 1.0f, 1.0f / 255.0f) },
-            { "foo", "bar" },
-        };
-        Assert.AreEqual(expected, value);
 
-        Assert.IsFalse(new ColorParseFunction().CanParse("   value #121212", 3));
+        var expected = new Color[]
+        {
+            new Color(0, 16.0f / 255.0f, 1.0f, 1.0f),
+            new Color(0, 16.0f / 255.0f, 1.0f, 1.0f / 255.0f),
+        };
+
+        var func = new ColorParseFunction();
+
+        for (var i = 0; i < text.Length; i++)
+        {
+            var value = func.Parse(text[i]).value;
+            Assert.AreEqual(expected[i], value);
+        }
     }
 
     [Test]
@@ -177,7 +172,10 @@ public class PolyPropsParserTest
             "   null: null\n" +
             "}";
 
-        var value = PolyPropsParser.Read(text);
+        var value = new BasicParseFunctions()
+                        .CreatePolyPropsFunction()
+                        .Parse(text)
+                        .value;
         var expected = new Dictionary<string, object>()
         {
             {"str", "string"},
@@ -206,7 +204,10 @@ public class PolyPropsParserTest
             "   128.0f\n" +  
             "]";
 
-        var value = PolyPropsParser.Read(text);
+        var value = new BasicParseFunctions()
+                       .CreatePolyPropsFunction()
+                       .Parse(text)
+                       .value;
         var expected = new List<object>()
         {
             "string",
@@ -234,7 +235,10 @@ public class PolyPropsParserTest
             "   k3: \"value3\" // comment\n" +
             "} // comment";
 
-        var value = PolyPropsParser.Read(new UnityEngine.TextAsset(text).text);
+        var value = new BasicParseFunctions()
+                       .CreatePolyPropsFunction()
+                       .Parse(text)
+                       .value;
         var expected = new Dictionary<string, object>()
         {
             { "key", new Dictionary<string, object>() 
@@ -260,7 +264,10 @@ public class PolyPropsParserTest
             "'value3' // comment\n" +
             "] // comment";
 
-        var value = PolyPropsParser.Read(new UnityEngine.TextAsset(text).text);
+        var value = new BasicParseFunctions()
+                        .CreatePolyPropsFunction()
+                        .Parse(text)
+                        .value;
         var expected = new Dictionary<string, object>()
         {
             { "key1", new List<object>() { "value1", "value2", "value3" } },
@@ -277,7 +284,10 @@ public class PolyPropsParserTest
             "key1: [// comment \n" +
             "'value']";
 
-        var value = PolyPropsParser.Read(new UnityEngine.TextAsset(text).text);
+        var value = new BasicParseFunctions()
+                        .CreatePolyPropsFunction()
+                        .Parse(text)
+                        .value;
         var expected = new Dictionary<string, object>()
         {
             { "key1", new List<object>() { "value" } },
@@ -294,7 +304,10 @@ public class PolyPropsParserTest
             "key1: // comment \n" +
             "'value'";
 
-        var value = PolyPropsParser.Read(new UnityEngine.TextAsset(text).text);
+        var value = new BasicParseFunctions()
+                       .CreatePolyPropsFunction()
+                       .Parse(new UnityEngine.TextAsset(text).text)
+                       .value;
         var expected = new Dictionary<string, object>()
         {
             { "key1", "value" },
@@ -311,7 +324,10 @@ public class PolyPropsParserTest
             "key1 // comment \n" +
             ": 'value'";
 
-        var value = PolyPropsParser.Read(new UnityEngine.TextAsset(text).text);
+        var value = new BasicParseFunctions()
+                        .CreatePolyPropsFunction()
+                        .Parse(new UnityEngine.TextAsset(text).text)
+                        .value;
         var expected = new Dictionary<string, object>()
         {
             { "key1", "value" },
@@ -331,12 +347,12 @@ public class PolyPropsParserTest
             "key3: 42\n ## more comments \n,";
 
         // change the comment token for some variation
-        var config = new PolyPropsConfig()
-        {
-            SingleLineCommentToken = "#"
-        };
-
-        var value = PolyPropsParser.Read(new UnityEngine.TextAsset(text).text, 0, config);
+        var functions = new BasicParseFunctions() { SingleLineCommentToken = "#" };
+        var value = functions
+                        .CreatePolyPropsFunction()
+                        .Parse(new UnityEngine.TextAsset(text).text)
+                        .value;
+        
         var expected = new Dictionary<string, object>()
         {
             { "key1", "value" },
@@ -362,7 +378,10 @@ public class PolyPropsParserTest
             "\n" +
             "key4: -42\n";
 
-        var value = PolyPropsParser.Read(new UnityEngine.TextAsset(text).text);
+        var value = new BasicParseFunctions()
+                     .CreatePolyPropsFunction()
+                     .Parse(new UnityEngine.TextAsset(text).text)
+                     .value;        
         var expected = new Dictionary<string, object>()
         {
             { "key1", "value" },
@@ -384,7 +403,10 @@ public class PolyPropsParserTest
             "// line\n" +
             "  // comments\n";
 
-        var value = PolyPropsParser.Read(new UnityEngine.TextAsset(text).text);
+        var value = new BasicParseFunctions()
+                     .CreatePolyPropsFunction()
+                     .Parse(new UnityEngine.TextAsset(text).text)
+                     .value;
         var expected = new Dictionary<string, object>()
         {
             { "key", "value" },
@@ -403,7 +425,10 @@ public class PolyPropsParserTest
             "  // comments\n" +
             "   key: 'value'";
 
-        var value = PolyPropsParser.Read(new UnityEngine.TextAsset(text).text);
+        var value = new BasicParseFunctions()
+                      .CreatePolyPropsFunction()
+                      .Parse(new UnityEngine.TextAsset(text).text)
+                      .value;
         var expected = new Dictionary<string, object>()
         {
             { "key", "value" },
@@ -424,7 +449,10 @@ public class PolyPropsParserTest
             "   objFlag: true," +
             "}";
 
-        var value = PolyPropsParser.Read(new UnityEngine.TextAsset(text).text);
+        var value = new BasicParseFunctions()
+                      .CreatePolyPropsFunction()
+                      .Parse(new UnityEngine.TextAsset(text).text)
+                      .value;
         var expected = new Dictionary<string, object>()
         {
             { "foo", "bar" },
@@ -442,60 +470,21 @@ public class PolyPropsParserTest
         Assert.AreEqual(expected, value);
     }
 
-    [Test]
-    [Description("Parse a valid key.")]
-    public void ParseValidKeyTest()
-    {
-        var testString = "key:";
-        var result = PolyPropsParser.ParseKey(testString, 0, PolyPropsConfig.Default);
-
-        Assert.AreEqual(result.value, "key");
-        Assert.IsTrue(result.charactersRead == testString.Length);
-
-        testString = " key :";
-        result = PolyPropsParser.ParseKey(testString, 0,  PolyPropsConfig.Default);
-
-        Assert.AreEqual(result.value, "key");
-        Assert.IsTrue(result.charactersRead == testString.Length);
-
-        testString = " key\n\n\n:";
-        result = PolyPropsParser.ParseKey(testString, 0, PolyPropsConfig.Default);
-
-        Assert.AreEqual(result.value, "key");
-        Assert.IsTrue(result.charactersRead == testString.Length);
-
-        testString = "'key:':";
-        result = PolyPropsParser.ParseKey(testString, 0, PolyPropsConfig.Default);
-
-        Assert.AreEqual(result.value, "key:");
-        Assert.IsTrue(result.charactersRead == testString.Length);
-
-        testString = " a b c :";
-        result = PolyPropsParser.ParseKey(testString, 0, PolyPropsConfig.Default);
-
-        Assert.AreEqual(result.value, "a b c");
-        Assert.IsTrue(result.charactersRead == testString.Length);
-
-        var prefix = "keyA: bla\n";
-        testString = " keyB :";
-        result = PolyPropsParser.ParseKey(prefix + testString, prefix.Length, PolyPropsConfig.Default);
-
-        Assert.AreEqual(result.value, "keyB");
-        Assert.IsTrue(result.charactersRead == testString.Length);
-    }
-
+    
     [Test]
     [Description("Parse key with a missing column.")]
     public void ParseMissingColumnTest()
     {
+        var keyFunction = new BasicParseFunctions().KeyValueFunction;
+
         var testString = "key";
-        var result = PolyPropsParser.ParseKey(testString, 0, PolyPropsConfig.Default);
+        var result = keyFunction.Parse(testString, 0);
 
         Assert.IsTrue(!result.isSuccess);
         Assert.IsTrue(result.charactersRead == testString.Length);
 
         testString = " key \n";
-        result = PolyPropsParser.ParseKey(testString, 0, PolyPropsConfig.Default);
+        result = keyFunction.Parse(testString, 0);
 
         Assert.IsTrue(!result.isSuccess);
         Assert.IsTrue(result.charactersRead == testString.Length);
@@ -505,10 +494,10 @@ public class PolyPropsParserTest
     [Description("Parse int values.")]
     public void ParseIntValueTest()
     {
-        var input = new string[] { "42", "-1", "", " \n", "444", "a38", "0001", " 282f"};
+        var input = new string[] { "42", "-1", "", " \n", "444", "a38", "0001", " 282r"};
         var expectedValue = new object[] { 42, -1, null, null, 444, null, 1, null };
 
-        TestParseValues(input, expectedValue, (str) => int.Parse(str));
+        TestParseValues(input, expectedValue, new BasicParseFunctions().NumberFunction);
     }
 
     [Test]
@@ -573,10 +562,10 @@ public class PolyPropsParserTest
     [Description("Parse boolean values.")]
     public void ParseBoolValueTest()
     {
-        var input = new string[] { "true", "False", "", " \n", "true", "'true' ", "fals", "TRUE" };
-        var expectedValue = new object[] { true, false, null, null, true, null, null, true };
+        var input = new string[]         { "true", "False", "",   " \n", "true", "'true' ", "fals", "TRUE" };
+        var expectedValue = new object[] {  true,   false,  null, null,  true,     null,     null,   true };
 
-        TestParseValues(input, expectedValue, (str) => bool.Parse(str));
+        TestParseValues(input, expectedValue, new BasicParseFunctions().BoolFunction);
     }
 
     [Test]
@@ -605,10 +594,10 @@ public class PolyPropsParserTest
     [Description("Parse float values.")]
     public void ParseFloatValueTest()
     {
-        var input = new string[] { "0", "0.1", "", " \n", "42.4", "'3'", "-1.11", "1e10" };
+        var input = new string[] { "0", "0.1f", "", " \n", "42.4f", "'3'", "-1.11f", "1e10f" };
         var expectedValue = new object[] { 0.0f, 0.1f, null, null, 42.4f, null, -1.11f, 1e10f};
 
-        TestParseValues(input, expectedValue, (str) => float.Parse(str));
+        TestParseValues(input, expectedValue, new BasicParseFunctions().NumberFunction);
     }
 
     [Test]
@@ -617,11 +606,12 @@ public class PolyPropsParserTest
     {
         var input = new string[] { "0", "0.1", "'foo'", "xxx", "true", "\" bar \"", "-1.11f" };
         var expectedValue = new object[] { 0, 0.1, "foo", "xxx", true, " bar ", -1.11f};
+        var valuesFunction = new BasicParseFunctions().ValueFunction;
 
         for (var i = 0; i < input.Length; i++)
         {
             var testString = input[i];
-            var result = PolyPropsParser.ParseValue(testString, 0, PolyPropsConfig.Default);
+            var result = valuesFunction.Parse(testString, 0);
 
             var actual = result.value;
             var expected = expectedValue[i];
@@ -685,15 +675,16 @@ public class PolyPropsParserTest
             null
         };
 
+        var listFunction = new BasicParseFunctions().ListFunction;
+
         for (var i = 0; i < input.Length; i++)
         {
             var testString = input[i];
-            var result = PolyPropsParser.ParseList(testString, 0, PolyPropsConfig.Default);
+            var result = listFunction.Parse(testString, 0);
 
             if (expectedValues[i] == null)
             {
-                Assert.AreEqual(expectedValues[i], result.value);
-                //Assert.AreEqual(-1, result.charactersRead);
+                Assert.AreEqual(false, result.isSuccess);
             }
             else
             {
@@ -856,10 +847,12 @@ public class PolyPropsParserTest
             new List<object>() { new List<object>() { "str", "also, str", "str too" } },
         };
 
+        var func = new BasicParseFunctions().ListFunction;
+
         for (var i = 0; i < input.Length; i++)
         {
             var testString = input[i];
-            var result = PolyPropsParser.ParseList(testString, 0, PolyPropsConfig.Default);
+            var result = func.Parse(testString, 0);
 
             if (expectedValues[i] == null)
             {
@@ -921,12 +914,12 @@ public class PolyPropsParserTest
             null
         };
 
-        PolyPropsConfig.Default.Log = (location, message) => Debug.Log(location + ": " + message);
+        var func = new BasicParseFunctions().MapFunction;
 
         for (var i = 0; i < input.Length; i++)
         {
             var testString = input[i];
-            var result = PolyPropsParser.ParseMap(testString, 0, PolyPropsConfig.Default);
+            var result = func.Parse(testString, 0);
 
             if (expectedValues[i] == null)
             {
@@ -1010,11 +1003,13 @@ public class PolyPropsParserTest
                 },
             }
         };
+        
+        var func = new BasicParseFunctions().MapFunction;
 
         for (var i = 0; i < input.Length; i++)
         {       
             var testString = input[i];
-            var result = PolyPropsParser.ParseMap(testString, 0, PolyPropsConfig.Default);
+            var result = func.Parse(testString, 0);
 
             if (expectedValues[i] == null)
             {
@@ -1030,22 +1025,32 @@ public class PolyPropsParserTest
         }
     }
 
-    private void TestParseValues<T>(string[] input, object[] expectedValues, Func<string, T> parseFunction)
+    private void TestParseValues(string[] input, object[] expectedValues, IParseFunction func)
     {
         for (var i = 0; i < input.Length; i++)
         {
             var testString = input[i];
-            var result = PolyPropsParser.ParseValue(testString, 0, (str) => parseFunction(str), PolyPropsConfig.Default);
+            var result = func.Parse(testString, 0);
 
             if (expectedValues[i] == null)
             {
-                Assert.IsTrue(!result.isSuccess);
+                if (result.isSuccess)
+                {
+                    Debug.Log("Failing: " + i + ", " + testString);
+                }
+
+                Assert.IsTrue(!result.isSuccess || result.value == null);
             }
             else
             {
                 var actual = result.value;
                 var expected = expectedValues[i];
-                Assert.IsTrue(expected.Equals(actual));
+
+                if (!expected.Equals(actual))
+                {
+                    Debug.Log("Failing: " + i + ", " + testString);
+                }
+                Assert.AreEqual(expected, actual);
                 Assert.IsTrue(result.charactersRead == testString.Length);
             }
         }

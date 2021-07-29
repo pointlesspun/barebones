@@ -5,17 +5,17 @@ using System.Collections.Generic;
 
 namespace BareBones.Services.PropertyTable
 {
-    public class GroupParseFunction : IPolyPropsParseFunction
+    public class GroupParseFunction : IParseFunction
     {
         public Action<(int, int), string> Log { get; set; }
 
-        public List<IPolyPropsParseFunction> ParseFunctions { get; private set; } = new List<IPolyPropsParseFunction>();
+        public List<IParseFunction> ParseFunctions { get; private set; } = new List<IParseFunction>();
 
-        public IPolyPropsParseFunction DefaultFunction { get; set; } = null;
+        public IParseFunction DefaultFunction { get; set; } = null;
 
         public Func<string, int, int> SkipWhiteSpaceFunction { get; set; }
 
-        public GroupParseFunction Add(params IPolyPropsParseFunction[] functions)
+        public GroupParseFunction Add(params IParseFunction[] functions)
         {
             ParseFunctions.AddRange(functions);
             return this;

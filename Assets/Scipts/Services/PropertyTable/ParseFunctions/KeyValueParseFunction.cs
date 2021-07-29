@@ -4,15 +4,15 @@ using System.Collections.Generic;
 
 namespace BareBones.Services.PropertyTable
 {
-    public class KeyValueParseFunction<TKey, TValue> : IPolyPropsParseFunction
+    public class KeyValueParseFunction<TKey, TValue> : IParseFunction
     {
         public Action<(int, int), string> Log { get; set; }
 
         public string SeparatorToken { get; set; } = ":";
 
-        public IPolyPropsParseFunction KeyParseFunction { get; set; }
+        public IParseFunction KeyParseFunction { get; set; }
 
-        public IPolyPropsParseFunction ValueParseFunction { get; set; }
+        public IParseFunction ValueParseFunction { get; set; }
 
         public Func<string, int, int> SkipWhiteSpaceFunction { get; set; }
 
@@ -24,8 +24,8 @@ namespace BareBones.Services.PropertyTable
         public static ParseResult Parse(
             string text, 
             int start, 
-            IPolyPropsParseFunction keyFunction, 
-            IPolyPropsParseFunction valueFunction,
+            IParseFunction keyFunction, 
+            IParseFunction valueFunction,
             Func<string, int, int> skipFunction,
             string separatorToken = ":",
             Action<(int, int), string> log = null)

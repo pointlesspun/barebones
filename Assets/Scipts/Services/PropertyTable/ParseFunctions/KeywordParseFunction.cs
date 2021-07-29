@@ -3,7 +3,7 @@ using System;
 
 namespace BareBones.Services.PropertyTable
 {
-    public class KeywordParseFunction : IPolyPropsParseFunction
+    public class KeywordParseFunction : IParseFunction
     {
         public Action<(int, int), string> Log { get; set; }
 

@@ -36,24 +36,29 @@ namespace BareBones.Services.PropertyTable
             return _typeMapping[name.ToLower()];
         }
 
-        public static object CreateInstance(string text, PolyPropsConfig config = null) 
+        public static object CreateInstance(string text, IParseFunction function, Type t = null) 
         {
-            var dictionary = PolyPropsParser.Read(text, 0, config) as Dictionary<string, object>;
+            var parseResult = function.Parse(text);
 
-            if (dictionary != null && dictionary.Count == 1)
+            if (parseResult.isSuccess)
             {
-                foreach (var kvp in dictionary)
+                var dictionary = parseResult.value as Dictionary<string, object>;
+
+                if (dictionary != null && dictionary.Count == 1)
                 {
-                    var key = kvp.Key;
-                    var properties = kvp.Value as Dictionary<string, object>;
-
-                    if (key != string.Empty && properties != null)
+                    foreach (var kvp in dictionary)
                     {
-                        var type = Resolve(key);
+                        var key = kvp.Key;
+                        var properties = kvp.Value as Dictionary<string, object>;
 
-                        if (type != null)
+                        if (key != string.Empty && properties != null)
                         {
-                            return properties.MapData(Activator.CreateInstance(type));
+                            var type = t ?? Resolve(key);
+
+                            if (type != null)
+                            {
+                                return properties.MapData(Activator.CreateInstance(type));
+                            }
                         }
                     }
                 }
@@ -62,25 +67,9 @@ namespace BareBones.Services.PropertyTable
             return null;
         }
 
-        public static T CreateInstance<T>(string text, PolyPropsConfig config = null)
+        public static T CreateInstance<T>(string text, IParseFunction function)
         {
-            var dictionary = PolyPropsParser.Read(text, 0, config) as Dictionary<string, object>;
-
-            if (dictionary != null && dictionary.Count == 1)
-            {
-                foreach (var kvp in dictionary)
-                {
-                    var key = kvp.Key;
-                    var properties = kvp.Value as Dictionary<string, object>;
-
-                    if (key != string.Empty && properties != null)
-                    {
-                        return properties.MapData(Activator.CreateInstance<T>());
-                    }
-                }
-            }
-
-            return default(T);
+            return (T) CreateInstance(text, function, typeof(T));
         }
 
     }

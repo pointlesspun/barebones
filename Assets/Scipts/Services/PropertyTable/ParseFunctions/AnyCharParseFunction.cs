@@ -2,7 +2,7 @@
 
 namespace BareBones.Services.PropertyTable
 {
-    public class AnyCharParseFunction : IPolyPropsParseFunction
+    public class AnyCharParseFunction : IParseFunction
     {
         public const string DefaultDelimiters = "\n\r/:[]{},";
 
@@ -38,7 +38,7 @@ namespace BareBones.Services.PropertyTable
                 idx++;
             }
 
-            return new ParseResult(text.Substring(start, idx - start), idx - start, true);
+            return new ParseResult(text.Substring(start, idx - start).Trim(), idx - start, true);
         }
     }
 }

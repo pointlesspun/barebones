@@ -6,7 +6,7 @@ namespace BareBones.Services.PropertyTable
     /**
      * @deprecated
      */
-    public class BooleanParseFunction : IPolyPropsParseFunction
+    public class BooleanParseFunction : IParseFunction
     {
         public const string DefaultTrueToken = "true";
         public const string DefaultFalseToken = "false";

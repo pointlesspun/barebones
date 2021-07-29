@@ -140,7 +140,7 @@ namespace BareBones.Services.PropertyTable
         {
             if (source == null)
             {
-                return default(T);
+                return default;
             }
 
             var type = source.GetType();
