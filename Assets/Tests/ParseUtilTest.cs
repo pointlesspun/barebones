@@ -1,5 +1,6 @@
 ﻿
 using NUnit.Framework;
+using System;
 
 public class ParseUtilTest
 {
@@ -189,6 +190,29 @@ public class ParseUtilTest
 
         Assert.AreEqual(10e10d, "10e10d".ParseNumber());
         Assert.AreEqual(typeof(double), "10e10d".ParseNumber().GetType());
+    }
 
+    [Test]
+    [Description("Test parsing with limitations")]
+    public void ParseWithLimitationsTest()
+    {
+        // try hex, not allowed and only allowed
+        Assert.Throws(typeof(ArgumentException), () => "0x0".ParseNumber("d"));
+        Assert.AreEqual(1, "0x01".ParseNumber("x"));
+
+        // try hex or double, not allowed and allowed
+        Assert.Throws(typeof(ArgumentException), () => "12ul".ParseNumber("xd"));
+        Assert.AreEqual(1, "0x01".ParseNumber("xd"));
+        Assert.AreEqual(0.1, "0.1".ParseNumber("dx"));
+        Assert.AreEqual(0.1, "0.1d".ParseNumber("dx"));
+
+        // try usigned long
+        Assert.AreEqual(12, "12ul".ParseNumber("xdul"));
+
+        // try int, not allowed and allowed
+        Assert.Throws(typeof(ArgumentException), () => "12".ParseNumber("b"));
+        Assert.Throws(typeof(ArgumentException), () => "12z".ParseNumber("b"));
+        Assert.AreEqual(1, "1".ParseNumber("bz"));
+        Assert.AreEqual(1, "1z".ParseNumber("bz"));
     }
 }

@@ -41,13 +41,13 @@
     - [skip] multiline comments ? will revisit later
     - [in-progress] test errors
         - [done] replace return values with struct { result : object, charactersRead: int, isError : bool }
-        - [done] refactored most functionality of the parser into parsefunctions
+        - [done] refactored most functionality of the parser into parsefunc tions
         - [done] add null parser, vector function, regex function and color parser.
         - [done] add extension parameter to createbasicparser - configuration is a complex beast,figure out how this should be done - first pass need to revisit in the future
         - [done] allow for key-values on the top level
         - [done] after error read until the end of the line, continue ? Implemented for composite, not sure if others are needed
         - [done] clean up old parser
-    - limit numbers to certain type
+    - [done] limit numbers to certain type
     - test against a json, .properties, command line, .csv
     - clean up & document
 

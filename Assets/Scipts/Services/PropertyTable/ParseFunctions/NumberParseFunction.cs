@@ -10,11 +10,14 @@ namespace BareBones.Services.PropertyTable
 
         public string Delimiters { get; set; } = DefaultDelimiters;
 
+        public string AllowedTypes { get; set; } = null;
+
         public bool CanParse(string text, int start) => text[start] == '-' || char.IsDigit(text[start]);
 
-        public ParseResult Parse(string text, int start) => NumberParseFunction.Parse(text, start, Delimiters, Log);
+        public ParseResult Parse(string text, int start) => NumberParseFunction.Parse(text, start, Delimiters, AllowedTypes, Log);
 
-        public static ParseResult Parse(string text, int start, string delimiters = DefaultDelimiters, Action<(int, int), string> log = null)
+
+        public static ParseResult Parse(string text, int start, string delimiters = DefaultDelimiters, string allowedTypes = null, Action<(int, int), string> log = null)
         {
             var idx = ParseUtil.SkipUntil(text, start, (chr) => delimiters.IndexOf(chr) >= 0);
 
@@ -24,7 +27,9 @@ namespace BareBones.Services.PropertyTable
 
                 try
                 {
-                    return new ParseResult(numberString.ParseNumber(), idx - start, true);
+                    return new ParseResult(allowedTypes == null 
+                                            ? numberString.ParseNumber() 
+                                            : numberString.ParseNumber(allowedTypes), idx - start, true);
                 }
                 catch (Exception e)
                 {

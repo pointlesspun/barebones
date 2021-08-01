@@ -16,6 +16,28 @@ public struct ParseResult
 };
 public static class ParseUtil
 {
+    public static char DoubleSymbol = 'd';
+    public static char IntSymbol = 'z';
+    public static char FloatSymbol = 'f';
+    public static char ByteSymbol = 'b';
+    public static char DecimalSymbol = 'm';
+    public static char LongSymbol = 'l';
+    public static char UnsignedSymbol = 'u';
+    public static char HexSymbol = 'x';
+    public static char ShortSymbol = 's';
+
+    public static string AllowedNumberSymbols = String.Join("", 
+        FloatSymbol, 
+        DecimalSymbol, 
+        LongSymbol, 
+        UnsignedSymbol, 
+        HexSymbol, 
+        ShortSymbol,
+        DoubleSymbol, 
+        IntSymbol, 
+        ByteSymbol
+    );
+
     /**
      * Returns the number of whitespace characters at the beginning of the string
      */
@@ -55,7 +77,7 @@ public static class ParseUtil
     /**
      * Get the length from a string starting with the given delimiter until and including the end of the delimiter
      */
-    public static int ReadScopedString(this string str, int start, char delimiter = '"', char escapeChar ='\\')
+    public static int ReadScopedString(this string str, int start, char delimiter = '"', char escapeChar = '\\')
     {
         var idx = start;
 
@@ -88,7 +110,7 @@ public static class ParseUtil
     {
         var idx = startIndex;
 
-        while(idx < str.Length && matches.IndexOf(str[idx]) == -1)
+        while (idx < str.Length && matches.IndexOf(str[idx]) == -1)
         {
             idx++;
         }
@@ -161,11 +183,11 @@ public static class ParseUtil
         (numberString.Length > 2 && char.ToLower(numberString[numberString.Length - 2]) == 'u');
 
 
-    public static int SkipUntil(string text, int start, Func<char,bool> condition)
+    public static int SkipUntil(string text, int start, Func<char, bool> condition)
     {
         var idx = start;
 
-        while (idx < text.Length && !condition(text[idx])) 
+        while (idx < text.Length && !condition(text[idx]))
         {
             idx++;
         }
@@ -192,7 +214,7 @@ public static class ParseUtil
             throw new ArgumentException("Attempting to parse an empty string.");
         }
 
-        if (numberString.Length > 2 && char.ToLower(numberString[1]) == 'x')
+        if (IsHex(numberString))
         {
             return Convert.ToInt32(numberString, 16);
         }
@@ -201,36 +223,96 @@ public static class ParseUtil
 
         if (char.IsDigit(lastCharacter))
         {
-            bool hasExponent = numberString.IndexOf('e') >= 0 || numberString.IndexOf('E') >= 0;
-            if (numberString.IndexOf('.') >= 0 || hasExponent)
-            {
-                if (hasExponent)
-                {
-                    return double.Parse(numberString, NumberStyles.AllowExponent | NumberStyles.AllowDecimalPoint | NumberStyles.AllowLeadingSign);
-                }
-
-                return double.Parse(numberString);
-            }
-
-            return int.Parse(numberString);
+            return ParseIntOrDouble(numberString);
         }
 
         lastCharacter = char.ToLower(lastCharacter);
 
-        if ("fulmsbd".IndexOf(lastCharacter) < 0)
+        return AllowedNumberSymbols.IndexOf(lastCharacter) >= 0
+            ? ParseNumber(numberString, lastCharacter)
+            : throw new ArgumentException("found unknown character ending: '" + lastCharacter + "'.");
+    }
+
+    public static object ParseNumber(this string numberString, string allowedTypes)
+    {
+        if (String.Empty == numberString)
         {
-            throw new ArgumentException( "found unknown character ending: '" + lastCharacter + "'.");
+            throw new ArgumentException("Attempting to parse an empty string.");
         }
-        
-        if (lastCharacter == 'm')
+
+        if (IsHex(numberString))
+        {
+            return ConvertIfAllowed(numberString, allowedTypes, HexSymbol, (str) => Convert.ToInt32(numberString, 16));
+        }
+
+        var lastCharacter = numberString[numberString.Length - 1];
+
+        if (char.IsDigit(lastCharacter))
+        {
+            bool hasExponent = HasExponent(numberString);
+            if (numberString.IndexOf('.') >= 0 || hasExponent)
+            {
+                return ConvertIfAllowed(numberString, allowedTypes, DoubleSymbol, (str) =>
+                    hasExponent ? double.Parse(numberString, NumberStyles.AllowExponent | NumberStyles.AllowDecimalPoint | NumberStyles.AllowLeadingSign)
+                                : double.Parse(numberString)
+                );
+            }
+
+            return ConvertIfAllowed(numberString, allowedTypes, IntSymbol, (str) => int.Parse(numberString));
+        }
+
+        lastCharacter = char.ToLower(lastCharacter);
+
+        return (allowedTypes.IndexOf(lastCharacter) < 0 || AllowedNumberSymbols.IndexOf(lastCharacter) < 0)
+            ? throw new ArgumentException("found unknown or disallowed character ending with: '" + lastCharacter + "'.")
+            : ParseNumber(numberString, lastCharacter);
+    }
+
+    /** Checks if the given string is potentially a hex string without checking too much */
+    public static bool IsHex(string str)
+        => str.Length > 2 && (char.ToLower(str[0]) == HexSymbol || char.ToLower(str[1]) == HexSymbol);
+
+    public static bool HasExponent(string str)
+        => str.Length > 2 && str.LastIndexOf("e", str.Length - 1, StringComparison.InvariantCultureIgnoreCase) > 0;
+
+    private static object ParseIntOrDouble(string numberString) 
+    {
+        if (HasExponent(numberString))
+        {
+            return double.Parse(numberString, NumberStyles.AllowExponent | NumberStyles.AllowDecimalPoint | NumberStyles.AllowLeadingSign);
+        }
+        else if (numberString.LastIndexOf('.') >= 0)
+        {
+            return double.Parse(numberString);
+        }
+
+        return int.Parse(numberString);
+    }
+
+
+    private static T ConvertIfAllowed<T>(string str, string allowedTypes, char typeSymbol, Func<string, T> conversion) 
+    {
+        if (allowedTypes.IndexOf(typeSymbol) >= 0)
+        {
+            return conversion(str);
+        }
+        else
+        {
+            throw new ArgumentException("Values of type " + typeSymbol + " are not allowed (" + allowedTypes + ").");
+        }
+    }
+
+    private static object ParseNumber(this string numberString, char lastCharacter)
+    {
+        if (lastCharacter == DecimalSymbol)
         {
             return Decimal.Parse(numberString.Substring(0, numberString.Length - 1));
         }
-        else if (lastCharacter == 'f')
+        else if (lastCharacter == FloatSymbol)
         {
             return float.Parse(numberString.Substring(0, numberString.Length - 1));
         }
-        else if (lastCharacter == 'd')
+        else if (lastCharacter == DoubleSymbol)
         {
             bool hasExponent = numberString.IndexOf('e') >= 0 || numberString.IndexOf('E') >= 0;
             if (hasExponent)
@@ -240,11 +322,11 @@ public static class ParseUtil
 
             return double.Parse(numberString.Substring(0, numberString.Length - 1));
         }
-        else if (lastCharacter == 'u')
+        else if (lastCharacter == UnsignedSymbol)
         {
             return uint.Parse(numberString.Substring(0, numberString.Length - 1));
         }
-        else if (lastCharacter == 's')
+        else if (lastCharacter == ShortSymbol)
         {
             if (ParseUtil.IsUnsignedLongOrShort(numberString))
             {
@@ -253,11 +335,11 @@ public static class ParseUtil
 
             return short.Parse(numberString.Substring(0, numberString.Length - 1));
         }
-        else if (lastCharacter == 'b')
+        else if (lastCharacter == ByteSymbol)
         {
             return byte.Parse(numberString.Substring(0, numberString.Length - 1));
         }
-        else if (lastCharacter == 'l')
+        else if (lastCharacter == LongSymbol)
         {
             if (ParseUtil.IsUnsignedLongOrShort(numberString))
             {
@@ -265,6 +347,10 @@ public static class ParseUtil
             }
 
             return long.Parse(numberString.Substring(0, numberString.Length - 1));
+        }
+        else if (lastCharacter == IntSymbol)
+        {
+            return int.Parse(numberString.Substring(0, numberString.Length - 1));
         }
 
         throw new NotImplementedException("... yeah so something went wrong on the implementation side. Sorry.");

@@ -7,6 +7,7 @@ namespace BareBones.Common
 {
     public static class Enumerations
     {
+
         public static int GetAvailableSlot<T>(this T[] array) where T : class
         {
             for (var i = 0; i < array.Length; i++)
