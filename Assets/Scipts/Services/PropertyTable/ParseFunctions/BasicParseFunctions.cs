@@ -7,9 +7,9 @@ namespace BareBones.Services.PropertyTable
     {
         public string SingleLineCommentToken { get; set; } = "//";
 
-        public Action<(int, int), string> Log { get; set; }
+        public string WhiteSpaceCharacters { get; set; } = " \t\r\n";
 
-        public Func<string, int, int> SkipFunction { get; set; }
+        public Action<(int, int), string> Log { get; set; }
 
         /**
          * Parse a 'value' in the text at the given start position. A value can either be a standard value
@@ -54,12 +54,10 @@ namespace BareBones.Services.PropertyTable
         {
             Log = log;
 
-            SkipFunction = new Func<string, int, int>((text, idx) => SkipWhiteSpaceAndComments(text, idx, commentToken: SingleLineCommentToken));
-
             ValueFunction = new GroupParseFunction()
             {
                 Log = log,
-                SkipWhiteSpaceFunction = SkipFunction
+                SkipWhiteSpaceFunction = SkipWhiteSpaceAndComments
             };
 
             AnyCharFunction = new AnyCharParseFunction() { Log = log };
@@ -69,13 +67,13 @@ namespace BareBones.Services.PropertyTable
             KeyFunction = new GroupParseFunction()
             {
                 Log = log,
-                SkipWhiteSpaceFunction = SkipFunction
+                SkipWhiteSpaceFunction = SkipWhiteSpaceAndComments
             }.Add(StringFunction, AnyCharFunction);
 
             KeyValueFunction = new KeyValueParseFunction<string, object>()
             {
                 Log = log,
-                SkipWhiteSpaceFunction = SkipFunction,
+                SkipWhiteSpaceFunction = SkipWhiteSpaceAndComments,
                 KeyParseFunction = KeyFunction,
                 ValueParseFunction = ValueFunction
             };
@@ -84,14 +82,14 @@ namespace BareBones.Services.PropertyTable
             {
                 ElementParseFunction = KeyValueFunction,
                 Log = log,
-                SkipWhiteSpaceFunction = SkipFunction
+                SkipWhiteSpaceFunction = SkipWhiteSpaceAndComments
             };
 
             ListFunction = new CompositeParseFunction<List<object>, object>()
             {
                 ElementParseFunction = ValueFunction,
                 Log = log,
-                SkipWhiteSpaceFunction = SkipFunction,
+                SkipWhiteSpaceFunction = SkipWhiteSpaceAndComments,
                 StartToken = "[",
                 EndToken = "]"
             };
@@ -101,7 +99,7 @@ namespace BareBones.Services.PropertyTable
             BoolFunction = new GroupParseFunction()
             {
                 Log = log,
-                SkipWhiteSpaceFunction = SkipFunction
+                SkipWhiteSpaceFunction = SkipWhiteSpaceAndComments
             }.Add(
                 new KeywordParseFunction() { Log = log, Keyword = "true", ValueFunction = () => true },
                 new KeywordParseFunction() { Log = log, Keyword = "false", ValueFunction = () => false }
@@ -130,13 +128,13 @@ namespace BareBones.Services.PropertyTable
                 StartToken = String.Empty,
                 EndToken = String.Empty,
                 Log = Log,
-                SkipWhiteSpaceFunction = SkipFunction
+                SkipWhiteSpaceFunction = SkipWhiteSpaceAndComments
             };
             
             return new GroupParseFunction()
             {
                 Log = Log,
-                SkipWhiteSpaceFunction = SkipFunction
+                SkipWhiteSpaceFunction = SkipWhiteSpaceAndComments
             }.Add(
                 MapFunction,
                 ListFunction,
@@ -144,18 +142,68 @@ namespace BareBones.Services.PropertyTable
             );
         }
 
-        private int SkipWhiteSpaceAndComments(string text, int start, string whiteSpace = " \t\r\n", string commentToken = "//")
+        public IParseFunction CreateXMLFunction()
         {
-            start = text.Skip(whiteSpace, start);
+            var stack = new List<string>();
 
-            while (start < text.Length && text.IsMatch(commentToken, start))
+            var attributeFunction = new KeyValueParseFunction<string, string>()
+            {
+                KeyParseFunction = new AnyCharParseFunction()
+                {
+                    Delimiters = "= ",
+                    EscapeChar = (char)0,
+                    Log = Log
+                },
+                SkipWhiteSpaceFunction = SkipWhiteSpaceAndComments,
+                Log = Log,
+                SeparatorToken = "=",
+                ValueParseFunction = StringFunction
+            };
+
+            var nodeFunction = new ConcatenationParseFunction()
+            {
+                Log = Log,
+                SkipWhiteSpaceFunction = SkipWhiteSpaceAndComments,
+            };
+            
+            nodeFunction.Add(
+                new KeywordParseFunction()
+                {
+                    Keyword = "<",
+                    Log = Log,
+                    ValueFunction = () => "<"
+                },
+                new AnyCharParseFunction()
+                {
+                    Delimiters = " />",
+                    Log = Log,
+                    EscapeChar = (char) 0,
+                    OnMatchCallback = (str) => stack.Add(str)
+                },
+                new RepeatParseFunction()
+                {
+                    Log = Log,
+                    SkipWhiteSpaceOperation = SkipWhiteSpaceAndComments,
+                    Function = attributeFunction,
+                }
+            );
+
+            return null;
+        }
+
+        public int SkipWhiteSpaceAndComments(string text, int start)
+        {
+
+            start = text.Skip(WhiteSpaceCharacters, start);
+
+            while (start < text.Length && text.IsMatch(SingleLineCommentToken, start))
             {
                 var eoln = text.IndexOfAny("\r\n", start);
 
                 if (eoln >= 0)
                 {
                     start = eoln + 1;
-                    start = text.Skip(whiteSpace, start);
+                    start = text.Skip(WhiteSpaceCharacters, start);
                 }
                 else
                 {

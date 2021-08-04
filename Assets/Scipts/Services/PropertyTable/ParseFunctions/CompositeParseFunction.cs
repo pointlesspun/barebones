@@ -23,7 +23,7 @@ namespace BareBones.Services.PropertyTable
 
         public IParseFunction ElementParseFunction { get; set; }
 
-        public Func<string, int, int> SkipWhiteSpaceFunction { get; set; }
+        public ParseOperation SkipWhiteSpaceFunction { get; set; }
 
         public bool CanParse(string text, int start) => text.IsMatch(StartToken, start, true);
 
@@ -34,7 +34,7 @@ namespace BareBones.Services.PropertyTable
         public static ParseResult Parse(
             string text, 
             IParseFunction parseFunction,
-            Func<string, int, int> skipWhiteSpaceFunction,
+            ParseOperation skipWhiteSpaceFunction,
             int start = 0,
             string startToken = DefaultStartToken, 
             string endToken = DefaultEndToken, 
@@ -75,13 +75,16 @@ namespace BareBones.Services.PropertyTable
             string text,
             int start,
             IParseFunction parseFunction,
-            Func<string, int, int> skipWhiteSpaceFunction,
+            ParseOperation skipWhiteSpaceFunction,
             string endToken = "}",
             string separators = ",",
             bool continueAfterError = true,
             Action<(int, int), string> log = null
         ) 
         {
+            Debug.Assert(parseFunction != null, "Cannot parse elements with null ParseFunction.");
+            Debug.Assert(skipWhiteSpaceFunction != null, "Cannot parse elements with null skip ws function.");
+
             var resultCollection = new TCollection();
             var idx = start;
             var noErrorsEncountered = true;

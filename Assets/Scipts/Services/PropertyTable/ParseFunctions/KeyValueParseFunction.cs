@@ -14,7 +14,7 @@ namespace BareBones.Services.PropertyTable
 
         public IParseFunction ValueParseFunction { get; set; }
 
-        public Func<string, int, int> SkipWhiteSpaceFunction { get; set; }
+        public ParseOperation SkipWhiteSpaceFunction { get; set; }
 
         public bool CanParse(string text, int start) => KeyParseFunction.CanParse(text, start);
 
@@ -26,7 +26,7 @@ namespace BareBones.Services.PropertyTable
             int start, 
             IParseFunction keyFunction, 
             IParseFunction valueFunction,
-            Func<string, int, int> skipFunction,
+            ParseOperation skipFunction,
             string separatorToken = ":",
             Action<(int, int), string> log = null)
         {

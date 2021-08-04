@@ -1,6 +1,8 @@
 ﻿
 namespace BareBones.Services.PropertyTable
 {
+    public delegate int ParseOperation(string text, int start);
+
     public interface IParseFunction
     {
         bool CanParse(string text, int start = 0);

@@ -13,7 +13,7 @@ namespace BareBones.Services.PropertyTable
 
         public IParseFunction DefaultFunction { get; set; } = null;
 
-        public Func<string, int, int> SkipWhiteSpaceFunction { get; set; }
+        public ParseOperation SkipWhiteSpaceFunction { get; set; }
 
         public GroupParseFunction Add(params IParseFunction[] functions)
         {

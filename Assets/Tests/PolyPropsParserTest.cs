@@ -715,7 +715,7 @@ public class PolyPropsParserTest
             ElementParseFunction = new NumberParseFunction(),
             StartToken = "[",
             EndToken = "]",
-            SkipWhiteSpaceFunction = new Func<string, int, int>((str, idx) => ParseUtil.Skip(str, " \n\t\r", idx))
+            SkipWhiteSpaceFunction = (str, idx) => ParseUtil.Skip(str, " \n\t\r", idx)
         };
         
         for (var i = 0; i < input.Length; i++)
@@ -748,7 +748,7 @@ public class PolyPropsParserTest
             StartToken = String.Empty,
             EndToken = ";",
             ElementSeparators = " ",
-            SkipWhiteSpaceFunction = new Func<string, int, int>((str, idx) => ParseUtil.Skip(str, "\n\r", idx))
+            SkipWhiteSpaceFunction = (str, idx) => ParseUtil.Skip(str, "\n\r", idx)
         };
 
         for (var i = 0; i < inputNoStartingDelimiter.Length; i++)
@@ -780,7 +780,7 @@ public class PolyPropsParserTest
             StartToken = "#",
             EndToken = String.Empty,
             ElementSeparators = "|",
-            SkipWhiteSpaceFunction = new Func<string, int, int>((str, idx) => ParseUtil.Skip(str, " \t\n\r", idx))
+            SkipWhiteSpaceFunction = (str, idx) => ParseUtil.Skip(str, " \t\n\r", idx)
         };
 
         for (var i = 0; i < inputNoStartingDelimiter.Length; i++)
@@ -812,7 +812,7 @@ public class PolyPropsParserTest
             StartToken = String.Empty,
             EndToken = String.Empty,
             ElementSeparators = ":",
-            SkipWhiteSpaceFunction = new Func<string, int, int>((str, idx) => ParseUtil.Skip(str, " \t\n\r", idx))
+            SkipWhiteSpaceFunction = (str, idx) => ParseUtil.Skip(str, " \t\n\r", idx)
         };
 
         for (var i = 0; i < inputNoStartingDelimiter.Length; i++)
