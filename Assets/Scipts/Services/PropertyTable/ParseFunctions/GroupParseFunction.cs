@@ -5,10 +5,8 @@ using System.Collections.Generic;
 
 namespace BareBones.Services.PropertyTable
 {
-    public class GroupParseFunction : IParseFunction
+    public class GroupParseFunction : AbstractParseFunction
     {
-        public Action<(int, int), string> Log { get; set; }
-
         public List<IParseFunction> ParseFunctions { get; private set; } = new List<IParseFunction>();
 
         public IParseFunction DefaultFunction { get; set; } = null;
@@ -21,12 +19,12 @@ namespace BareBones.Services.PropertyTable
             return this;
         }
 
-        public bool CanParse(string text, int start = 0) =>
+        public override bool CanParse(string text, int start = 0) =>
             start < text.Length
             &&  ParseFunctions.Any(f => f.CanParse(text, start)) 
             || (DefaultFunction != null && DefaultFunction.CanParse(text, start));
 
-        public ParseResult Parse(string text, int start = 0)
+        public override ParseResult Parse(string text, int start = 0)
         {
             var idx = start;
 

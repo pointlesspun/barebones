@@ -6,21 +6,19 @@ namespace BareBones.Services.PropertyTable
     /**
      * @deprecated
      */
-    public class BooleanParseFunction : IParseFunction
+    public class BooleanParseFunction : AbstractParseFunction
     {
         public const string DefaultTrueToken = "true";
         public const string DefaultFalseToken = "false";
-
-        public Action<(int, int), string> Log { get; set; }
 
         public string TrueToken { get; set; } = DefaultTrueToken;
 
         public string FalseToken { get; set; } = DefaultFalseToken;
 
-        public bool CanParse(string text, int start) =>
+        public override bool CanParse(string text, int start) =>
             text.IsMatch(TrueToken, start, true) || text.IsMatch(FalseToken, start, true);
 
-        public ParseResult Parse(string text, int start) => BooleanParseFunction.Parse(text, start, TrueToken, FalseToken, Log);
+        public override ParseResult Parse(string text, int start) => BooleanParseFunction.Parse(text, start, TrueToken, FalseToken, Log);
 
         public static ParseResult Parse(
             string text, 

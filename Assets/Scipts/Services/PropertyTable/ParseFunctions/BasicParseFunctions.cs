@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
+using UnityEngine;
 
 namespace BareBones.Services.PropertyTable
 {
@@ -144,10 +146,11 @@ namespace BareBones.Services.PropertyTable
 
         public IParseFunction CreateXMLFunction()
         {
-            var stack = new List<string>();
+            var stack = new List<Regex>();
 
-            var attributeFunction = new KeyValueParseFunction<string, string>()
+            var attributeFunction = new KeyValueParseFunction<string, object>()
             {
+                Name = "XmlAttribute",
                 KeyParseFunction = new AnyCharParseFunction()
                 {
                     Delimiters = "= ",
@@ -160,36 +163,129 @@ namespace BareBones.Services.PropertyTable
                 ValueParseFunction = StringFunction
             };
 
-            var nodeFunction = new ConcatenationParseFunction()
+            var xmlNodeFunction = new ConcatenationParseFunction()
             {
+                Name = "XmlNode",
                 Log = Log,
                 SkipWhiteSpaceFunction = SkipWhiteSpaceAndComments,
+                AddNullElements = false
             };
-            
-            nodeFunction.Add(
-                new KeywordParseFunction()
-                {
-                    Keyword = "<",
-                    Log = Log,
-                    ValueFunction = () => "<"
-                },
+
+            var xmlTagFunction = new AnyCharParseFunction()
+            {
+                Name = "XmlTag",
+                Delimiters = " />",
+                Log = Log,
+                EscapeChar = (char)0,
+                OnMatch = (str) => {
+
+                    stack.Insert(0, new Regex("\\G<\\/\\s*" + str + "\\s*>"));
+                }
+            };
+
+            var xmlAttributeCollection = new RepeatParseFunction<Dictionary<string, object>, KeyValuePair<string, object>>()
+            {
+                Name = "XmlAttributeCollection",
+                Log = Log,
+                SkipWhiteSpaceOperation = SkipWhiteSpaceAndComments,
+                Function = attributeFunction,
+                TerminationOperation = MatchAnyChar(" />"),
+                ConsumeTermination = false
+            };
+
+            var xmlNodeOpen = new KeywordParseFunction()
+            {
+                Name = "XmlNodeOpen",
+                Keyword = "<",
+                Log = Log,
+                ValueFunction = () => null,
+            };
+
+            var xmlChildElement = new GroupParseFunction()
+            {
+                Name = "XmlChildElement",
+                Log = Log,
+                SkipWhiteSpaceFunction = SkipWhiteSpaceAndComments,
+            }.Add(
+                xmlNodeFunction,
                 new AnyCharParseFunction()
                 {
-                    Delimiters = " />",
+                    Delimiters = "<",
                     Log = Log,
-                    EscapeChar = (char) 0,
-                    OnMatchCallback = (str) => stack.Add(str)
-                },
-                new RepeatParseFunction()
-                {
-                    Log = Log,
-                    SkipWhiteSpaceOperation = SkipWhiteSpaceAndComments,
-                    Function = attributeFunction,
+                    EscapeChar = (char)0,
                 }
             );
 
-            return null;
+            var xmlChildren = new RepeatParseFunction<List<object>, object>()
+            {
+                Name = "XmlChildren",
+                Function = xmlChildElement,
+                Log = Log,
+                AddNullElements = false,
+                SkipWhiteSpaceOperation = SkipWhiteSpaceAndComments,
+                TerminationOperation = (text, start) =>
+                {
+                    var match = stack[0].Match(text, start);
+
+                    if (match.Success)
+                    {
+                        stack.RemoveAt(0);
+                        return start + match.Length;
+                    }
+
+                    return -1;
+                }
+            };
+
+            var xmlComposite = new ConcatenationParseFunction()
+            {
+                Name = "XmlComposite",
+                Log = Log,
+                SkipWhiteSpaceFunction = SkipWhiteSpaceAndComments,
+                AddNullElements = false,
+                CompressResult = true
+            }.Add(
+                new KeywordParseFunction()
+                {
+                    Keyword = ">",
+                    Log = Log,
+                    ValueFunction = () => null,
+                },
+                xmlChildren);
+
+            var xmlNodeClose = new GroupParseFunction()
+            {
+                Name = "XmlNodeClose",
+                SkipWhiteSpaceFunction = SkipWhiteSpaceAndComments,
+                Log = Log,
+            }.Add(
+                new KeywordParseFunction()
+                {
+                    Keyword = "/>",
+                    Log = Log,
+                    ValueFunction = () => null,
+                    Name = "XmlClose",
+                    OnMatch = (str) => stack.RemoveAt(0)
+                },
+                xmlComposite                
+            );
+
+            xmlNodeFunction.Add(
+                xmlNodeOpen,
+                xmlTagFunction,
+                xmlAttributeCollection,
+                xmlNodeClose
+            );
+
+            return xmlNodeFunction;
         }
+
+        public ParseOperation MatchAnyChar(string characters)
+            => (text, start) => characters.IndexOf(text[start]) >= 0 ? start + 1 : -1;
+
+
+        public ParseOperation MatchChar(char c) 
+            => (text, start) => text[start] == c ? start + 1 : -1;
 
         public int SkipWhiteSpaceAndComments(string text, int start)
         {

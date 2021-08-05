@@ -1,21 +1,18 @@
 ﻿
 using System;
 using System.Collections.Generic;
-using UnityEngine;
 
 namespace BareBones.Services.PropertyTable
 {
-    public class RepeatParseFunction : IParseFunction
+    public class RepeatParseFunction<TCollection, TElement> : AbstractParseFunction where TCollection : ICollection<TElement>, new()
     {
-        public Action<(int, int), string> Log { get; set; }
-
         public IParseFunction Function { get; set; }
 
         public int Min { get; set; } = -1;
 
         public int Max { get; set; } = -1;
 
-        public bool CanParse(string text, int start) => Function != null && Function.CanParse(text, start);
+        public override bool CanParse(string text, int start) => Function != null && Function.CanParse(text, start);
 
         public ParseOperation SkipWhiteSpaceOperation { get; set; }
 
@@ -25,11 +22,16 @@ namespace BareBones.Services.PropertyTable
 
         public bool ContinueAfterError { get; set; } = true;
 
-        public ParseResult Parse(string text, int start = 0)
+        public bool ConsumeTermination { get; set; } = true;
+
+        public bool AddNullElements { get; set; } = true;
+ 
+        public override ParseResult Parse(string text, int start = 0)
         {
-            return Parse(text, Function, SkipWhiteSpaceOperation, TerminationOperation, SeparationOperation, start, ContinueAfterError, Min, Max);
+            return Parse(text, Function, SkipWhiteSpaceOperation, TerminationOperation, SeparationOperation, start, ContinueAfterError, Min, Max, ConsumeTermination, AddNullElements);
         }
 
+        
         public static ParseResult Parse(
             string text, 
             IParseFunction elementFunction, 
@@ -39,26 +41,56 @@ namespace BareBones.Services.PropertyTable
             int start = 0, 
             bool continueAfterErrors = true, 
             int min = -1, 
-            int max = -1
+            int max = -1,
+            bool consumeTerminationCharacters = true,
+            bool addNullElements = true
         )
         {
             var idx = start;
-            var result = new List<object>();
+            var result = new TCollection();
             var noErrorsEncountered = true;
 
             if (!String.IsNullOrEmpty(text))
             {
-                while ((terminationFunction == null || terminationFunction(text, idx) == -1) &&
-                    idx < text.Length
+                // guard
+                if (terminationFunction != null)
+                {
+                    var count = terminationFunction(text, idx);
+
+                    if (count >= 0)
+                    {
+                        return consumeTerminationCharacters
+                            ? new ParseResult(result, count - start, true)
+                            : new ParseResult(result, 0, true);
+                    }
+                }
+
+                var iteration = 0;
+
+                while ((terminationFunction == null || terminationFunction(text, idx) == -1) 
+                    && idx < text.Length
                     && elementFunction.CanParse(text, idx)
                     && (max == -1 || result.Count < max))
                 {
+                    if (iteration > 100)
+                    {
+                        throw new InvalidProgramException("RepeatParseFunction got into an loop which took too long...");
+                    }
+                    else
+                    {
+                        iteration++;
+                    }
+
                     var functionResult = elementFunction.Parse(text, idx);
 
                     // parse an element
                     if (functionResult.isSuccess)
                     {
-                        result.Add(functionResult.value);
+                        if (functionResult.value != null || addNullElements)
+                        {
+                            result.Add((TElement)functionResult.value);
+                        }
+
                         idx += functionResult.charactersRead;
                     }
                     else if (!CanContinueAfterError(idx + functionResult.charactersRead))
@@ -73,12 +105,18 @@ namespace BareBones.Services.PropertyTable
                     if (idx < text.Length)
                     {
                         // end found, breakt to go to the check of the termination conditions (min, max)
-                        if (terminationFunction != null && terminationFunction(text, idx) >= 0)
+                        if (terminationFunction != null)
                         {
-                            idx++;
-                            return (min < 0 || result.Count >= min)
-                                    ? new ParseResult(result, idx - start, noErrorsEncountered)
-                                    : new ParseResult(null, idx - start, false);
+                            var terminationCharactersRead = terminationFunction(text, idx);
+
+                            if (terminationCharactersRead >= 0)
+                            {
+                                idx = consumeTerminationCharacters ? terminationCharactersRead : idx;
+
+                                return (min < 0 || result.Count >= min)
+                                        ? new ParseResult(result, idx - start, noErrorsEncountered)
+                                        : new ParseResult(null, idx - start, false);
+                            }
                         }
 
                         // more characters found, must be separators if any are defined

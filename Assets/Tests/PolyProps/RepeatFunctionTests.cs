@@ -1,8 +1,8 @@
-﻿
-using BareBones.Services.PropertyTable;
+﻿using System.Collections.Generic;
+
 using NUnit.Framework;
-using System;
-using System.Collections.Generic;
+
+using BareBones.Services.PropertyTable;
 
 public class RepeatFunctionTests
 {
@@ -10,13 +10,13 @@ public class RepeatFunctionTests
     [Description("provide an empty string, expect parsing to succeed with an empty list as result")]
     public void EmptyInputTest()
     {
-        var result = RepeatParseFunction.Parse(null, null, null, null);
+        var result = RepeatParseFunction<List<object>, object>.Parse(null, null, null, null);
 
         Assert.AreEqual(result.isSuccess, true);
         Assert.AreEqual(result.value, new List<object>());
         Assert.AreEqual(result.charactersRead, 0);
 
-        result = RepeatParseFunction.Parse("", null, null, null);
+        result = RepeatParseFunction<List<object>, object>.Parse("", null, null, null);
 
         Assert.AreEqual(result.isSuccess, true);
         Assert.AreEqual(result.value, new List<object>());
@@ -28,13 +28,13 @@ public class RepeatFunctionTests
     public void SingleInputTest()
     {
         var functions = new BasicParseFunctions();
-        var result = RepeatParseFunction.Parse("1", functions.NumberFunction, functions.SkipWhiteSpaceAndComments, null);
+        var result = RepeatParseFunction<List<object>, object>.Parse("1", functions.NumberFunction, functions.SkipWhiteSpaceAndComments, null);
 
         Assert.AreEqual(result.isSuccess, true);
         Assert.AreEqual(result.value, new List<object>() { 1 });
         Assert.AreEqual(result.charactersRead, 1);
 
-        result = RepeatParseFunction.Parse("1  ", functions.NumberFunction, functions.SkipWhiteSpaceAndComments, null);
+        result = RepeatParseFunction<List<object>, object>.Parse("1  ", functions.NumberFunction, functions.SkipWhiteSpaceAndComments, null);
 
         Assert.AreEqual(result.isSuccess, true);
         Assert.AreEqual(result.value, new List<object>() { 1 });
@@ -47,7 +47,7 @@ public class RepeatFunctionTests
     public void ThreeElementInputTest()
     {
         var functions = new BasicParseFunctions();
-        var result = RepeatParseFunction.Parse("1, 2,  3", functions.NumberFunction, functions.SkipWhiteSpaceAndComments, null, (text, idx) => ",".IndexOf(text[idx]) >= 0 ? idx + 1 : -1);
+        var result = RepeatParseFunction<List<object>, object>.Parse("1, 2,  3", functions.NumberFunction, functions.SkipWhiteSpaceAndComments, null, (text, idx) => ",".IndexOf(text[idx]) >= 0 ? idx + 1 : -1);
 
         Assert.AreEqual(result.isSuccess, true);
         Assert.AreEqual(result.value, new List<object>() { 1, 2, 3 });
@@ -59,7 +59,7 @@ public class RepeatFunctionTests
     public void ThreeElementsAndATerminatorInputTest()
     {
         var functions = new BasicParseFunctions();
-        var result = RepeatParseFunction.Parse(
+        var result = RepeatParseFunction<List<object>, object>.Parse(
             "[1, 2,  3 ] ", 
             functions.NumberFunction, 
             functions.SkipWhiteSpaceAndComments,
@@ -79,7 +79,7 @@ public class RepeatFunctionTests
     {
         var testText = "[1, 2  3, 4 ]";
         var functions = new BasicParseFunctions();
-        var result = RepeatParseFunction.Parse(
+        var result = RepeatParseFunction<List<object>, object>.Parse(
             testText,
             functions.NumberFunction,
             functions.SkipWhiteSpaceAndComments,
@@ -102,7 +102,7 @@ public class RepeatFunctionTests
         var testText3 = "1, 2]";
 
         var functions = new BasicParseFunctions();
-        var func = new RepeatParseFunction()
+        var func = new RepeatParseFunction<List<object>, object>()
         {
             Function = functions.NumberFunction,
             SkipWhiteSpaceOperation = functions.SkipWhiteSpaceAndComments,
@@ -139,7 +139,7 @@ public class RepeatFunctionTests
         var testText3 = "1]";
 
         var functions = new BasicParseFunctions();
-        var func = new RepeatParseFunction()
+        var func = new RepeatParseFunction<List<object>, object>()
         {
             Function = functions.NumberFunction,
             SkipWhiteSpaceOperation = functions.SkipWhiteSpaceAndComments,

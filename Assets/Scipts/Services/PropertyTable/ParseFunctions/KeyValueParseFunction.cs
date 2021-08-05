@@ -4,10 +4,8 @@ using System.Collections.Generic;
 
 namespace BareBones.Services.PropertyTable
 {
-    public class KeyValueParseFunction<TKey, TValue> : IParseFunction
+    public class KeyValueParseFunction<TKey, TValue> : AbstractParseFunction
     {
-        public Action<(int, int), string> Log { get; set; }
-
         public string SeparatorToken { get; set; } = ":";
 
         public IParseFunction KeyParseFunction { get; set; }
@@ -16,9 +14,9 @@ namespace BareBones.Services.PropertyTable
 
         public ParseOperation SkipWhiteSpaceFunction { get; set; }
 
-        public bool CanParse(string text, int start) => KeyParseFunction.CanParse(text, start);
+        public override bool CanParse(string text, int start) => KeyParseFunction.CanParse(text, start);
 
-        public ParseResult Parse(string text, int start) => 
+        public override ParseResult Parse(string text, int start) => 
             KeyValueParseFunction<TKey, TValue>.Parse(text, start, KeyParseFunction, ValueParseFunction, SkipWhiteSpaceFunction, SeparatorToken, Log);
 
         public static ParseResult Parse(
@@ -50,8 +48,10 @@ namespace BareBones.Services.PropertyTable
 
                         if (valueResult.isSuccess)
                         {
+                            var value = new KeyValuePair<TKey, TValue>((TKey)keyResult.value, (TValue)valueResult.value);
+                            
                             return new ParseResult(
-                                new KeyValuePair<TKey, TValue>((TKey)keyResult.value, (TValue)valueResult.value), 
+                                value, 
                                 (idx +valueResult.charactersRead) - start, 
                                 true
                             );

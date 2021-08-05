@@ -2,19 +2,17 @@
 
 namespace BareBones.Services.PropertyTable
 {
-    public class NumberParseFunction : IParseFunction
+    public class NumberParseFunction : AbstractParseFunction
     {
         public const string DefaultDelimiters = " \t\n\r,[]{}/";
-
-        public Action<(int, int), string> Log { get; set; }
 
         public string Delimiters { get; set; } = DefaultDelimiters;
 
         public string AllowedTypes { get; set; } = null;
 
-        public bool CanParse(string text, int start) => text[start] == '-' || char.IsDigit(text[start]);
+        public override bool CanParse(string text, int start) => text[start] == '-' || char.IsDigit(text[start]);
 
-        public ParseResult Parse(string text, int start) => NumberParseFunction.Parse(text, start, Delimiters, AllowedTypes, Log);
+        public override ParseResult Parse(string text, int start) => NumberParseFunction.Parse(text, start, Delimiters, AllowedTypes, Log);
 
 
         public static ParseResult Parse(string text, int start, string delimiters = DefaultDelimiters, string allowedTypes = null, Action<(int, int), string> log = null)

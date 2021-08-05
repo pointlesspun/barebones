@@ -4,18 +4,22 @@ using System.Collections.Generic;
 
 namespace BareBones.Services.PropertyTable
 {
-    public class ConcatenationParseFunction : IParseFunction
+    public class ConcatenationParseFunction : AbstractParseFunction
     {
-        public Action<(int, int), string> Log { get; set; }
 
         public List<IParseFunction> Functions { get; set; } = new List<IParseFunction>();
 
-        public bool CanParse(string text, int start) => Functions.Count > 0 && Functions[0].CanParse(text, start);
+        public override bool CanParse(string text, int start) => Functions.Count > 0 && Functions[0].CanParse(text, start);
 
         public ParseOperation SkipWhiteSpaceFunction { get; set; }
 
-        public ParseResult Parse(string text, int start) 
-            => ConcatenationParseFunction.Parse(text, start, Functions, SkipWhiteSpaceFunction);
+        public bool AddNullElements { get; set; } = true;
+
+        public bool CompressResult { get; set; } = false;
+
+        public override ParseResult Parse(string text, int start = 0) 
+            => ConcatenationParseFunction.Parse(text, start, Functions, SkipWhiteSpaceFunction, AddNullElements, Log, Name, CompressResult);
+
 
         public ConcatenationParseFunction Add(params IParseFunction[] functions)
         {
@@ -23,16 +27,34 @@ namespace BareBones.Services.PropertyTable
             return this;
         }
 
-        public static ParseResult Parse(string text, int start, List<IParseFunction> functions, ParseOperation skipFunction)
+        public static ParseResult Parse(
+            string text, 
+            int start, 
+            List<IParseFunction> functions, 
+            ParseOperation skipFunction, 
+            bool addNullElements = true,
+            Action<(int, int), string>  log = null,
+            string name = "", 
+            bool compressResult = false)
         {
             if (functions.Count > 0)
             {
                 var result = new List<object>();
                 var idx = start;
                 var functionIdx = 0;
+                var iteration = 0;
 
                 while (idx < text.Length && functionIdx < functions.Count)
                 {
+                    if (iteration > 100)
+                    {
+                        throw new InvalidProgramException("ConcatenationParseFunction got into an loop which took too long...");
+                    }
+                    else 
+                    {
+                        iteration++;
+                    }
+
                     idx = skipFunction(text, idx);
 
                     if (idx < text.Length)
@@ -45,7 +67,11 @@ namespace BareBones.Services.PropertyTable
                             if (functionResult.isSuccess)
                             {
                                 idx += functionResult.charactersRead;
-                                result.Add(functionResult.value);
+                                if (functionResult.value != null || addNullElements)
+                                {
+                                    result.Add(functionResult.value);
+                                }
+                                    
                                 functionIdx++;
                             }
                             else
@@ -53,16 +79,43 @@ namespace BareBones.Services.PropertyTable
                                 return functionResult;
                             }
                         }
+                        else
+                        {
+                            log?.Invoke(text.GetLineAndColumn(start), name + " failed to parse function "  + current + "(" + functionIdx + ").");
+                            return new ParseResult(null, idx - start, false);
+                        }
                     }
                 }
 
                 return functionIdx >= functions.Count 
-                    ? new ParseResult(result, start - idx, true)
-                    : new ParseResult(null, start - idx, false);
+                    ? MapResult(result, idx - start, compressResult)
+                    : new ParseResult(null, idx - start, false);
             }
             else
             {
                 return new ParseResult(null, 0, true);
+            }
+        }
+
+        private static ParseResult MapResult(List<object> values, int charactersRead, bool compressResult)
+        {
+            if (compressResult)
+            {
+                if (values.Count == 0)
+                {
+                    return new ParseResult(null, charactersRead, true);
+                }
+                else if (values.Count == 1)
+                {
+                    return new ParseResult(values[0], charactersRead, true);
+                }
+
+                return new ParseResult(values, charactersRead, true);
+
+            }
+            else
+            {
+                return new ParseResult(values, charactersRead, true);
             }
         }
     }

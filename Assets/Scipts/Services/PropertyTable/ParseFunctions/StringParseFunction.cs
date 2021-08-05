@@ -2,22 +2,21 @@
 
 namespace BareBones.Services.PropertyTable
 {
-    public class StringParseFunction : IParseFunction
+    public class StringParseFunction : AbstractParseFunction
     {
         public const string DefaultDelimiters = "\"'`";
 
         public const char DefaultEscapeChar = '\\';
 
-        public Action<(int, int), string> Log { get; set; }
-
+        
         public string Delimiters { get; set; } = DefaultDelimiters;
 
         public char EscapeChar { get; set; } = DefaultEscapeChar;
 
         
-        public bool CanParse(string text, int start) => Delimiters.IndexOf(text[start]) >= 0;
+        public override bool CanParse(string text, int start) => Delimiters.IndexOf(text[start]) >= 0;
 
-        public ParseResult Parse(string text, int start) => ParseString(text, start, Delimiters, EscapeChar, Log);
+        public override ParseResult Parse(string text, int start) => ParseString(text, start, Delimiters, EscapeChar, Log);
 
         public static ParseResult ParseString(
             string text, 

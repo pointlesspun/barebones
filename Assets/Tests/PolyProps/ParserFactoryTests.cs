@@ -5,6 +5,7 @@ using NUnit.Framework;
 using BareBones.Services.PropertyTable;
 using UnityEngine;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 
 public class ParseFactoryTest
 {
@@ -73,7 +74,7 @@ public class ParseFactoryTest
     {
         var log = new Action<(int, int), string>((position, msg) => Debug.Log(position + ": " + msg));
         var basicFunctions = new BasicParseFunctions(log);
-        
+
         basicFunctions.ValueFunction.Add(
             new VectorParseFunction()
             {
@@ -118,8 +119,60 @@ public class ParseFactoryTest
             },
             { "boolean", true },
             { "void", null }
-        }) {
+        })
+        {
             Assert.AreEqual(kvp.Value, value[kvp.Key]);
         }
+    }
+
+    [Test]
+    public void XmlSimpleNodeTests()
+    {
+        var log = new Action<(int, int), string>((position, msg) => Debug.Log(position + ": " + msg));
+        var basicFunctions = new BasicParseFunctions(log);
+        var xmlParser = basicFunctions.CreateXMLFunction();
+
+        var simpleNode = "<node/>";
+        var parseResult = xmlParser.Parse(simpleNode);
+
+        Assert.AreEqual(true, parseResult.isSuccess);
+        Assert.AreEqual(simpleNode.Length, parseResult.charactersRead);
+        Assert.AreEqual(new List<object>() { "node", new Dictionary<string, object>() }, parseResult.value);
+
+        var nodeWithAttributes = "<node attr1='value1' attr2 = 'value2' />";
+        parseResult = xmlParser.Parse(nodeWithAttributes);
+
+        Assert.AreEqual(true, parseResult.isSuccess);
+        Assert.AreEqual(nodeWithAttributes.Length, parseResult.charactersRead);
+        Assert.AreEqual(new List<object>() { "node", new Dictionary<string, object>() {
+            {"attr1", "value1"},
+            {"attr2", "value2"},
+        } }, parseResult.value);
+    }
+
+    [Test]
+    public void XmlCompositeNodeTests()
+    {
+        var log = new Action<(int, int), string>((position, msg) => Debug.Log(position + ": " + msg));
+        var basicFunctions = new BasicParseFunctions(log);
+        var xmlParser = basicFunctions.CreateXMLFunction();
+
+        var simpleNode = "<node><child/></node>";
+        var parseResult = xmlParser.Parse(simpleNode);
+        var expectedChildNode = new List<object>() {
+                    "child",
+                    new Dictionary<string, object>()
+                };
+        var expected = new List<object>() {
+            "node",
+            new Dictionary<string, object>(),
+            new List<object>()
+            {
+                expectedChildNode
+            }
+        };
+        Assert.AreEqual(true, parseResult.isSuccess);
+        Assert.AreEqual(simpleNode.Length, parseResult.charactersRead);
+        Assert.AreEqual(expected, parseResult.value);
     }
 }

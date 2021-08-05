@@ -5,7 +5,8 @@ using UnityEngine;
 
 namespace BareBones.Services.PropertyTable
 {
-    public class CompositeParseFunction<TCollection, TElement> : IParseFunction where TCollection : ICollection<TElement>, new()
+    public class CompositeParseFunction<TCollection, TElement> : AbstractParseFunction 
+        where TCollection : ICollection<TElement>, new()
     {
         public const string DefaultStartToken = "{";
         public const string DefaultEndToken = "}";
@@ -17,17 +18,15 @@ namespace BareBones.Services.PropertyTable
 
         public string ElementSeparators { get; set; } = DefaultSeparators;
 
-        public Action<(int, int), string> Log { get; set; }
-
         public bool ContinueAfterError { get; set; } = true;
 
         public IParseFunction ElementParseFunction { get; set; }
 
         public ParseOperation SkipWhiteSpaceFunction { get; set; }
 
-        public bool CanParse(string text, int start) => text.IsMatch(StartToken, start, true);
+        public override bool CanParse(string text, int start) => text.IsMatch(StartToken, start, true);
 
-        public ParseResult Parse(string text, int start = 0) => 
+        public override ParseResult Parse(string text, int start = 0) => 
             CompositeParseFunction<TCollection, TElement>.Parse(
                 text, ElementParseFunction, SkipWhiteSpaceFunction, start, StartToken, EndToken, ElementSeparators, ContinueAfterError, Log);
 
@@ -88,9 +87,19 @@ namespace BareBones.Services.PropertyTable
             var resultCollection = new TCollection();
             var idx = start;
             var noErrorsEncountered = true;
+            var iteration = 0;
 
             while (idx >= 0 && idx < text.Length && (string.IsNullOrEmpty(endToken) || !text.IsMatch(endToken, idx, true)))
             {
+                if (iteration > 100)
+                {
+                    throw new InvalidProgramException("CompositeParseFunction got into an loop which took too long...");
+                }
+                else
+                {
+                    iteration++;
+                }
+
                 idx = skipWhiteSpaceFunction(text, idx);
 
                 if (idx < text.Length && (string.IsNullOrEmpty(endToken) || !text.IsMatch(endToken, idx, true)))

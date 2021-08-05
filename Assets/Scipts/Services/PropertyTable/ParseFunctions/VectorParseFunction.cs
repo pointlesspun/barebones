@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace BareBones.Services.PropertyTable
 {
-    public class VectorParseFunction : IParseFunction
+    public class VectorParseFunction : AbstractParseFunction
     {
         public static readonly string DefaultVectorPrefix = "v[";
 
@@ -15,14 +15,12 @@ namespace BareBones.Services.PropertyTable
 
         public IParseFunction ListFunction { get; set; }
 
-        public Action<(int, int), string> Log { get; set; }
-
-        public bool CanParse(string text, int start)
+        public override bool CanParse(string text, int start)
         {
             return text.IsMatch(VectorPrefix, start, true);
         }
 
-        public ParseResult Parse(string text, int start) => Parse(text, start, ListFunction, ListOffset, Log);
+        public override ParseResult Parse(string text, int start) => Parse(text, start, ListFunction, ListOffset, Log);
 
         public static ParseResult Parse(string text, int start, IParseFunction listFunction, int listOffset, Action<(int, int), string> log = null)
         {
